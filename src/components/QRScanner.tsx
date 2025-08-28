@@ -15,16 +15,6 @@ export default function QRScanner({ onScan, onError, isActive }: QRScannerProps)
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  useEffect(() => {
-    if (isActive) {
-      startCamera();
-    } else {
-      stopCamera();
-    }
-
-    return () => stopCamera();
-  }, [isActive, startCamera, stopCamera]);
-
   const startCamera = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -41,8 +31,8 @@ export default function QRScanner({ onScan, onError, isActive }: QRScannerProps)
         setHasCamera(true);
         setScanning(true);
       }
-    } catch (error) {
-      console.error('Camera access denied:', error);
+    } catch {
+      console.error('Camera access denied');
       setHasCamera(false);
       onError?.('ไม่สามารถเข้าถึงกล้องได้ กรุณาอนุญาตการใช้งานกล้อง');
     }
@@ -55,6 +45,16 @@ export default function QRScanner({ onScan, onError, isActive }: QRScannerProps)
     }
     setScanning(false);
   };
+
+  useEffect(() => {
+    if (isActive) {
+      startCamera();
+    } else {
+      stopCamera();
+    }
+
+    return () => stopCamera();
+  }, [isActive]);
 
   const handleManualInput = () => {
     const input = prompt('กรอกรหัสวัสดุ หรือ เลขครุภัณฑ์:');
