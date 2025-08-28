@@ -1,9 +1,7 @@
 // src/app/api/materials/route.ts
 
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
 
 // GET: ดึงข้อมูลวัสดุทั้งหมด
 export async function GET() {

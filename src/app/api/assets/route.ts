@@ -1,8 +1,6 @@
 // src/app/api/assets/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
 
 // GET: ดึงรายการครุภัณฑ์ทั้งหมด
 export async function GET() {
@@ -74,3 +72,4 @@ export async function POST(request: NextRequest) {
     }, { status: 500 });
   }
 }
+

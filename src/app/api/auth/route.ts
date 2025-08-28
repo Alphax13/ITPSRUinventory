@@ -1,8 +1,6 @@
 // src/app/api/auth/route.ts
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
 
 // POST: ล็อกอิน (ระบบง่าย ๆ ใช้ email)
 export async function POST(request: Request) {
@@ -15,23 +13,34 @@ export async function POST(request: Request) {
     }
 
     // ค้นหาผู้ใช้จาก email
-    let user = await prisma.user.findUnique({
-      where: { email },
-    });
+    let user;
+    try {
+      user = await prisma.user.findUnique({
+        where: { email },
+      });
+    } catch (findError) {
+      console.error('User lookup failed:', findError);
+      return NextResponse.json({ error: 'User lookup failed' }, { status: 500 });
+    }
 
     // หากไม่มีผู้ใช้ ให้สร้างใหม่ (สำหรับ demo)
     if (!user) {
-      // สร้างผู้ใช้ใหม่โดยใช้ email domain เป็น department
-      const domain = email.split('@')[1];
-      const department = domain.includes('edu') ? 'Academic' : 'General';
-      
-      user = await prisma.user.create({
-        data: {
-          email,
-          name: email.split('@')[0], // ใช้ส่วนหน้า @ เป็นชื่อ
-          department,
-        },
-      });
+      try {
+        // สร้างผู้ใช้ใหม่โดยใช้ email domain เป็น department
+        const domain = email.split('@')[1];
+        const department = domain?.includes('edu') ? 'Academic' : 'General';
+        
+        user = await prisma.user.create({
+          data: {
+            email,
+            name: email.split('@')[0], // ใช้ส่วนหน้า @ เป็นชื่อ
+            department,
+          },
+        });
+      } catch (createError) {
+        console.error('User creation failed:', createError);
+        return NextResponse.json({ error: 'User creation failed' }, { status: 500 });
+      }
     }
 
     return NextResponse.json({ 
