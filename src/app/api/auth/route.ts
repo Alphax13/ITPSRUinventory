@@ -1,10 +1,20 @@
 // src/app/api/auth/route.ts
 import { NextResponse } from 'next/server';
 
-// POST: ล็อกอิน (ระบบง่าย ๆ ใช้ email) - v3 simple version
+// POST: ล็อกอิน (ระบบง่าย ๆ ใช้ email) - v4 with env check
 export async function POST(request: Request) {
   try {
     console.log('Auth API called');
+    
+    // Check if DATABASE_URL exists
+    if (!process.env.DATABASE_URL) {
+      console.error('DATABASE_URL not found in environment variables');
+      return NextResponse.json({ 
+        error: 'Database configuration missing',
+        details: 'DATABASE_URL environment variable not set'
+      }, { status: 500 });
+    }
+    
     const body = await request.json();
     const { email } = body;
     
