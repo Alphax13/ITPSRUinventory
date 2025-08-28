@@ -2,11 +2,33 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 
 interface AssetFormModalProps {
   onClose: () => void;
   onSave: () => void;
-  editingAsset?: any;
+}
+
+interface AssetFormData {
+  id: string;
+  assetNumber: string;
+  name: string;
+  category: string;
+  brand: string;
+  model: string;
+  serialNumber: string;
+  purchaseDate: string;
+  purchasePrice: string;
+  location: string;
+  condition: string;
+  imageUrl: string;
+  description: string;
+}
+
+interface AssetFormModalProps {
+  onClose: () => void;
+  onSave: () => void;
+  editingAsset?: AssetFormData;
 }
 
 export default function AssetFormModal({ onClose, onSave, editingAsset }: AssetFormModalProps) {
@@ -129,7 +151,7 @@ export default function AssetFormModal({ onClose, onSave, editingAsset }: AssetF
         return;
       }
 
-      let assetData: any = { ...formData };
+  const assetData: AssetFormData = { ...formData };
       
       // อัปโหลดรูปภาพก่อน (ถ้ามี)
       if (selectedFile) {
@@ -208,9 +230,11 @@ export default function AssetFormModal({ onClose, onSave, editingAsset }: AssetF
             
             {imagePreview && (
               <div className="mb-3 relative">
-                <img 
-                  src={imagePreview} 
-                  alt="Preview" 
+                <Image
+                  src={imagePreview}
+                  alt="Preview"
+                  width={400}
+                  height={160}
                   className="w-full h-40 object-cover rounded-xl border border-orange-200"
                 />
                 <button

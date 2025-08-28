@@ -6,7 +6,7 @@ import MaterialFormModal from './MaterialFormModal';
 import { useMaterialStore } from '@/stores/materialStore';
 import { useAuthStore } from '@/stores/authStore';
 
-interface Material {
+export interface Material {
   id: string;
   name: string;
   code: string;
@@ -18,7 +18,7 @@ interface Material {
   imageUrl?: string;
 }
 
-export default function MaterialsPage() {
+  export interface Material {
   const [materials, setMaterials] = useState<Material[]>([]);
   const [filteredMaterials, setFilteredMaterials] = useState<Material[]>([]);
   const [loading, setLoading] = useState(true);

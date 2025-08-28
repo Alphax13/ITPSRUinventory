@@ -3,8 +3,9 @@
 
 import { useEffect, useState } from 'react';
 import { useAuthStore } from '@/stores/authStore';
+import type { Material } from '../materials/page';
 
-interface Asset {
+export interface Asset {
   id: string;
   assetNumber: string;
   materialId: string;
@@ -23,12 +24,12 @@ export default function AssetsPage() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
-    assetNumber: '',
-    materialId: '',
-    location: '',
-    condition: 'GOOD' as const,
+  assetNumber: '',
+  materialId: '',
+  location: '',
+  condition: 'GOOD' as Asset['condition'],
   });
-  const [materials, setMaterials] = useState<any[]>([]);
+  const [materials, setMaterials] = useState<Material[]>([]);
   const { user } = useAuthStore();
 
   const isStaff = user?.role === 'STAFF';
@@ -197,7 +198,7 @@ export default function AssetsPage() {
                 </label>
                 <select
                   value={formData.condition}
-                  onChange={(e) => setFormData({ ...formData, condition: e.target.value as any })}
+                  onChange={(e) => setFormData({ ...formData, condition: e.target.value as Asset['condition'] })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                 >
                   <option value="GOOD">ดี</option>

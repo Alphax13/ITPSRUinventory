@@ -2,11 +2,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 
 interface ConsumableFormModalProps {
   onClose: () => void;
   onSave: () => void;
-  editingConsumable?: any;
+  editingConsumable?: import("./page").ConsumableMaterial;
 }
 
 export default function ConsumableFormModal({ onClose, onSave, editingConsumable }: ConsumableFormModalProps) {
@@ -110,7 +111,7 @@ export default function ConsumableFormModal({ onClose, onSave, editingConsumable
         return;
       }
 
-      let materialData: any = { ...formData };
+  const materialData: import("./page").ConsumableMaterial = { ...formData };
       
       // อัปโหลดรูปภาพก่อน (ถ้ามี)
       if (selectedFile) {
@@ -190,9 +191,11 @@ export default function ConsumableFormModal({ onClose, onSave, editingConsumable
             
             {imagePreview && (
               <div className="mb-3 relative">
-                <img 
-                  src={imagePreview} 
-                  alt="Preview" 
+                <Image
+                  src={imagePreview}
+                  alt="Preview"
+                  width={400}
+                  height={160}
                   className="w-full h-40 object-cover rounded-xl border border-orange-200"
                 />
                 <button

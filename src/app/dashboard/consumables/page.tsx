@@ -6,7 +6,7 @@ import { useAuthStore } from '@/stores/authStore';
 import ConsumableFormModal from './ConsumableFormModal';
 import StockAdjustmentModal from './StockAdjustmentModal';
 
-interface ConsumableMaterial {
+export interface ConsumableMaterial {
   id: string;
   name: string;
   category: string;

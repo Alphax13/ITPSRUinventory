@@ -1,3 +1,14 @@
+interface MaterialFormData {
+  id: string;
+  name: string;
+  code: string;
+  category: string;
+  unit: string;
+  minStock: number;
+  currentStock: number;
+  isAsset: boolean;
+  imageUrl: string;
+}
 // src/app/dashboard/materials/MaterialFormModal.tsx
 'use client';
 
@@ -7,16 +18,18 @@ import { generateMaterialQRCode } from '@/utils/qrcode';
 
 export default function MaterialFormModal({ onSave }: { onSave: () => void }) {
   const { isModalOpen, editingMaterial, closeModal } = useMaterialStore();
-  const [categories, setCategories] = useState<any[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<MaterialFormData>({
     id: '',
     name: '',
+  const materialData: MaterialFormData = { ...formData };
     code: '',
     category: '',
     unit: '',
     minStock: 0,
+    currentStock: 0,
     isAsset: false,
     imageUrl: '',
   });
@@ -37,6 +50,7 @@ export default function MaterialFormModal({ onSave }: { onSave: () => void }) {
         category: editingMaterial.category,
         unit: editingMaterial.unit,
         minStock: editingMaterial.minStock,
+        currentStock: editingMaterial.currentStock ?? 0,
         isAsset: editingMaterial.isAsset,
         imageUrl: editingMaterial.imageUrl || '',
       });
@@ -49,6 +63,7 @@ export default function MaterialFormModal({ onSave }: { onSave: () => void }) {
         category: '',
         unit: '',
         minStock: 0,
+        currentStock: 0,
         isAsset: false,
         imageUrl: '',
       });
@@ -100,23 +115,34 @@ export default function MaterialFormModal({ onSave }: { onSave: () => void }) {
   };
 
   const removeImage = () => {
+interface MaterialFormData {
+  id: string;
+  name: string;
+  code: string;
+  category: string;
+  unit: string;
+  minStock: number;
+  currentStock: number;
+  isAsset: boolean;
+  imageUrl: string;
+}
     setSelectedFile(null);
     setImagePreview('');
     setFormData(prev => ({
       ...prev,
       imageUrl: ''
-    }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    
-    const method = editingMaterial ? 'PUT' : 'POST';
-    const url = editingMaterial ? `/api/materials/${editingMaterial.id}` : '/api/materials';
+    id: '',
+    name: '',
+    code: '',
+    category: '',
+    unit: '',
+    minStock: 0,
+    currentStock: 0,
+    isAsset: false,
+    imageUrl: '',
 
     try {
-      let materialData: any = { ...formData };
+  const materialData: import("./page").Material = { ...formData };
       
       // อัปโหลดรูปภาพก่อน (ถ้ามี)
       if (selectedFile) {
@@ -132,7 +158,6 @@ export default function MaterialFormModal({ onSave }: { onSave: () => void }) {
         if (uploadResponse.ok) {
           const uploadResult = await uploadResponse.json();
           materialData.imageUrl = uploadResult.url;
-        } else {
           console.error('Image upload failed');
         }
       }
@@ -141,11 +166,10 @@ export default function MaterialFormModal({ onSave }: { onSave: () => void }) {
       if (!editingMaterial && formData.code) {
         try {
           const qrCode = await generateMaterialQRCode(formData.code);
-          materialData = { ...materialData, qrCode };
+          const materialDataWithQR = { ...materialData, qrCode };
         } catch (error) {
           console.warn('QR Code generation failed, proceeding without it:', error);
         }
-      }
 
       const res = await fetch(url, {
         method,
@@ -213,7 +237,7 @@ export default function MaterialFormModal({ onSave }: { onSave: () => void }) {
                 <img 
                   src={imagePreview} 
                   alt="Preview" 
-                  className="w-full h-40 object-cover rounded-lg border border-gray-300"
+            const materialData: MaterialFormData = { ...formData };
                 />
                 <button
                   type="button"
@@ -246,8 +270,8 @@ export default function MaterialFormModal({ onSave }: { onSave: () => void }) {
             >
               <option value="">เลือกหมวดหมู่</option>
               {categories.map((cat) => (
-                <option key={cat.name} value={cat.name}>
-                  {cat.name}
+                <option key={cat} value={cat}>
+                  {cat}
                 </option>
               ))}
             </select>
