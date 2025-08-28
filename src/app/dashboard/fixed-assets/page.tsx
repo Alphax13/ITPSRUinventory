@@ -2,6 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { useAuthStore } from '@/stores/authStore';
 import AssetFormModal from './AssetFormModal';
 
@@ -244,9 +245,11 @@ export default function AssetsPage() {
               {/* Asset Image */}
               <div className="relative h-48 bg-gradient-to-br from-orange-100 to-orange-200">
                 {asset.imageUrl ? (
-                  <img 
-                    src={asset.imageUrl} 
+                  <Image
+                    src={asset.imageUrl}
                     alt={asset.name}
+                    width={400}
+                    height={192}
                     className="w-full h-full object-cover"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
@@ -373,7 +376,7 @@ export default function AssetsPage() {
         <AssetFormModal 
           onClose={handleModalClose}
           onSave={handleModalSave}
-          editingAsset={editingAsset}
+          editingAsset={editingAsset as any || undefined}
         />
       )}
     </div>

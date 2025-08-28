@@ -2,6 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import MaterialFormModal from './MaterialFormModal';
 import { useMaterialStore } from '@/stores/materialStore';
 import { useAuthStore } from '@/stores/authStore';
@@ -18,7 +19,7 @@ export interface Material {
   imageUrl?: string;
 }
 
-  export interface Material {
+export default function MaterialsPage() {
   const [materials, setMaterials] = useState<Material[]>([]);
   const [filteredMaterials, setFilteredMaterials] = useState<Material[]>([]);
   const [loading, setLoading] = useState(true);
@@ -211,9 +212,11 @@ export interface Material {
               {/* Material Image */}
               <div className="relative h-48 bg-gradient-to-br from-orange-100 to-orange-200">
                 {material.imageUrl ? (
-                  <img 
-                    src={material.imageUrl} 
+                  <Image
+                    src={material.imageUrl}
                     alt={material.name}
+                    width={400}
+                    height={192}
                     className="w-full h-full object-cover"
                     onError={(e) => {
                       // ถ้าโหลดรูปไม่ได้ จะแสดง placeholder

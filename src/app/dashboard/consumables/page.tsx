@@ -2,6 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { useAuthStore } from '@/stores/authStore';
 import ConsumableFormModal from './ConsumableFormModal';
 import StockAdjustmentModal from './StockAdjustmentModal';
@@ -211,9 +212,11 @@ export default function ConsumablesPage() {
               {/* Material Image */}
               <div className="relative h-48 bg-gradient-to-br from-orange-100 to-orange-200">
                 {consumable.imageUrl ? (
-                  <img 
-                    src={consumable.imageUrl} 
+                  <Image
+                    src={consumable.imageUrl}
                     alt={consumable.name}
+                    width={400}
+                    height={192}
                     className="w-full h-full object-cover"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
@@ -331,7 +334,7 @@ export default function ConsumablesPage() {
         <ConsumableFormModal 
           onClose={handleModalClose}
           onSave={handleModalSave}
-          editingConsumable={editingConsumable}
+          editingConsumable={editingConsumable || undefined}
         />
       )}
 

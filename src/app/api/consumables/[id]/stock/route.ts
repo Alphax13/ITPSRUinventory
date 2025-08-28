@@ -11,7 +11,7 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { adjustment, reason } = body; // adjustment สามารถเป็นบวกหรือลบได้
+    const { adjustment } = body; // adjustment สามารถเป็นบวกหรือลบได้
 
     // ตรวจสอบว่า consumable มีอยู่จริง
     const consumable = await prisma.consumableMaterial.findUnique({

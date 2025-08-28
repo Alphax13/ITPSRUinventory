@@ -1,14 +1,29 @@
 // src/utils/pdfGenerator.ts
 import jsPDF from 'jspdf';
+import type { Material } from '../app/dashboard/materials/page';
+
+interface Transaction {
+  id: string;
+  type: string;
+  quantity: number;
+  createdAt: string;
+  material: {
+    code: string;
+    name: string;
+  };
+  user: {
+    name: string;
+  };
+}
 
 export interface ReportData {
   title: string;
   date: string;
-  data: any[];
+  data: Material[] | Transaction[];
   headers: string[];
 }
 
-export const generateStockReport = async (materials: any[]) => {
+export const generateStockReport = async (materials: Material[]) => {
   const pdf = new jsPDF();
   
   // Set Thai font (you might need to configure this)
@@ -54,7 +69,7 @@ export const generateStockReport = async (materials: any[]) => {
   return pdf;
 };
 
-export const generateTransactionReport = async (transactions: any[], startDate: string, endDate: string) => {
+export const generateTransactionReport = async (transactions: Transaction[], startDate: string, endDate: string) => {
   const pdf = new jsPDF();
   
   pdf.setFont('helvetica');
