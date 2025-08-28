@@ -6,9 +6,9 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 // GET: ดึงข้อมูลวัสดุหนึ่งรายการ
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const material = await prisma.material.findUnique({
       where: { id },
     });
@@ -22,9 +22,9 @@ export async function GET(request: Request, { params }: { params: { id: string }
 }
 
 // PUT: อัปเดตข้อมูลวัสดุ
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
     const updatedMaterial = await prisma.material.update({
       where: { id },
@@ -45,9 +45,9 @@ export async function PUT(request: Request, { params }: { params: { id: string }
 }
 
 // DELETE: ลบข้อมูลวัสดุ
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     await prisma.material.delete({
       where: { id },
     });

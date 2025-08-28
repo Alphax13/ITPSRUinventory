@@ -63,7 +63,7 @@ export async function DELETE(
     const borrowedAsset = await prisma.assetBorrow.findFirst({
       where: {
         fixedAssetId: id,
-        returnDate: null // ยังไม่ได้คืน
+        actualReturnDate: null // ยังไม่ได้คืน
       }
     });
 
