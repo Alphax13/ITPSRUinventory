@@ -70,7 +70,7 @@ export default function StockAdjustmentModal({ onClose, onSave, consumable }: St
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
       <div className="bg-white p-6 rounded-2xl shadow-xl w-full max-w-md border border-orange-200">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-gray-800">
