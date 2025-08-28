@@ -1,0 +1,196 @@
+// prisma/schema.prisma
+
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enum สำหรับ Role ของ User
+enum Role {
+  STAFF
+  LECTURER
+}
+
+// Enum สำหรับสถานะของครุภัณฑ์
+enum AssetCondition {
+  GOOD
+  DAMAGED
+  NEEDS_REPAIR
+  DISPOSED
+}
+
+// Enum สำหรับประเภทของ Transaction
+enum TransactionType {
+  IN  // นำเข้า
+  OUT // เบิก/จ่าย
+  TRANSFER // โอนย้าย
+}
+
+// Enum สำหรับสถานะของ Purchase Request
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// Model สำหรับผู้ใช้งาน
+model User {
+  id              String            @id @default(cuid())
+  email           String            @unique
+  name            String
+  role            Role              @default(LECTURER)
+  department      String?
+  
+  // ความสัมพันธ์กับการทำรายการวัสดุสิ้นเปลือง
+  consumableTransactions ConsumableTransaction[] @relation("ConsumableTransactions")
+  
+  // ความสัมพันธ์กับการยืม-คืนครุภัณฑ์
+  assetBorrows    AssetBorrow[]     @relation("AssetBorrows")
+  
+  // ความสัมพันธ์เดิม (สำหรับ backward compatibility)
+  transactions    Transaction[]
+  purchaseRequests PurchaseRequest[]
+}
+
+// Model สำหรับวัสดุสิ้นเปลือง (ไม่มีรหัสสินค้า)
+model ConsumableMaterial {
+  id            String         @id @default(cuid())
+  name          String
+  category      String
+  unit          String         // หน่วยนับ เช่น กล่อง, แพ็ค, ชิ้น
+  minStock      Int            // จำนวนขั้นต่ำ
+  currentStock  Int            @default(0)
+  location      String?        // ตำแหน่งจัดเก็บ
+  imageUrl      String?
+  description   String?        // รายละเอียด
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  
+  // ประวัติการเบิก-จ่าย
+  transactions  ConsumableTransaction[]
+}
+
+// Model สำหรับครุภัณฑ์ (ไม่มีรหัสสินค้า, มีเลขกำกับ)
+model FixedAsset {
+  id              String          @id @default(cuid())
+  assetNumber     String          @unique  // เลขกำกับครุภัณฑ์
+  name            String
+  category        String
+  brand           String?         // ยี่ห้อ
+  model           String?         // รุ่น
+  serialNumber    String?         // เลขซีเรียล
+  purchaseDate    DateTime?       // วันที่ซื้อ
+  purchasePrice   Decimal?        // ราคาซื้อ
+  location        String          @default("Unassigned")
+  condition       AssetCondition  @default(GOOD)
+  imageUrl        String?
+  description     String?         // รายละเอียด
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  
+  // การยืม-คืน
+  borrowHistory   AssetBorrow[]
+  // การซ่อมบำรุง
+  maintenanceHistory AssetMaintenance[]
+}
+
+// Model สำหรับการเบิก-จ่ายวัสดุสิ้นเปลือง
+model ConsumableTransaction {
+  id                    String               @id @default(cuid())
+  consumableMaterialId  String
+  consumableMaterial    ConsumableMaterial   @relation(fields: [consumableMaterialId], references: [id])
+  userId                String
+  user                  User                 @relation(fields: [userId], references: [id], name: "ConsumableTransactions")
+  quantity              Int
+  type                  TransactionType      // IN (เข้า) หรือ OUT (จ่าย)
+  note                  String?
+  createdAt             DateTime             @default(now())
+}
+
+// Model สำหรับการยืม-คืนครุภัณฑ์
+model AssetBorrow {
+  id              String        @id @default(cuid())
+  fixedAssetId    String
+  fixedAsset      FixedAsset    @relation(fields: [fixedAssetId], references: [id])
+  userId          String
+  user            User          @relation(fields: [userId], references: [id], name: "AssetBorrows")
+  borrowDate      DateTime      @default(now())
+  expectedReturnDate DateTime?   // วันที่คาดว่าจะคืน
+  actualReturnDate DateTime?     // วันที่คืนจริง
+  purpose         String?       // วัตถุประสงค์การยืม
+  note            String?
+  status          BorrowStatus  @default(BORROWED)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+// Enum สำหรับสถานะการยืม
+enum BorrowStatus {
+  BORROWED    // กำลังยืมอยู่
+  RETURNED    // คืนแล้ว
+  OVERDUE     // เกินกำหนด
+  LOST        // สูญหาย
+}
+
+// Model สำหรับการซ่อมบำรุงครุภัณฑ์
+model AssetMaintenance {
+  id              String      @id @default(cuid())
+  fixedAssetId    String
+  fixedAsset      FixedAsset  @relation(fields: [fixedAssetId], references: [id])
+  maintenanceDate DateTime    @default(now())
+  description     String
+  cost            Decimal?
+  performedBy     String?     // ผู้ดำเนินการซ่อม
+  nextMaintenanceDate DateTime?
+  createdAt       DateTime    @default(now())
+}
+
+// Model เก่า (รักษาไว้สำหรับ backward compatibility)
+// จะค่อยๆ migrate ข้อมูลไปใหม่
+model Material {
+  id            String         @id @default(cuid())
+  name          String
+  code          String?        @unique  // เปลี่ยนเป็น optional
+  category      String
+  unit          String?
+  minStock      Int?
+  currentStock  Int            @default(0)
+  imageUrl      String?
+  qrCode        String?
+  isAsset       Boolean        @default(false)
+  transactions  Transaction[]
+  
+  @@map("materials_legacy")  // ใช้ table name เก่า
+}
+
+// Model สำหรับการทำรายการเบิก/จ่าย/โอน (เก่า)
+model Transaction {
+  id          String          @id @default(cuid())
+  type        TransactionType
+  quantity    Int
+  reason      String?
+  createdAt   DateTime        @default(now())
+  userId      String
+  user        User            @relation(fields: [userId], references: [id])
+  materialId  String
+  material    Material        @relation(fields: [materialId], references: [id])
+}
+
+// Model สำหรับคำขอซื้อ
+model PurchaseRequest {
+  id          String        @id @default(cuid())
+  requesterId String
+  requester   User          @relation(fields: [requesterId], references: [id])
+  items       Json          // Store requested items as JSON
+  status      RequestStatus @default(PENDING)
+  reason      String
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
