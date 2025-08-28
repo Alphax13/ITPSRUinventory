@@ -16,7 +16,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
       return NextResponse.json({ error: 'Material not found' }, { status: 404 });
     }
     return NextResponse.json(material, { status: 200 });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Failed to fetch material' }, { status: 500 });
   }
 }
@@ -39,7 +39,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       },
     });
     return NextResponse.json(updatedMaterial, { status: 200 });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Failed to update material' }, { status: 500 });
   }
 }
@@ -52,7 +52,7 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
       where: { id },
     });
     return NextResponse.json({ message: 'Material deleted successfully' }, { status: 200 });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Failed to delete material' }, { status: 500 });
   }
 }
