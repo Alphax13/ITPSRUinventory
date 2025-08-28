@@ -109,7 +109,7 @@ export default function StockAdjustmentModal({ onClose, onSave, consumable }: St
                   name="adjustmentType"
                   value="add"
                   checked={adjustmentType === 'add'}
-                  onChange={(e) => setAdjustmentType('add')}
+                  onChange={() => setAdjustmentType('add')}
                   className="mr-2"
                 />
                 <span className="text-green-600">➕ เพิ่มสต็อค</span>
@@ -120,7 +120,7 @@ export default function StockAdjustmentModal({ onClose, onSave, consumable }: St
                   name="adjustmentType"
                   value="subtract"
                   checked={adjustmentType === 'subtract'}
-                  onChange={(e) => setAdjustmentType('subtract')}
+                  onChange={() => setAdjustmentType('subtract')}
                   className="mr-2"
                 />
                 <span className="text-red-600">➖ หักสต็อค</span>

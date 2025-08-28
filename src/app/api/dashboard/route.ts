@@ -55,7 +55,7 @@ export async function GET() {
           status: 'PENDING',
         },
       });
-    } catch (error) {
+    } catch {
       console.log('Purchase request table not ready yet');
     }
 

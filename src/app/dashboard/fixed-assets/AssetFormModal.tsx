@@ -14,15 +14,15 @@ interface AssetFormData {
   assetNumber: string;
   name: string;
   category: string;
-  brand: string;
-  model: string;
-  serialNumber: string;
-  purchaseDate: string;
-  purchasePrice: string;
+  brand?: string;
+  model?: string;
+  serialNumber?: string;
+  purchaseDate?: string;
+  purchasePrice?: string;
   location: string;
   condition: string;
-  imageUrl: string;
-  description: string;
+  imageUrl?: string;
+  description?: string;
 }
 
 interface AssetFormModalProps {

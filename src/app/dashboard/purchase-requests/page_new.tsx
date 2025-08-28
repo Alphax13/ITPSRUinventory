@@ -2,7 +2,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAuthStore } from '@/stores/authStore';
 
 interface PurchaseItem {
   name: string;
@@ -27,7 +26,6 @@ export default function PurchaseRequestsPage() {
   const [requests, setRequests] = useState<PurchaseRequest[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { user } = useAuthStore();
 
   const [formData, setFormData] = useState({
     items: [{ name: '', quantity: 1, estimatedPrice: 0 }],

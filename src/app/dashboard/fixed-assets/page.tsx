@@ -376,7 +376,11 @@ export default function AssetsPage() {
         <AssetFormModal 
           onClose={handleModalClose}
           onSave={handleModalSave}
-          editingAsset={editingAsset as any || undefined}
+          editingAsset={editingAsset ? {
+            ...editingAsset,
+            purchaseDate: '',
+            purchasePrice: ''
+          } : undefined}
         />
       )}
     </div>
