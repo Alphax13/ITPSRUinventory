@@ -1,3 +1,11 @@
+// src/app/dashboard/materials/MaterialFormModal.tsx
+'use client';
+
+import { useState, useEffect } from 'react';
+import Image from 'next/image';
+import { useMaterialStore } from '@/stores/materialStore';
+import { generateMaterialQRCode } from '@/utils/qrcode';
+
 interface MaterialFormData {
   id: string;
   name: string;
@@ -9,12 +17,6 @@ interface MaterialFormData {
   isAsset: boolean;
   imageUrl: string;
 }
-// src/app/dashboard/materials/MaterialFormModal.tsx
-'use client';
-
-import { useState, useEffect } from 'react';
-import { useMaterialStore } from '@/stores/materialStore';
-import { generateMaterialQRCode } from '@/utils/qrcode';
 
 export default function MaterialFormModal({ onSave }: { onSave: () => void }) {
   const { isModalOpen, editingMaterial, closeModal } = useMaterialStore();
@@ -24,7 +26,6 @@ export default function MaterialFormModal({ onSave }: { onSave: () => void }) {
   const [formData, setFormData] = useState<MaterialFormData>({
     id: '',
     name: '',
-  const materialData: MaterialFormData = { ...formData };
     code: '',
     category: '',
     unit: '',
@@ -115,34 +116,23 @@ export default function MaterialFormModal({ onSave }: { onSave: () => void }) {
   };
 
   const removeImage = () => {
-interface MaterialFormData {
-  id: string;
-  name: string;
-  code: string;
-  category: string;
-  unit: string;
-  minStock: number;
-  currentStock: number;
-  isAsset: boolean;
-  imageUrl: string;
-}
     setSelectedFile(null);
     setImagePreview('');
     setFormData(prev => ({
       ...prev,
       imageUrl: ''
-    id: '',
-    name: '',
-    code: '',
-    category: '',
-    unit: '',
-    minStock: 0,
-    currentStock: 0,
-    isAsset: false,
-    imageUrl: '',
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    const method = editingMaterial ? 'PUT' : 'POST';
+    const url = editingMaterial ? `/api/materials/${editingMaterial.id}` : '/api/materials';
 
     try {
-  const materialData: import("./page").Material = { ...formData };
+      const materialData: MaterialFormData = { ...formData };
       
       // อัปโหลดรูปภาพก่อน (ถ้ามี)
       if (selectedFile) {
@@ -158,6 +148,7 @@ interface MaterialFormData {
         if (uploadResponse.ok) {
           const uploadResult = await uploadResponse.json();
           materialData.imageUrl = uploadResult.url;
+        } else {
           console.error('Image upload failed');
         }
       }
@@ -167,23 +158,54 @@ interface MaterialFormData {
         try {
           const qrCode = await generateMaterialQRCode(formData.code);
           const materialDataWithQR = { ...materialData, qrCode };
+          
+          const res = await fetch(url, {
+            method,
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(materialDataWithQR),
+          });
+          
+          if (res.ok) {
+            closeModal();
+            onSave(); // Call the onSave prop to refresh the list
+          } else {
+            console.error('Failed to save material');
+          }
         } catch (error) {
           console.warn('QR Code generation failed, proceeding without it:', error);
+          // Proceed without QR code
+          const res = await fetch(url, {
+            method,
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(materialData),
+          });
+          
+          if (res.ok) {
+            closeModal();
+            onSave(); // Call the onSave prop to refresh the list
+          } else {
+            console.error('Failed to save material');
+          }
         }
-
-      const res = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(materialData),
-      });
-      
-      if (res.ok) {
-        closeModal();
-        onSave(); // Call the onSave prop to refresh the list
       } else {
-        console.error('Failed to save material');
+        const res = await fetch(url, {
+          method,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(materialData),
+        });
+        
+        if (res.ok) {
+          closeModal();
+          onSave(); // Call the onSave prop to refresh the list
+        } else {
+          console.error('Failed to save material');
+        }
       }
     } catch (error) {
       console.error('Error:', error);
@@ -234,10 +256,12 @@ interface MaterialFormData {
             {/* Image Preview */}
             {imagePreview && (
               <div className="mb-3 relative">
-                <img 
-                  src={imagePreview} 
-                  alt="Preview" 
-            const materialData: MaterialFormData = { ...formData };
+                <Image
+                  src={imagePreview}
+                  alt="Preview"
+                  width={400}
+                  height={160}
+                  className="w-full h-40 object-cover rounded-lg border border-gray-300"
                 />
                 <button
                   type="button"
@@ -323,7 +347,7 @@ interface MaterialFormData {
             <div>
               <label htmlFor="isAsset" className="text-gray-700 font-medium">ครุภัณฑ์/ทรัพย์สิน</label>
               <p className="text-sm text-gray-500">
-                เช่นคราว์ต์แซชน์ ตู้ เซ้น จอคอมพิวเตอร์ (ต้องการการติดตามเป็นรายชิ้น)
+                เช่น คอมพิวเตอร์ โต๊ะ เก้าอี้ จอคอมพิวเตอร์ (ต้องการการติดตามเป็นรายชิ้น)
               </p>
             </div>
           </div>
