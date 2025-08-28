@@ -5,19 +5,25 @@ import { prisma } from '@/lib/prisma';
 // POST: ล็อกอิน (ระบบง่าย ๆ ใช้ email)
 export async function POST(request: Request) {
   try {
+    console.log('Auth API called');
     const body = await request.json();
     const { email } = body;
+    
+    console.log('Email received:', email);
 
     if (!email) {
+      console.log('No email provided');
       return NextResponse.json({ error: 'Email is required' }, { status: 400 });
     }
 
     // ค้นหาผู้ใช้จาก email
     let user;
     try {
+      console.log('Looking up user...');
       user = await prisma.user.findUnique({
         where: { email },
       });
+      console.log('User found:', user);
     } catch (findError) {
       console.error('User lookup failed:', findError);
       return NextResponse.json({ error: 'User lookup failed' }, { status: 500 });
@@ -26,6 +32,7 @@ export async function POST(request: Request) {
     // หากไม่มีผู้ใช้ ให้สร้างใหม่ (สำหรับ demo)
     if (!user) {
       try {
+        console.log('Creating new user...');
         // สร้างผู้ใช้ใหม่โดยใช้ email domain เป็น department
         const domain = email.split('@')[1];
         const department = domain?.includes('edu') ? 'Academic' : 'General';
@@ -37,11 +44,20 @@ export async function POST(request: Request) {
             department,
           },
         });
+        console.log('New user created:', user);
       } catch (createError) {
         console.error('User creation failed:', createError);
         return NextResponse.json({ error: 'User creation failed' }, { status: 500 });
       }
     }
+
+    console.log('Returning user data:', {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      department: user.department,
+    });
 
     return NextResponse.json({ 
       user: {
