@@ -244,7 +244,7 @@ export default function DashboardPage() {
         </div>
         <div className="divide-y divide-gray-100">
           {data.recentTransactions && data.recentTransactions.length > 0 ? (
-            data.recentTransactions.slice(0, 5).map((transaction, index) => (
+            data.recentTransactions.slice(0, 5).map((transaction) => (
               <div key={transaction.id} className="px-8 py-6 hover:bg-orange-50 transition-colors">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4">

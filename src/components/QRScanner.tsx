@@ -23,7 +23,7 @@ export default function QRScanner({ onScan, onError, isActive }: QRScannerProps)
     }
 
     return () => stopCamera();
-  }, [isActive]);
+  }, [isActive, startCamera, stopCamera]);
 
   const startCamera = async () => {
     try {

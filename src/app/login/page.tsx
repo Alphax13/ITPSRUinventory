@@ -29,7 +29,7 @@ export default function LoginPage() {
       } else {
         setError('เข้าสู่ระบบไม่สำเร็จ');
       }
-    } catch (error) {
+    } catch {
       setError('เกิดข้อผิดพลาดในการเข้าสู่ระบบ');
     } finally {
       setLoading(false);

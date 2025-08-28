@@ -10,7 +10,7 @@ export async function GET() {
   try {
     const materials = await prisma.material.findMany();
     return NextResponse.json(materials, { status: 200 });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Failed to fetch materials' }, { status: 500 });
   }
 }
