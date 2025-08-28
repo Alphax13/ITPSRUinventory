@@ -1,8 +1,7 @@
 // src/app/api/auth/route.ts
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
 
-// POST: ล็อกอิน (ระบบง่าย ๆ ใช้ email) - v2 with debug logs
+// POST: ล็อกอิน (ระบบง่าย ๆ ใช้ email) - v3 simple version
 export async function POST(request: Request) {
   try {
     console.log('Auth API called');
@@ -16,6 +15,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 });
     }
 
+    // Import Prisma dynamically to avoid initialization issues
+    const { PrismaClient } = await import('@prisma/client');
+    const prisma = new PrismaClient();
+
+    console.log('Prisma client created');
+
     // ค้นหาผู้ใช้จาก email
     let user;
     try {
@@ -26,6 +31,7 @@ export async function POST(request: Request) {
       console.log('User found:', user);
     } catch (findError) {
       console.error('User lookup failed:', findError);
+      await prisma.$disconnect();
       return NextResponse.json({ error: 'User lookup failed' }, { status: 500 });
     }
 
@@ -47,9 +53,12 @@ export async function POST(request: Request) {
         console.log('New user created:', user);
       } catch (createError) {
         console.error('User creation failed:', createError);
+        await prisma.$disconnect();
         return NextResponse.json({ error: 'User creation failed' }, { status: 500 });
       }
     }
+
+    await prisma.$disconnect();
 
     console.log('Returning user data:', {
       id: user.id,
@@ -71,6 +80,9 @@ export async function POST(request: Request) {
 
   } catch (error) {
     console.error('Login error:', error);
-    return NextResponse.json({ error: 'Authentication failed' }, { status: 500 });
+    return NextResponse.json({ 
+      error: 'Authentication failed',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
   }
 }
