@@ -43,8 +43,8 @@ export const useAuthStore = create<AuthState>()(
             return true;
           }
           return false;
-        } catch (error) {
-          console.error('Login error:', error);
+        } catch {
+          console.error('Login error');
           return false;
         }
       },
