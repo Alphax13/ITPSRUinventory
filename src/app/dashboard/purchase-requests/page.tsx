@@ -1,4 +1,19 @@
-// src/app/dashboard/purchase-requests/page.tsx
+// import { useState, useEffect } from 'react';
+import { useAuthStore } from '@/stores/authStore';
+
+interface PurchaseItem {
+  name: string;
+  quantity: number;
+  estimatedPrice: number;
+}
+
+interface PurchaseRequest {
+  id: string;
+  requesterId: string;
+  items: PurchaseItem[];
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  reason: string;
+  createdAt: string;shboard/purchase-requests/page.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
