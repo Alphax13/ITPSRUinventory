@@ -2,7 +2,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-// POST: ล็อกอิน (ระบบง่าย ๆ ใช้ email)
+// POST: ล็อกอิน (ระบบง่าย ๆ ใช้ email) - v2 with debug logs
 export async function POST(request: Request) {
   try {
     console.log('Auth API called');
