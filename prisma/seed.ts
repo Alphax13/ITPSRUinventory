@@ -23,6 +23,8 @@ async function main() {
     update: {},
     create: {
       email: 'teacher@school.edu',
+      username: 'teacher',
+      password: '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj4J/HS.iK8i', // teacher123
       name: 'อาจารย์',
       role: 'LECTURER',
       department: 'Computer Science',
