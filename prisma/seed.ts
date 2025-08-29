@@ -5,14 +5,16 @@ const prisma = new PrismaClient();
 
 async function main() {
   // สร้าง Users
-  const staff = await prisma.user.upsert({
-    where: { email: 'staff@school.edu' },
+  const admin = await prisma.user.upsert({
+    where: { email: 'admin@school.edu' },
     update: {},
     create: {
-      email: 'staff@school.edu',
-      name: 'เจ้าหน้าที่',
-      role: 'STAFF',
-      department: 'Academic',
+      email: 'admin@school.edu',
+      username: 'admin',
+      password: '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj4J/HS.iK8i', // admin123
+      name: 'ผู้ดูแลระบบ',
+      role: 'ADMIN',
+      department: 'Information Technology',
     },
   });
 
@@ -113,7 +115,7 @@ async function main() {
   ]);
 
   console.log('✅ Database seeded successfully!');
-  console.log('👥 Users created:', { staff: staff.email, teacher: teacher.email });
+  console.log('👥 Users created:', { admin: admin.email, teacher: teacher.email });
   console.log('📦 Consumables created:', consumables.length);
   console.log('🏷️ Assets created:', assets.length);
 }
