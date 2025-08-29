@@ -309,7 +309,7 @@ export default function PurchaseRequestsPage() {
 
               <div className="mb-6">
                 <label className="block text-gray-700 text-sm font-bold mb-2">
-                  เหตุผลในการจัดซื้อ
+                  เหตุผลในการจัดซื้อ (ไม่บังคับ)
                 </label>
                 <textarea
                   value={formData.reason}
@@ -317,7 +317,6 @@ export default function PurchaseRequestsPage() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                   rows={3}
                   placeholder="เช่น สำหรับใช้ในการทำงาน, ทดแทนของเสีย"
-                  required
                 />
               </div>
 
@@ -411,7 +410,7 @@ export default function PurchaseRequestsPage() {
                   </td>
                   <td className="px-6 py-4">
                     <div className="text-sm text-gray-900 max-w-xs">
-                      {request.reason}
+                      {request.reason || <span className="text-gray-400 italic">ไม่ได้ระบุ</span>}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">

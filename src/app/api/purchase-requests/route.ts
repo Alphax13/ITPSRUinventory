@@ -29,7 +29,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { requesterId, items, reason } = body;
 
-    if (!requesterId || !items || !reason) {
+    if (!requesterId || !items) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
@@ -37,7 +37,7 @@ export async function POST(request: Request) {
       data: {
         requesterId,
         items,
-        reason,
+        reason: reason || '',
         status: 'PENDING',
       },
       include: {
