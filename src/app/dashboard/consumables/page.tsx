@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { useAuthStore } from '@/stores/authStore';
 import ConsumableFormModal from './ConsumableFormModal';
 import StockAdjustmentModal from './StockAdjustmentModal';
+import WithdrawModal from './WithdrawModal';
 
 export interface ConsumableMaterial {
   id: string;
@@ -30,9 +31,27 @@ export default function ConsumablesPage() {
   const [editingConsumable, setEditingConsumable] = useState<ConsumableMaterial | null>(null);
   const [isStockModalOpen, setIsStockModalOpen] = useState(false);
   const [adjustingConsumable, setAdjustingConsumable] = useState<ConsumableMaterial | null>(null);
+  const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
+  const [withdrawingConsumable, setWithdrawingConsumable] = useState<ConsumableMaterial | null>(null);
+
 
   const { user } = useAuthStore();
   const isAdmin = user?.role === 'ADMIN';
+
+  const handleWithdraw = (consumable: ConsumableMaterial) => {
+    setWithdrawingConsumable(consumable);
+    setIsWithdrawModalOpen(true);
+  };
+
+  const handleWithdrawModalClose = () => {
+    setIsWithdrawModalOpen(false);
+    setWithdrawingConsumable(null);
+  };
+
+  const handleWithdrawModalSave = () => {
+    fetchConsumables();
+    handleWithdrawModalClose();
+  };
 
   useEffect(() => {
     fetchConsumables();
@@ -302,13 +321,14 @@ export default function ConsumablesPage() {
                     </div>
                   </div>
                 ) : (
-                  <div className="flex gap-2">
-                    <button 
-                      className="flex-1 bg-gradient-to-r from-green-400 to-green-500 hover:from-green-500 hover:to-green-600 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 text-sm"
-                    >
-                      📝 เบิกวัสดุ
-                    </button>
-                  </div>
+                    <div className="flex gap-2">
+                      <button 
+                        className="flex-1 bg-gradient-to-r from-green-400 to-green-500 hover:from-green-500 hover:to-green-600 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 text-sm"
+                        onClick={() => handleWithdraw(consumable)}
+                      >
+                        📝 เบิกวัสดุ
+                      </button>
+                    </div>
                 )}
               </div>
             </div>
@@ -343,6 +363,14 @@ export default function ConsumablesPage() {
           onClose={handleStockModalClose}
           onSave={handleStockModalSave}
           consumable={adjustingConsumable}
+        />
+      )}
+
+      {isWithdrawModalOpen && withdrawingConsumable && (
+        <WithdrawModal
+          consumable={withdrawingConsumable}
+          onClose={handleWithdrawModalClose}
+          onSave={handleWithdrawModalSave}
         />
       )}
     </div>
