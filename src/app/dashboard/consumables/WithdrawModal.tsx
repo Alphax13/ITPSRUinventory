@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ConsumableMaterial } from './page';
+import { useAuthStore } from '@/stores/authStore';
 
 interface WithdrawModalProps {
   consumable: ConsumableMaterial;
@@ -11,6 +12,8 @@ export default function WithdrawModal({ consumable, onClose, onSave }: WithdrawM
   const [amount, setAmount] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [note, setNote] = useState('');
+  const { user } = useAuthStore();
 
   const handleWithdraw = async () => {
     setLoading(true);
@@ -32,11 +35,22 @@ export default function WithdrawModal({ consumable, onClose, onSave }: WithdrawM
         body: JSON.stringify({
           id: consumable.id,
           amount,
+          userId: user?.id,
+          note: note || `เบิกวัสดุ ${consumable.name}`,
         }),
       });
+      
+      const data = await res.json();
+      
       if (!res.ok) {
-        throw new Error('เบิกวัสดุไม่สำเร็จ');
+        throw new Error(data.error || 'เบิกวัสดุไม่สำเร็จ');
       }
+      
+      // Show success message if available
+      if (data.message) {
+        alert(data.message);
+      }
+      
       onSave();
     } catch (e: unknown) {
       const errorMessage = e instanceof Error ? e.message : 'เกิดข้อผิดพลาด';
@@ -52,16 +66,32 @@ export default function WithdrawModal({ consumable, onClose, onSave }: WithdrawM
         <h2 className="text-xl font-bold mb-4">📝 เบิกวัสดุ: {consumable.name}</h2>
         <div className="mb-4">
           <div className="text-sm text-gray-600 mb-2">สต็อกคงเหลือ: <span className="font-bold">{consumable.currentStock} {consumable.unit}</span></div>
-          <input
-            type="number"
-            min={1}
-            max={consumable.currentStock}
-            value={amount}
-            onChange={e => setAmount(Number(e.target.value))}
-            className="w-full px-4 py-2 border border-orange-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
-            placeholder="จำนวนที่ต้องการเบิก"
-          />
-          <div className="text-xs text-gray-400 mt-1">* จำนวนต้องไม่เกินสต็อก</div>
+          
+          <div className="mb-3">
+            <label className="block text-sm font-medium text-gray-700 mb-1">จำนวนที่ต้องการเบิก</label>
+            <input
+              type="number"
+              min={1}
+              max={consumable.currentStock}
+              value={amount}
+              onChange={e => setAmount(Number(e.target.value))}
+              className="w-full px-4 py-2 border border-orange-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
+              placeholder="จำนวนที่ต้องการเบิก"
+            />
+            <div className="text-xs text-gray-400 mt-1">* จำนวนต้องไม่เกินสต็อก</div>
+          </div>
+          
+          <div className="mb-3">
+            <label className="block text-sm font-medium text-gray-700 mb-1">หมายเหตุ (ไม่บังคับ)</label>
+            <input
+              type="text"
+              value={note}
+              onChange={e => setNote(e.target.value)}
+              className="w-full px-4 py-2 border border-orange-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
+              placeholder="เช่น สำหรับใช้ในห้องเรียน, งานโครงการ"
+            />
+          </div>
+          
           {error && <div className="text-red-500 mt-2">{error}</div>}
         </div>
         <div className="flex gap-2 justify-end">
