@@ -88,11 +88,8 @@ export default function Sidebar() {
         {/* Header */}
         <div className="flex h-20 items-center justify-center border-b border-orange-200 bg-gradient-to-r from-orange-100 to-orange-200">
           <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-orange-400 to-orange-500 rounded-xl flex items-center justify-center shadow-lg">
-              <span className="text-white font-bold text-xl">📚</span>
-            </div>
             <div>
-              <h1 className="text-xl font-bold text-gray-800">EduInventory</h1>
+              <h1 className="text-xl font-bold text-gray-800">ITPSRU Inventory</h1>
               <p className="text-sm text-orange-600 font-medium">ระบบจัดการวัสดุ</p>
             </div>
           </div>

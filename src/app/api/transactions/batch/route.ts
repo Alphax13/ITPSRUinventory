@@ -44,7 +44,7 @@ export async function POST(request: Request) {
         const transactionType = type === 'OUT' ? TransactionType.OUT : TransactionType.IN;
 
         // Try to find material in ConsumableMaterial first, then Material (legacy)
-        let material: any = null;
+        let material: import('@prisma/client').ConsumableMaterial | import('@prisma/client').Material | null = null;
         let materialType: 'consumable' | 'legacy' = 'legacy';
 
         // Check consumable materials first

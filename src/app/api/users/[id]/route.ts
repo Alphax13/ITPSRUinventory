@@ -42,7 +42,14 @@ export async function PUT(
     }
 
     // เตรียมข้อมูลสำหรับอัพเดต
-    const updateData: any = {
+    const updateData: {
+      name?: string;
+      role?: string;
+      email?: string;
+      isActive?: boolean;
+      username?: string;
+      password?: string;
+    } = {
       name,
       role: role || existingUser.role,
       email: email || existingUser.email,

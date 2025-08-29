@@ -34,7 +34,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
             <div className="w-8 h-8 bg-gradient-to-br from-orange-400 to-orange-500 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-sm">📚</span>
             </div>
-            <h1 className="text-lg font-bold text-gray-900">EduInventory</h1>
+            <h1 className="text-lg font-bold text-gray-900">ITPSRU Inventory</h1>
           </div>
 
           {/* Desktop title and breadcrumb */}

@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuthStore } from '@/stores/authStore';
 import QRScanner from '@/components/QRScanner';
+import SafeImage from '@/components/SafeImage';
 
 interface Material {
   id: string;
@@ -229,7 +230,7 @@ export default function TransactionPage() {
         const data = await res.json();
         
         if (data.failed && data.failed > 0) {
-          alert(`ดำเนินการเสร็จสิ้น: สำเร็จ ${data.successful}/${data.totalRequested} รายการ\n\nรายการที่ล้มเหลว:\n${data.errors.map((err: any) => `- ${err.error}`).join('\n')}`);
+          alert(`ดำเนินการเสร็จสิ้น: สำเร็จ ${data.successful}/${data.totalRequested} รายการ\n\nรายการที่ล้มเหลว:\n${data.errors.map((err: { error: string }) => `- ${err.error}`).join('\n')}`);
         } else {
           alert(`${transactionType === 'OUT' ? 'เบิกวัสดุ' : 'เพิ่มวัสดุ'}ทั้งหมด ${data.successful} รายการสำเร็จ!`);
         }
@@ -363,14 +364,18 @@ export default function TransactionPage() {
                           {/* Material Image */}
                           <div className="w-12 h-12 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
                             {material.imageUrl ? (
-                              <img
+                              <SafeImage
                                 src={material.imageUrl}
                                 alt={material.name}
+                                width={48}
+                                height={48}
                                 className="w-full h-full object-cover"
-                                onError={(e) => {
-                                  const target = e.target as HTMLImageElement;
-                                  target.style.display = 'none';
-                                  target.parentElement!.innerHTML = '<div class="w-full h-full bg-gray-200 flex items-center justify-center text-gray-400 text-xs">📦</div>';
+                                onError={() => {
+                                  // Handle error by showing fallback icon
+                                  const parent = document.querySelector('.w-12.h-12') as HTMLElement;
+                                  if (parent) {
+                                    parent.innerHTML = '<div class="w-full h-full bg-gray-200 flex items-center justify-center text-gray-400 text-xs">📦</div>';
+                                  }
                                 }}
                               />
                             ) : (

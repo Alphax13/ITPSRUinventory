@@ -45,7 +45,7 @@ export async function POST(request: Request) {
         console.log(`Processing transaction ${i + 1}/${transactions.length}: ${materialId}`);
 
         // Find material in either table
-        let material: any = null;
+        let material: import('@prisma/client').ConsumableMaterial | import('@prisma/client').Material | null = null;
         let materialType: 'consumable' | 'legacy' = 'legacy';
 
         const consumableMaterial = await prisma.consumableMaterial.findUnique({
@@ -77,7 +77,7 @@ export async function POST(request: Request) {
         // Perform transaction in a small transaction scope
         const result = await prisma.$transaction(async (tx) => {
           // Create transaction record
-          let newTransaction: any;
+          let newTransaction: import('@prisma/client').ConsumableTransaction | import('@prisma/client').Transaction;
           
           if (materialType === 'consumable') {
             newTransaction = await tx.consumableTransaction.create({
