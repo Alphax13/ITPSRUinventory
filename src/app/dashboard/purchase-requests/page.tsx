@@ -29,6 +29,7 @@ export default function PurchaseRequestsPage() {
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [uploadingImages, setUploadingImages] = useState<{ [key: number]: boolean }>({});
+  const [processingStatus, setProcessingStatus] = useState<{ [key: string]: boolean }>({});
   const { user } = useAuthStore();
 
   const [formData, setFormData] = useState({
@@ -169,6 +170,62 @@ export default function PurchaseRequestsPage() {
       case 'APPROVED': return 'อนุมัติแล้ว';
       case 'REJECTED': return 'ปฏิเสธ';
       default: return status;
+    }
+  };
+
+  const handleStatusUpdate = async (requestId: string, status: 'APPROVED' | 'REJECTED') => {
+    if (!user?.id) {
+      alert('กรุณาเข้าสู่ระบบก่อน');
+      return;
+    }
+
+    if (user.role !== 'ADMIN') {
+      alert('คุณไม่มีสิทธิ์ในการอนุมัติคำขอ');
+      return;
+    }
+
+    const confirmMessage = status === 'APPROVED' 
+      ? 'คุณต้องการอนุมัติคำขอนี้หรือไม่?' 
+      : 'คุณต้องการปฏิเสธคำขอนี้หรือไม่?';
+    
+    if (!confirm(confirmMessage)) {
+      return;
+    }
+
+    setProcessingStatus(prev => ({ ...prev, [requestId]: true }));
+
+    try {
+      const response = await fetch(`/api/purchase-requests/${requestId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          status,
+          adminId: user.id,
+        }),
+      });
+
+      if (response.ok) {
+        // อัปเดตสถานะในตาราง
+        setRequests(prev => 
+          prev.map(request => 
+            request.id === requestId 
+              ? { ...request, status, updatedAt: new Date().toISOString() }
+              : request
+          )
+        );
+        
+        alert(status === 'APPROVED' ? 'อนุมัติคำขอเรียบร้อยแล้ว' : 'ปฏิเสธคำขอเรียบร้อยแล้ว');
+      } else {
+        const error = await response.json();
+        alert('เกิดข้อผิดพลาด: ' + error.error);
+      }
+    } catch (error) {
+      console.error('Error updating status:', error);
+      alert('เกิดข้อผิดพลาดในการอัปเดตสถานะ');
+    } finally {
+      setProcessingStatus(prev => ({ ...prev, [requestId]: false }));
     }
   };
 
@@ -379,6 +436,11 @@ export default function PurchaseRequestsPage() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   วันที่สร้าง
                 </th>
+                {user?.role === 'ADMIN' && (
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    การจัดการ
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -426,6 +488,46 @@ export default function PurchaseRequestsPage() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {new Date(request.createdAt).toLocaleDateString('th-TH')}
                   </td>
+                  {user?.role === 'ADMIN' && (
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      {request.status === 'PENDING' ? (
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleStatusUpdate(request.id, 'APPROVED')}
+                            disabled={processingStatus[request.id]}
+                            className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-lg text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                          >
+                            {processingStatus[request.id] ? (
+                              <div className="animate-spin w-3 h-3 border-2 border-white border-t-transparent rounded-full"></div>
+                            ) : (
+                              <>
+                                <span>✓</span>
+                                อนุมัติ
+                              </>
+                            )}
+                          </button>
+                          <button
+                            onClick={() => handleStatusUpdate(request.id, 'REJECTED')}
+                            disabled={processingStatus[request.id]}
+                            className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                          >
+                            {processingStatus[request.id] ? (
+                              <div className="animate-spin w-3 h-3 border-2 border-white border-t-transparent rounded-full"></div>
+                            ) : (
+                              <>
+                                <span>✕</span>
+                                ปฏิเสธ
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      ) : (
+                        <span className="text-gray-400 text-xs">
+                          {request.status === 'APPROVED' ? 'อนุมัติแล้ว' : 'ปฏิเสธแล้ว'}
+                        </span>
+                      )}
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
