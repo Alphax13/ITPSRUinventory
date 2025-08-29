@@ -7,7 +7,6 @@ import { useAuthStore } from '@/stores/authStore';
 interface PurchaseItem {
   name: string;
   quantity: number;
-  estimatedPrice: number;
   imageUrl?: string;
 }
 
@@ -32,7 +31,7 @@ export default function PurchaseRequestsPage() {
   const { user } = useAuthStore();
 
   const [formData, setFormData] = useState({
-    items: [{ name: '', quantity: 1, estimatedPrice: 0, imageUrl: '' }],
+    items: [{ name: '', quantity: 1, imageUrl: '' }],
     reason: '',
   });
 
@@ -77,7 +76,7 @@ export default function PurchaseRequestsPage() {
 
       if (response.ok) {
         setFormData({
-          items: [{ name: '', quantity: 1, estimatedPrice: 0, imageUrl: '' }],
+          items: [{ name: '', quantity: 1, imageUrl: '' }],
           reason: '',
         });
         setShowForm(false);
@@ -93,7 +92,7 @@ export default function PurchaseRequestsPage() {
   const addItem = () => {
     setFormData(prev => ({
       ...prev,
-      items: [...prev.items, { name: '', quantity: 1, estimatedPrice: 0, imageUrl: '' }]
+      items: [...prev.items, { name: '', quantity: 1, imageUrl: '' }]
     }));
   };
 
@@ -229,18 +228,9 @@ export default function PurchaseRequestsPage() {
                             placeholder="จำนวน"
                             value={item.quantity}
                             onChange={(e) => updateItem(index, 'quantity', parseInt(e.target.value) || 1)}
-                            className="w-24 px-3 py-2 border border-gray-300 rounded-lg"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                             min="1"
                             required
-                          />
-                          <input
-                            type="number"
-                            placeholder="ราคาประมาณ (บาท)"
-                            value={item.estimatedPrice}
-                            onChange={(e) => updateItem(index, 'estimatedPrice', parseFloat(e.target.value) || 0)}
-                            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg"
-                            min="0"
-                            step="0.01"
                           />
                         </div>
                       </div>
@@ -413,11 +403,6 @@ export default function PurchaseRequestsPage() {
                             <div className="font-medium">{item.name}</div>
                             <div className="text-xs text-gray-500">
                               จำนวน: {item.quantity}
-                              {item.estimatedPrice > 0 && (
-                                <span className="ml-2">
-                                  ~{item.estimatedPrice.toLocaleString()} บาท
-                                </span>
-                              )}
                             </div>
                           </div>
                         </div>
