@@ -2,6 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { useAuthStore } from '@/stores/authStore';
 
 interface PurchaseItem {
@@ -239,9 +240,11 @@ export default function PurchaseRequestsPage() {
                       <div className="w-32">
                         {item.imageUrl ? (
                           <div className="relative">
-                            <img
+                            <Image
                               src={item.imageUrl}
                               alt="สินค้า"
+                              width={128}
+                              height={96}
                               className="w-full h-24 object-cover rounded-lg border"
                             />
                             <button
@@ -392,9 +395,11 @@ export default function PurchaseRequestsPage() {
                       {Array.isArray(request.items) && request.items.map((item: PurchaseItem, index: number) => (
                         <div key={index} className="flex items-center gap-3 mb-2 p-2 bg-gray-50 rounded-lg">
                           {item.imageUrl && (
-                            <img
+                            <Image
                               src={item.imageUrl}
                               alt={item.name}
+                              width={48}
+                              height={48}
                               className="w-12 h-12 object-cover rounded-lg border"
                             />
                           )}
@@ -431,7 +436,7 @@ export default function PurchaseRequestsPage() {
           <div className="text-center py-16">
             <div className="text-6xl mb-4 opacity-30">🛒</div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">ยังไม่มีคำขอจัดซื้อ</h3>
-            <p className="text-gray-600">คลิกปุ่ม "สร้างคำขอใหม่" เพื่อเริ่มต้น</p>
+            <p className="text-gray-600">คลิกปุ่ม &quot;สร้างคำขอใหม่&quot; เพื่อเริ่มต้น</p>
           </div>
         )}
       </div>

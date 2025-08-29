@@ -1,6 +1,7 @@
 // src/app/api/upload/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { getCloudinary } from '@/lib/cloudinary';
+import { UploadApiResponse, UploadApiOptions } from 'cloudinary';
 
 export const runtime = 'nodejs'; // สำคัญ: ใช้ Node runtime (ไม่ใช่ Edge)
 
@@ -22,7 +23,7 @@ function isAllowedFileType(file: File): boolean {
 }
 
 // กำหนด resource type สำหรับ Cloudinary
-function getResourceType(fileType: string): string {
+function getResourceType(fileType: string): 'image' | 'raw' | 'auto' | 'video' {
   if (fileType.startsWith('image/')) return 'image';
   if (fileType === 'application/pdf') return 'raw';
   if (fileType.includes('word') || fileType.includes('excel')) return 'raw';
@@ -76,8 +77,8 @@ export async function POST(request: NextRequest) {
     const resourceType = getResourceType(file.type);
 
     // อัปโหลดขึ้น Cloudinary
-    const uploadResult = await new Promise<any>((resolve, reject) => {
-      const uploadOptions: any = {
+    const uploadResult = await new Promise<UploadApiResponse>((resolve, reject) => {
+      const uploadOptions: UploadApiOptions = {
         folder,
         public_id: publicId,
         resource_type: resourceType,
@@ -112,7 +113,16 @@ export async function POST(request: NextRequest) {
     });
 
     // ส่งข้อมูลกลับ
-    const response: any = {
+    const response: {
+      success: boolean;
+      url: string;
+      publicId: string;
+      format: string;
+      size: number;
+      createdAt: string;
+      width?: number;
+      height?: number;
+    } = {
       success: true,
       url: uploadResult.secure_url,
       publicId: uploadResult.public_id,
