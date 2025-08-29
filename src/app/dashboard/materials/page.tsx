@@ -217,6 +217,7 @@ export default function MaterialsPage() {
                     alt={material.name}
                     width={400}
                     height={192}
+                    priority
                     className="w-full h-full object-cover"
                     onError={(e) => {
                       // ถ้าโหลดรูปไม่ได้ จะแสดง placeholder

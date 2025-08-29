@@ -250,6 +250,7 @@ export default function AssetsPage() {
                     alt={asset.name}
                     width={400}
                     height={192}
+                    priority
                     className="w-full h-full object-cover"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
