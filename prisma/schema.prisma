@@ -184,8 +184,8 @@ model Transaction {
   createdAt   DateTime        @default(now())
   userId      String
   user        User            @relation(fields: [userId], references: [id])
-  materialId  String
-  material    Material        @relation(fields: [materialId], references: [id])
+  materialId  String?         // เปลี่ยนเป็น optional สำหรับกรณีวัสดุถูกลบแล้ว
+  material    Material?       @relation(fields: [materialId], references: [id])
 }
 
 // Model สำหรับคำขอซื้อ

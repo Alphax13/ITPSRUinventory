@@ -26,6 +26,7 @@ export default function MaterialsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [showLowStock, setShowLowStock] = useState(false);
+  const [materialUsage, setMaterialUsage] = useState<{ [key: string]: number }>({});
 
   const { user } = useAuthStore();
   const { isModalOpen, openModal, closeModal } = useMaterialStore();
@@ -33,7 +34,10 @@ export default function MaterialsPage() {
 
   useEffect(() => {
     fetchMaterials();
-  }, []);
+    if (isAdmin) {
+      fetchMaterialUsage();
+    }
+  }, [isAdmin]);
 
   useEffect(() => {
     let filtered = materials;
@@ -70,26 +74,55 @@ export default function MaterialsPage() {
     }
   };
 
+  const fetchMaterialUsage = async () => {
+    try {
+      const res = await fetch('/api/transactions');
+      if (res.ok) {
+        const transactions = await res.json();
+        const usageCount: { [key: string]: number } = {};
+        
+        transactions.forEach((transaction: any) => {
+          if (transaction.materialId) {
+            usageCount[transaction.materialId] = (usageCount[transaction.materialId] || 0) + 1;
+          }
+        });
+        
+        setMaterialUsage(usageCount);
+      }
+    } catch (error) {
+      console.error('Failed to fetch material usage:', error);
+    }
+  };
+
   const handleDelete = async (id: string) => {
     if (!isAdmin) {
       alert('คุณไม่มีสิทธิ์ลบข้อมูล');
       return;
     }
 
-    if (window.confirm('คุณแน่ใจหรือไม่ที่จะลบรายการนี้?')) {
+    const usageCount = materialUsage[id] || 0;
+    const confirmMessage = usageCount > 0 
+      ? `คุณแน่ใจหรือไม่ที่จะลบรายการนี้?\n\n📊 วัสดุนี้มีประวัติการใช้งาน ${usageCount} ครั้ง\n✅ ประวัติจะยังคงเก็บไว้ในระบบ\n❌ แต่จะไม่สามารถเพิ่มรายการใหม่ได้`
+      : 'คุณแน่ใจหรือไม่ที่จะลบรายการนี้?\n\n⚠️ วัสดุนี้ไม่มีประวัติการใช้งาน จะถูกลบอย่างถาวร';
+
+    if (window.confirm(confirmMessage)) {
       try {
         const res = await fetch(`/api/materials/${id}`, {
           method: 'DELETE',
         });
+        
         if (res.ok) {
+          const result = await res.json();
           fetchMaterials(); // Refresh the list
-          alert('ลบรายการสำเร็จ');
+          alert(`✅ ${result.message}\n\n💡 ${result.details}`);
         } else {
-          alert('เกิดข้อผิดพลาดในการลบ');
+          // แสดงข้อความข้อผิดพลาดจาก API
+          const errorData = await res.json().catch(() => ({ error: 'เกิดข้อผิดพลาดในการลบ' }));
+          alert('❌ ' + errorData.error);
         }
       } catch (error) {
         console.error('Error:', error);
-        alert('เกิดข้อผิดพลาดในการลบ');
+        alert('❌ เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาลองใหม่อีกครั้ง');
       }
     }
   };
@@ -283,19 +316,34 @@ export default function MaterialsPage() {
 
                 {/* Actions */}
                 {isAdmin ? (
-                  <div className="flex gap-2">
-                    <button 
-                      onClick={() => openModal(material)} 
-                      className="flex-1 bg-gradient-to-r from-blue-400 to-blue-500 hover:from-blue-500 hover:to-blue-600 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 text-sm"
-                    >
-                      ✏️ แก้ไข
-                    </button>
-                    <button 
-                      onClick={() => handleDelete(material.id)} 
-                      className="bg-gradient-to-r from-red-400 to-red-500 hover:from-red-500 hover:to-red-600 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 text-sm"
-                    >
-                      🗑️ ลบ
-                    </button>
+                  <div className="space-y-2">
+                    {/* Usage info */}
+                    {materialUsage[material.id] > 0 && (
+                      <div className="text-xs text-center py-1 bg-blue-50 text-blue-700 rounded-lg border border-blue-200">
+                        📊 มีประวัติการใช้งาน {materialUsage[material.id]} ครั้ง
+                        <br />
+                        <span className="text-xs text-gray-600">ประวัติจะถูกเก็บไว้หลังลบ</span>
+                      </div>
+                    )}
+                    
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => openModal(material)} 
+                        className="flex-1 bg-gradient-to-r from-blue-400 to-blue-500 hover:from-blue-500 hover:to-blue-600 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 text-sm"
+                      >
+                        ✏️ แก้ไข
+                      </button>
+                      <button 
+                        onClick={() => handleDelete(material.id)} 
+                        className="bg-gradient-to-r from-red-400 to-red-500 hover:from-red-500 hover:to-red-600 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 text-sm"
+                        title={materialUsage[material.id] > 0 
+                          ? `ลบรายการ (ประวัติ ${materialUsage[material.id]} รายการจะถูกเก็บไว้)` 
+                          : 'ลบรายการ'
+                        }
+                      >
+                        🗑️ ลบ
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <div className="text-center py-2">

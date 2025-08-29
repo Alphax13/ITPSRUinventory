@@ -49,6 +49,12 @@ const navigation = [
     roles: ['ADMIN', 'LECTURER'] 
   },
   { 
+    name: 'จัดการประวัติ', 
+    href: '/dashboard/transactions/manage', 
+    icon: '🗂️', 
+    roles: ['ADMIN'] 
+  },
+  { 
     name: 'คำขอซื้อ', 
     href: '/dashboard/purchase-requests', 
     icon: '🛒', 

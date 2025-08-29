@@ -1,0 +1,506 @@
+[
+  {
+    "item_name": "กรรไกร 7นิ้ว",
+    "image_url": "https://res.cloudinary.com/drr11w9tp/image/upload/v1756200725/it-stock/uploads/hxyqxsm7v6wsmisdcogw.jpg",
+    "unit": "อัน",
+    "quantity": 3,
+    "min_quantity": 2,
+    "Category": "อุปกรณ์สำนักงาน"
+  },
+  {
+    "item_name": "กรรไกร 6นิ้ว",
+    "image_url": "https://res.cloudinary.com/drr11w9tp/image/upload/v1756200727/it-stock/uploads/iy5jlzstauxezxcmcsk7.jpg",
+    "unit": "อัน",
+    "quantity": 5,
+    "min_quantity": 2,
+    "Category": "อุปกรณ์สำนักงาน"
+  },
+  {
+    "item_name": "ถ่าน AA แพ็ค 8ก้อน",
+    "image_url": "https://res.cloudinary.com/drr11w9tp/image/upload/v1756200729/it-stock/uploads/cavsgyyaytkwx0vpbzaq.jpg",
+    "unit": "แพ็ค",
+    "quantity": 3,
+    "min_quantity": 2,
+    "Category": "อุปกรณ์สำนักงาน"
+  },
+  {
+    "item_name": "ถ่าน AA แพ็ค 10ก้อน",
+    "image_url": "https://res.cloudinary.com/drr11w9tp/image/upload/v1756200732/it-stock/uploads/n1f23onh18kpfgrtn3bn.jpg",
+    "unit": "แพ็ค",
+    "quantity": 1,
+    "min_quantity": 1,
+    "Category": "อุปกรณ์สำนักงาน"
+  },
+  {
+    "item_name": "ถ่าน AAA แพ็ค8ก้อน",
+    "image_url": "https://res.cloudinary.com/drr11w9tp/image/upload/v1756200734/it-stock/uploads/hwecdz80oicjafpid2xu.jpg",
+    "unit": "แพ็ค",
+    "quantity": 4,
+    "min_quantity": 2,
+    "Category": "อุปกรณ์สำนักงาน"
+  },
+  {
+    "item_name": "ถ่าน 9V",
+    "image_url": "https://res.cloudinary.com/drr11w9tp/image/upload/v1756200737/it-stock/uploads/xf5hk7gx3cvccd95u5xl.jpg",
+    "unit": "ก้อน",
+    "quantity": 2,
+    "min_quantity": 1,
+    "Category": "อุปกรณ์สำนักงาน"
+  },
+  {
+    "item_name": "ถ่าน AA แพ็ค 4ก้อน",
+    "image_url": "https://res.cloudinary.com/drr11w9tp/image/upload/v1756200739/it-stock/uploads/xx6swtgndklpiflamepv.jpg",
+    "unit": "แพ็ค",
+    "quantity": 0,
+    "min_quantity": 1,
+    "Category": "อุปกรณ์สำนักงาน"
+  },
+  {
+    "item_name": "ถ่าน AAA แพ็ค 4ก้อน (ชำรุด)",
+    "image_url": "https://res.cloudinary.com/drr11w9tp/image/upload/v1756200741/it-stock/uploads/dmrhceif3bblj0i1vlgg.jpg",
+    "unit": "แพ็ค",
+    "quantity": 1,
+    "min_quantity": 0,
+    "Category": "อุปกรณ์สำนักงาน"
+  },
+  {
+    "item_name": "ถ่าน AAA แพ็ค 10ก้อน",
+    "image_url": "https://res.cloudinary.com/drr11w9tp/image/upload/v1756200743/it-stock/uploads/pz9gknget3qxk1k47nm3.jpg",
+    "unit": "แพ็ค",
+    "quantity": 1,
+    "min_quantity": 1,
+    "Category": "อุปกรณ์สำนักงาน"
+  },
+  {
+    "item_name": "ถ่าน AAA แพ็ค4ก้อน(สีเขียว)",
+    "image_url": "https://res.cloudinary.com/drr11w9tp/image/upload/v1756200747/it-stock/uploads/yfmopctye4nregqmfnvg.jpg",
+    "unit": "แพ็ค",
+    "quantity": 13,
+    "min_quantity": 5,
+    "Category": "อุปกรณ์สำนักงาน"
+  },
+  {
+    "item_name": "ถ่าน AA แพ็ค4ก้อน(สีเขียว)",
+    "image_url": "https://res.cloudinary.com/drr11w9tp/image/upload/v1756200749/it-stock/uploads/dt6lmvi55v6gqbrl4ygc.jpg",
+    "unit": "แพ็ค",
+    "quantity": 13,
+    "min_quantity": 5,
+    "Category": "อุปกรณ์สำนักงาน"
+  },
+  {
+    "item_name": "เทปใส ม้วนใหญ่",
+    "image_url": "https://res.cloudinary.com/drr11w9tp/image/upload/v1756200751/it-stock/uploads/ux58xjz7n5kgdgryucqg.jpg",
+    "unit": "ม้วน",
+    "quantity": 2,
+    "min_quantity": 1,
+    "Category": "เครื่องเขียน"
+  },
+  {
+    "item_name": "เทปใส ม้วนกลาง",
+    "image_url": "https://res.cloudinary.com/drr11w9tp/image/upload/v1756200753/it-stock/uploads/muwqqvis5xano6c2cuhr.jpg",
+    "unit": "ม้วน",
+    "quantity": 2,
+    "min_quantity": 2,
+    "Category": "เครื่องเขียน"
+  },
+  {
+    "item_name": "กาว2หน้า",
+    "image_url": "https://res.cloudinary.com/drr11w9tp/image/upload/v1756200759/it-stock/uploads/vvspiubj2z3baidv400k.jpg",
+    "unit": "ม้วน",
+    "quantity": 6,
+    "min_quantity": 2,
+    "Category": "อุปกรณ์สำนักงาน"
+  },
+  {
+    "item_name": "เทปโฟมกาว2หน้า",
+    "image_url": "https://res.cloudinary.com/drr11w9tp/image/upload/v1756200761/it-stock/uploads/sfnrl6mccyise3mlrmiy.jpg",
+    "unit": "ม้วน",
+    "quantity": 2,
+    "min_quantity": 1,
+    "Category": "อุปกรณ์สำนักงาน"
+  },
+  {
+    "item_name": "เทปโฟมกาว2หน้า ม้วนใหญ่",
+    "image_url": "https://res.cloudinary.com/drr11w9tp/image/upload/v1756200762/it-stock/uploads/tch3tysgexdpon7m37tf.jpg",
+    "unit": "ม้วน",
+    "quantity": 1,
+    "min_quantity": 1,
+    "Category": "อุปกรณ์สำนักงาน"
+  },
+  {
+    "item_name": "ถ่าน Bios",
+    "image_url": "https://res.cloudinary.com/drr11w9tp/image/upload/v1756200765/it-stock/uploads/mqqpz7p2f1f4mrduj7ou.jpg",
+    "unit": "ก้อน",
+    "quantity": 30,
+    "min_quantity": 5,
+    "Category": "อุปกรณ์สำนักงาน"
+  },
+  {
+    "item_name": "มีดคัตเตอร์",
+    "image_url": "https://res.cloudinary.com/drr11w9tp/image/upload/v1756200767/it-stock/uploads/cadfj2jmzegyaxfexbac.jpg",
+    "unit": "อัน",
+    "quantity": 4,
+    "min_quantity": 2,
+    "Category": "อุปกรณ์สำนักงาน"
+  },
+  {
+    "item_name": "Post it (เล็ก)",
+    "image_url": "https://res.cloudinary.com/drr11w9tp/image/upload/v1756200770/it-stock/uploads/yhfvinaw6hozvt2584bx.jpg",
+    "unit": "แพ็ค",
+    "quantity": 71,
+    "min_quantity": 5,
+    "Category": "เครื่องเขียน"
+  },
+  {
+    "item_name": "Post it",
+    "image_url": "https://res.cloudinary.com/drr11w9tp/image/upload/v1756200772/it-stock/uploads/cpbqwktq4diqcxhqvxxw.jpg",
+    "unit": "แพ็ค",
+    "quantity": 34,
+    "min_quantity": 5,
+    "Category": "เครื่องเขียน"
+  },
+  {
+    "item_name": "ตลับหมึกปั้ม",
+    "image_url": "https://res.cloudinary.com/drr11w9tp/image/upload/v1756200774/it-stock/uploads/qxrlqbdrmycfj5hvciib.jpg",
+    "unit": "ตลับ",
+    "quantity": 3,
+    "min_quantity": 1,
+    "Category": "เครื่องเขียน"
+  },
+  {
+    "item_name": "คลิปดำ 12mm",
+    "image_url": "https://res.cloudinary.com/drr11w9tp/image/upload/v1756200776/it-stock/uploads/eickn696k1ktgh74dd0l.jpg",
+    "unit": "กล่อง",
+    "quantity": 10,
+    "min_quantity": 4,
+    "Category": "อุปกรณ์สำนักงาน"
+  },
+  {
+    "item_name": "คลิปดำ 10mm",
+    "image_url": "https://res.cloudinary.com/drr11w9tp/image/upload/v1756200778/it-stock/uploads/nbendhbfrliouvin0bio.jpg",
+    "unit": "กล่อง",
+    "quantity": 12,
+    "min_quantity": 4,
+    "Category": "อุปกรณ์สำนักงาน"
+  },
+  {
+    "item_name": "คลิปดำ 8mm",
+    "image_url": "https://res.cloudinary.com/drr11w9tp/image/upload/v1756200780/it-stock/uploads/yys0an2fgbdgw39bksag.jpg",
+    "unit": "กล่อง",
+    "quantity": 6,
+    "min_quantity": 4,
+    "Category": "อุปกรณ์สำนักงาน"
+  },
+  {
+    "item_name": "คลิปดำ 22mm",
+    "image_url": "https://res.cloudinary.com/drr11w9tp/image/upload/v1756200782/it-stock/uploads/xnur2hpdz6xebcm54iur.jpg",
+    "unit": "กล่อง",
+    "quantity": 8,
+    "min_quantity": 2,
+    "Category": "อุปกรณ์สำนักงาน"
+  },
+  {
+    "item_name": "คลิปดำ 17.5mm",
+    "image_url": "https://res.cloudinary.com/drr11w9tp/image/upload/v1756200784/it-stock/uploads/jzao7zeaaw76pijwakfd.jpg",
+    "unit": "กล่อง",
+    "quantity": 8,
+    "min_quantity": 2,
+    "Category": "อุปกรณ์สำนักงาน"
+  },
+  {
+    "item_name": "ไส้ดินสอกด",
+    "image_url": "https://res.cloudinary.com/drr11w9tp/image/upload/v1756200786/it-stock/uploads/pspepnpswhm8p6gf9t0d.jpg",
+    "unit": "อัน",
+    "quantity": 12,
+    "min_quantity": 4,
+    "Category": "เครื่องเขียน"
+  },
+  {
+    "item_name": "ปากกาน้ำเงิน pentel 0.7",
+    "image_url": "https://res.cloudinary.com/drr11w9tp/image/upload/v1756200788/it-stock/uploads/q31ga9iefh5k7tddrg24.jpg",
+    "unit": "แท่ง",
+    "quantity": 14,
+    "min_quantity": 1,
+    "Category": "เครื่องเขียน"
+  },
+  {
+    "item_name": "ปากกาน้ำเงิน pentel 0.5",
+    "image_url": "https://res.cloudinary.com/drr11w9tp/image/upload/v1756200790/it-stock/uploads/ttackpfb7onhar90dlpp.jpg",
+    "unit": "แท่ง",
+    "quantity": 13,
+    "min_quantity": 5,
+    "Category": "เครื่องเขียน"
+  },
+  {
+    "item_name": "ปากกาแดง pentel 0.5",
+    "image_url": "https://res.cloudinary.com/drr11w9tp/image/upload/v1756200791/it-stock/uploads/gpzvzgfrugo1zz6cbgwd.jpg",
+    "unit": "แท่ง",
+    "quantity": 9,
+    "min_quantity": 4,
+    "Category": "เครื่องเขียน"
+  },
+  {
+    "item_name": "ปากกาดำ pentel 0.5",
+    "image_url": "https://res.cloudinary.com/drr11w9tp/image/upload/v1756200793/it-stock/uploads/mlppc895j1buerukzk8w.jpg",
+    "unit": "แท่ง",
+    "quantity": 4,
+    "min_quantity": 4,
+    "Category": "เครื่องเขียน"
+  },
+  {
+    "item_name": "ปากกา uni PAINT",
+    "image_url": "https://res.cloudinary.com/drr11w9tp/image/upload/v1756200795/it-stock/uploads/yfqdgkdqdzxahjnukurb.jpg",
+    "unit": "แท่ง",
+    "quantity": 5,
+    "min_quantity": 3,
+    "Category": "เครื่องเขียน"
+  },
+  {
+    "item_name": "ปากกาแดง pentel 0.7",
+    "image_url": "https://res.cloudinary.com/drr11w9tp/image/upload/v1756200797/it-stock/uploads/n8eheszh6mi3eww1wg3l.jpg",
+    "unit": "แท่ง",
+    "quantity": 4,
+    "min_quantity": 4,
+    "Category": "เครื่องเขียน"
+  },
+  {
+    "item_name": "ปากกาแดงpermanent",
+    "image_url": "https://res.cloudinary.com/drr11w9tp/image/upload/v1756200800/it-stock/uploads/gfmhpyqkwct0szs7odwb.jpg",
+    "unit": "แท่ง",
+    "quantity": 3,
+    "min_quantity": 2,
+    "Category": "เครื่องเขียน"
+  },
+  {
+    "item_name": "ปากกาน้ำเงินpermanent",
+    "image_url": "https://res.cloudinary.com/drr11w9tp/image/upload/v1756200801/it-stock/uploads/iqhina3pg03k2qhv3hhh.jpg",
+    "unit": "แท่ง",
+    "quantity": 2,
+    "min_quantity": 2,
+    "Category": "เครื่องเขียน"
+  },
+  {
+    "item_name": "ดินสอ",
+    "image_url": "https://res.cloudinary.com/drr11w9tp/image/upload/v1756200803/it-stock/uploads/gpjwhl7hgik8zwoedbn1.jpg",
+    "unit": "แท่ง",
+    "quantity": 19,
+    "min_quantity": 4,
+    "Category": "เครื่องเขียน"
+  },
+  {
+    "item_name": "ครีมถอดลวด",
+    "image_url": "https://res.cloudinary.com/drr11w9tp/image/upload/v1756200805/it-stock/uploads/cf1sssoonqitlqujeukt.jpg",
+    "unit": "อัน",
+    "quantity": 2,
+    "min_quantity": 1,
+    "Category": "อุปกรณ์สำนักงาน"
+  },
+  {
+    "item_name": "ตัวลบไวท์บอร์ด",
+    "image_url": "https://res.cloudinary.com/drr11w9tp/image/upload/v1756200806/it-stock/uploads/vwobmydeyb5qzamysxp0.jpg",
+    "unit": "อัน",
+    "quantity": 3,
+    "min_quantity": 1,
+    "Category": "เครื่องเขียน"
+  },
+  {
+    "item_name": "ปากกาเคมีสีน้ำเงิน",
+    "image_url": "https://res.cloudinary.com/drr11w9tp/image/upload/v1756200809/it-stock/uploads/dxabycdwllu9svueaepn.jpg",
+    "unit": "แท่ง",
+    "quantity": 3,
+    "min_quantity": 1,
+    "Category": "เครื่องเขียน"
+  },
+  {
+    "item_name": "ลิควิดน้ำ",
+    "image_url": "https://res.cloudinary.com/drr11w9tp/image/upload/v1756200812/it-stock/uploads/yzyf0vecrsomyjuhj3dz.jpg",
+    "unit": "แท่ง",
+    "quantity": 2,
+    "min_quantity": 1,
+    "Category": "เครื่องเขียน"
+  },
+  {
+    "item_name": "ยางลบ",
+    "image_url": "https://res.cloudinary.com/drr11w9tp/image/upload/v1756200814/it-stock/uploads/ztb9lptqhag1ozkcbsh9.jpg",
+    "unit": "ก้อน",
+    "quantity": 5,
+    "min_quantity": 2,
+    "Category": "เครื่องเขียน"
+  },
+  {
+    "item_name": "ไขควง",
+    "image_url": "https://res.cloudinary.com/drr11w9tp/image/upload/v1756200816/it-stock/uploads/giya1dewuugzi1lkdhvf.jpg",
+    "unit": "ด้าม",
+    "quantity": 5,
+    "min_quantity": 2,
+    "Category": "อุปกรณ์สำนักงาน"
+  },
+  {
+    "item_name": "ปากกาไวท์บอร์ด สีดำ",
+    "image_url": "https://res.cloudinary.com/drr11w9tp/image/upload/v1756200818/it-stock/uploads/pssqy2crgwdjnd55t6t4.jpg",
+    "unit": "แท่ง",
+    "quantity": 20,
+    "min_quantity": 4,
+    "Category": "เครื่องเขียน"
+  },
+  {
+    "item_name": "ปากกาไวท์บอร์ด สีแดง",
+    "image_url": "https://res.cloudinary.com/drr11w9tp/image/upload/v1756200820/it-stock/uploads/bimkqhluz2gojgimiida.jpg",
+    "unit": "แท่ง",
+    "quantity": 18,
+    "min_quantity": 4,
+    "Category": "เครื่องเขียน"
+  },
+  {
+    "item_name": "ปากกาไวท์บอร์ด สีน้ำเงิน",
+    "image_url": "https://res.cloudinary.com/drr11w9tp/image/upload/v1756200822/it-stock/uploads/b1rqdobnbi6zh8syobdk.jpg",
+    "unit": "แท่ง",
+    "quantity": 18,
+    "min_quantity": 4,
+    "Category": "เครื่องเขียน"
+  },
+  {
+    "item_name": "แม็กซ์ เย็บกระดาษ",
+    "image_url": "https://res.cloudinary.com/drr11w9tp/image/upload/v1756200825/it-stock/uploads/i8gouqmaqznqvml3bfu8.jpg",
+    "unit": "อัน",
+    "quantity": 4,
+    "min_quantity": 2,
+    "Category": "อุปกรณ์สำนักงาน"
+  },
+  {
+    "item_name": "ลวดเย็บกระดาษ เบอร์23/15",
+    "image_url": "https://res.cloudinary.com/drr11w9tp/image/upload/v1756200827/it-stock/uploads/kyoz9inty5beqodqgtvy.jpg",
+    "unit": "กล่อง",
+    "quantity": 5,
+    "min_quantity": 2,
+    "Category": "อุปกรณ์สำนักงาน"
+  },
+  {
+    "item_name": "ลวดเย็บกระดาษ เบอร์10",
+    "image_url": "https://res.cloudinary.com/drr11w9tp/image/upload/v1756200829/it-stock/uploads/whbrbujuhqvqwrhl2a59.jpg",
+    "unit": "กล่อง",
+    "quantity": 9,
+    "min_quantity": 2,
+    "Category": "อุปกรณ์สำนักงาน"
+  },
+  {
+    "item_name": "ลวดเย็บกระดาษ เบอร์23/24",
+    "image_url": "https://res.cloudinary.com/drr11w9tp/image/upload/v1756200831/it-stock/uploads/lqmltgow8xd0n6wqv1us.jpg",
+    "unit": "กล่อง",
+    "quantity": 2,
+    "min_quantity": 2,
+    "Category": "อุปกรณ์สำนักงาน"
+  },
+  {
+    "item_name": "ลวดเย็บกระดาษ เบอร์23/10",
+    "image_url": "https://res.cloudinary.com/drr11w9tp/image/upload/v1756200833/it-stock/uploads/qi383pv8mansweorktsw.jpg",
+    "unit": "กล่อง",
+    "quantity": 6,
+    "min_quantity": 2,
+    "Category": "อุปกรณ์สำนักงาน"
+  },
+  {
+    "item_name": "ลวดเย็บกระดาษ เบอร์3",
+    "image_url": "https://res.cloudinary.com/drr11w9tp/image/upload/v1756200836/it-stock/uploads/ba27njyefkzyzbwqnyvh.jpg",
+    "unit": "กล่อง",
+    "quantity": 14,
+    "min_quantity": 2,
+    "Category": "อุปกรณ์สำนักงาน"
+  },
+  {
+    "item_name": "แม็ก เย็บกระดาษตัวเล็ก",
+    "image_url": "https://res.cloudinary.com/drr11w9tp/image/upload/v1756200837/it-stock/uploads/o7fqnbwalwteyslytt8o.jpg",
+    "unit": "อัน",
+    "quantity": 3,
+    "min_quantity": 2,
+    "Category": "อุปกรณ์สำนักงาน"
+  },
+  {
+    "item_name": "ลิควิด ชนิดป้าย",
+    "image_url": "https://res.cloudinary.com/drr11w9tp/image/upload/v1756200840/it-stock/uploads/nqti4buwxk5p8ocro1og.jpg",
+    "unit": "ชุด",
+    "quantity": 1,
+    "min_quantity": 1,
+    "Category": "เครื่องเขียน"
+  },
+  {
+    "item_name": "ลิคลิว ชนิดเทป",
+    "image_url": "https://res.cloudinary.com/drr11w9tp/image/upload/v1756200842/it-stock/uploads/shizq7qp1rb7jjsny3pn.jpg",
+    "unit": "อัน",
+    "quantity": 10,
+    "min_quantity": 2,
+    "Category": "เครื่องเขียน"
+  },
+  {
+    "item_name": "ตรายางวันที่",
+    "image_url": "https://res.cloudinary.com/drr11w9tp/image/upload/v1756200843/it-stock/uploads/ejx6pvp3l5hbng9a6ccd.jpg",
+    "unit": "อัน",
+    "quantity": 4,
+    "min_quantity": 2,
+    "Category": "อุปกรณ์สำนักงาน"
+  },
+  {
+    "item_name": "ตรายาง ยกเลิก",
+    "image_url": "https://res.cloudinary.com/drr11w9tp/image/upload/v1756200847/it-stock/uploads/svlk44y9skrcntwrz30v.jpg",
+    "unit": "อัน",
+    "quantity": 3,
+    "min_quantity": 2,
+    "Category": "อุปกรณ์สำนักงาน"
+  },
+  {
+    "item_name": "ตรายาง สำเนาถูกต้อง",
+    "image_url": "https://res.cloudinary.com/drr11w9tp/image/upload/v1756200849/it-stock/uploads/lpenzm4cuhmvqxcq39pu.jpg",
+    "unit": "อัน",
+    "quantity": 4,
+    "min_quantity": 2,
+    "Category": "อุปกรณ์สำนักงาน"
+  },
+  {
+    "item_name": "USB HUB 6in1",
+    "image_url": "https://res.cloudinary.com/drr11w9tp/image/upload/v1756200851/it-stock/uploads/to1slpbbqyax4jrnoqpi.jpg",
+    "unit": "อัน",
+    "quantity": 20,
+    "min_quantity": 4,
+    "Category": "อุปกรณ์คอมพิวเตอร์"
+  },
+  {
+    "item_name": "ปลั๊กไฟ 3ช่อง 3M",
+    "image_url": "https://res.cloudinary.com/drr11w9tp/image/upload/v1756200852/it-stock/uploads/t9goghyyjbkgkt3c5v8v.jpg",
+    "unit": "อัน",
+    "quantity": 1,
+    "min_quantity": 1,
+    "Category": "อุปกรณ์ต่อพ่วง"
+  },
+  {
+    "item_name": "ปลั๊กไฟ 4ช่อง 3M",
+    "image_url": "https://res.cloudinary.com/drr11w9tp/image/upload/v1756200854/it-stock/uploads/qpq1ljuaxava0hbt4ajt.jpg",
+    "unit": "อัน",
+    "quantity": 4,
+    "min_quantity": 1,
+    "Category": "อุปกรณ์ต่อพ่วง"
+  },
+  {
+    "item_name": "ปลั๊กไฟ 4ช่อง 3M สีดำ",
+    "image_url": "https://res.cloudinary.com/drr11w9tp/image/upload/v1756200857/it-stock/uploads/oimmsj7tqavtr87g9ewq.jpg",
+    "unit": "อัน",
+    "quantity": 1,
+    "min_quantity": 1,
+    "Category": "อุปกรณ์ต่อพ่วง"
+  },
+  {
+    "item_name": "ปลั๊กไฟ 4ช่อง 5M",
+    "image_url": "https://res.cloudinary.com/drr11w9tp/image/upload/v1756200859/it-stock/uploads/rsfve4czuf0yefxuejls.jpg",
+    "unit": "อัน",
+    "quantity": 5,
+    "min_quantity": 1,
+    "Category": "อุปกรณ์ต่อพ่วง"
+  },
+  {
+    "item_name": "USB flash drive 64Gb",
+    "image_url": "https://res.cloudinary.com/drr11w9tp/image/upload/v1756200862/it-stock/uploads/ydmzjsqsiz6bvgyjxgtz.jpg",
+    "unit": "อัน",
+    "quantity": 21,
+    "min_quantity": 5,
+    "Category": "อุปกรณ์คอมพิวเตอร์"
+  }
+]
