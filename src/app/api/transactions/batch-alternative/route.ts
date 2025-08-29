@@ -111,9 +111,9 @@ export async function POST(request: Request) {
             return {
               ...newTransaction,
               material: {
-                name: newTransaction.consumableMaterial.name,
+                name: material.name,
                 code: `CON-${materialId.slice(-6)}`,
-                unit: newTransaction.consumableMaterial.unit,
+                unit: material.unit,
               }
             };
           } else {
