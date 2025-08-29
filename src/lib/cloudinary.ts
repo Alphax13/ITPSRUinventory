@@ -3,10 +3,18 @@ export type { UploadApiResponse, UploadApiErrorResponse } from "cloudinary";
 
 export async function getCloudinary() {
   const { v2: cloudinary } = await import("cloudinary");
+  
+  // วิธีที่ 1: ใช้ CLOUDINARY_URL (แนะนำสำหรับ Vercel)
+  if (process.env.CLOUDINARY_URL) {
+    cloudinary.config();
+    return cloudinary;
+  }
+  
+  // วิธีที่ 2: ใช้ตัวแปรแยกกัน
   const { CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET } = process.env;
 
   if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_API_KEY || !CLOUDINARY_API_SECRET) {
-    throw new Error("Cloudinary env missing");
+    throw new Error("Cloudinary env missing - Please set CLOUDINARY_URL or individual CLOUDINARY_* variables");
   }
 
   cloudinary.config({

@@ -1,25 +1,8 @@
 // src/app/api/upload/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { v2 as cloudinary } from 'cloudinary';
-import { configureCloudinary } from '@/lib/cloudinary';
+import { getCloudinary } from '@/lib/cloudinary';
 
 export const runtime = 'nodejs'; // สำคัญ: ใช้ Node runtime (ไม่ใช่ Edge)
-
-// ตรวจสอบ environment variables
-function validateEnvironment() {
-  // ตรวจสอบ CLOUDINARY_URL ก่อน (แนะนำสำหรับ Vercel)
-  if (process.env.CLOUDINARY_URL) {
-    return;
-  }
-  
-  // ตรวจสอบตัวแปรแยกกัน
-  const required = ['CLOUDINARY_CLOUD_NAME', 'CLOUDINARY_API_KEY', 'CLOUDINARY_API_SECRET'];
-  const missing = required.filter(key => !process.env[key]);
-  
-  if (missing.length > 0) {
-    throw new Error(`Missing required environment variables. Please set either CLOUDINARY_URL or these individual variables: ${missing.join(', ')}`);
-  }
-}
 
 // ตรวจสอบประเภทไฟล์ที่อนุญาต
 function isAllowedFileType(file: File): boolean {
@@ -49,10 +32,7 @@ function getResourceType(fileType: string): string {
 export async function POST(request: NextRequest) {
   try {
     // ตั้งค่า Cloudinary
-    configureCloudinary();
-    
-    // ตรวจสอบ environment variables
-    validateEnvironment();
+    const cloudinary = await getCloudinary();
 
     const data = await request.formData();
     const file = data.get('file') as unknown as File | null;
@@ -157,7 +137,7 @@ export async function POST(request: NextRequest) {
     let statusCode = 500;
 
     if (error instanceof Error) {
-      if (error.message.includes('Missing required environment variables')) {
+      if (error.message.includes('Cloudinary env missing')) {
         errorMessage = 'Server configuration error';
         statusCode = 500;
       } else if (error.message.includes('File')) {
