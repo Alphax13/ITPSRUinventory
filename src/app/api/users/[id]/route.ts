@@ -44,14 +44,14 @@ export async function PUT(
     // เตรียมข้อมูลสำหรับอัพเดต
     const updateData: {
       name?: string;
-      role?: string;
+      role?: import('@prisma/client').Role;
       email?: string;
       isActive?: boolean;
       username?: string;
       password?: string;
     } = {
       name,
-      role: role || existingUser.role,
+      role: role as import('@prisma/client').Role || existingUser.role,
       email: email || existingUser.email,
       isActive: isActive !== undefined ? isActive : existingUser.isActive,
     };
