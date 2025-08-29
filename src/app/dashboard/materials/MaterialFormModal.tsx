@@ -217,7 +217,7 @@ export default function MaterialFormModal({ onSave }: { onSave: () => void }) {
   if (!isModalOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex justify-center items-center z-50">
+    <div className="fixed inset-0 bg-gray-600/80 overflow-y-auto h-full w-full flex justify-center items-center z-50">
       <div className="bg-white p-6 rounded-lg shadow-xl w-96 max-h-[90vh] overflow-y-auto">
         <h2 className="text-xl font-bold mb-4">
           {editingMaterial ? 'แก้ไขรายการวัสดุ' : 'เพิ่มรายการวัสดุใหม่'}
