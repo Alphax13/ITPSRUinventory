@@ -15,12 +15,17 @@
 
 ### 3. ตั้งค่า Environment Variables ใน Vercel
 
-#### วิธีที่ 1: ผ่าน Vercel Dashboard
+#### วิธีที่ 1: ผ่าน Vercel Dashboard (แนะนำ)
 1. ไปที่ [Vercel Dashboard](https://vercel.com/dashboard)
 2. เลือกโปรเจคของคุณ
 3. ไปที่ **Settings** → **Environment Variables**
-4. เพิ่ม variables ต่อไปนี้:
+4. เพิ่ม variable นี้:
 
+```
+CLOUDINARY_URL = cloudinary://your_api_key:your_api_secret@your_cloud_name
+```
+
+**หรือ** ใช้ตัวแปรแยกกัน:
 ```
 CLOUDINARY_CLOUD_NAME = your_cloud_name
 CLOUDINARY_API_KEY = your_api_key
@@ -29,6 +34,10 @@ CLOUDINARY_API_SECRET = your_api_secret
 
 #### วิธีที่ 2: ผ่าน Vercel CLI
 ```bash
+# แนะนำ: ใช้ CLOUDINARY_URL
+vercel env add CLOUDINARY_URL
+
+# หรือใช้ตัวแปรแยกกัน
 vercel env add CLOUDINARY_CLOUD_NAME
 vercel env add CLOUDINARY_API_KEY
 vercel env add CLOUDINARY_API_SECRET
@@ -38,9 +47,13 @@ vercel env add CLOUDINARY_API_SECRET
 สร้างไฟล์ `.env.local` ในโปรเจค:
 
 ```env
-CLOUDINARY_CLOUD_NAME=your_cloud_name
-CLOUDINARY_API_KEY=your_api_key
-CLOUDINARY_API_SECRET=your_api_secret
+# แนะนำ: ใช้ CLOUDINARY_URL
+CLOUDINARY_URL=cloudinary://your_api_key:your_api_secret@your_cloud_name
+
+# หรือใช้ตัวแปรแยกกัน
+# CLOUDINARY_CLOUD_NAME=your_cloud_name
+# CLOUDINARY_API_KEY=your_api_key
+# CLOUDINARY_API_SECRET=your_api_secret
 ```
 
 ### 5. การใช้งาน API

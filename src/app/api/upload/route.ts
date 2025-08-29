@@ -1,23 +1,23 @@
 // src/app/api/upload/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { v2 as cloudinary } from 'cloudinary';
+import { configureCloudinary } from '@/lib/cloudinary';
 
 export const runtime = 'nodejs'; // สำคัญ: ใช้ Node runtime (ไม่ใช่ Edge)
 
-// ตั้งค่า Cloudinary จาก ENV
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME!,
-  api_key: process.env.CLOUDINARY_API_KEY!,
-  api_secret: process.env.CLOUDINARY_API_SECRET!,
-});
-
 // ตรวจสอบ environment variables
 function validateEnvironment() {
+  // ตรวจสอบ CLOUDINARY_URL ก่อน (แนะนำสำหรับ Vercel)
+  if (process.env.CLOUDINARY_URL) {
+    return;
+  }
+  
+  // ตรวจสอบตัวแปรแยกกัน
   const required = ['CLOUDINARY_CLOUD_NAME', 'CLOUDINARY_API_KEY', 'CLOUDINARY_API_SECRET'];
   const missing = required.filter(key => !process.env[key]);
   
   if (missing.length > 0) {
-    throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
+    throw new Error(`Missing required environment variables. Please set either CLOUDINARY_URL or these individual variables: ${missing.join(', ')}`);
   }
 }
 
@@ -48,6 +48,9 @@ function getResourceType(fileType: string): string {
 
 export async function POST(request: NextRequest) {
   try {
+    // ตั้งค่า Cloudinary
+    configureCloudinary();
+    
     // ตรวจสอบ environment variables
     validateEnvironment();
 
