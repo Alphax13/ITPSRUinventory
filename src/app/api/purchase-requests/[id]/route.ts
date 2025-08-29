@@ -5,9 +5,10 @@ import { prisma } from '@/lib/prisma';
 // PATCH: อัปเดตสถานะคำขอซื้อ
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const body = await request.json();
     const { status, adminId } = body;
 
@@ -32,7 +33,7 @@ export async function PATCH(
 
     // อัปเดตสถานะคำขอซื้อ
     const updatedRequest = await prisma.purchaseRequest.update({
-      where: { id: params.id },
+      where: { id },
       data: { 
         status,
         updatedAt: new Date(),
@@ -56,11 +57,12 @@ export async function PATCH(
 // GET: ดึงข้อมูลคำขอซื้อตาม ID
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const purchaseRequest = await prisma.purchaseRequest.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         requester: {
           select: { name: true, email: true, department: true },

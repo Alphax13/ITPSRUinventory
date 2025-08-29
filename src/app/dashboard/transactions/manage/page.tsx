@@ -91,7 +91,7 @@ export default function TransactionManagePage() {
     setShowEditModal(true);
   };
 
-  const handleSaveEdit = async (updatedData: any) => {
+  const handleSaveEdit = async (updatedData: { quantity: number; type: string; reason: string }) => {
     if (!editingTransaction) return;
 
     setProcessingId(editingTransaction.id);
@@ -347,7 +347,7 @@ function EditTransactionModal({
   onClose 
 }: { 
   transaction: Transaction; 
-  onSave: (data: any) => void; 
+  onSave: (data: { quantity: number; type: string; reason: string }) => void; 
   onClose: () => void; 
 }) {
   const [formData, setFormData] = useState({
@@ -432,3 +432,4 @@ function EditTransactionModal({
     </div>
   );
 }
+

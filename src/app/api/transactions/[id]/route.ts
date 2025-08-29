@@ -121,8 +121,7 @@ export async function PUT(
         data: {
           quantity: parseInt(quantity, 10),
           reason,
-          type: type as TransactionType,
-          updatedAt: new Date()
+          type: type as TransactionType
         },
         include: {
           user: { select: { name: true, department: true } },
@@ -233,3 +232,4 @@ export async function DELETE(
     }, { status: 500 });
   }
 }
+

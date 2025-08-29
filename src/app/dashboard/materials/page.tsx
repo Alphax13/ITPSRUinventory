@@ -81,7 +81,7 @@ export default function MaterialsPage() {
         const transactions = await res.json();
         const usageCount: { [key: string]: number } = {};
         
-        transactions.forEach((transaction: any) => {
+        transactions.forEach((transaction: { materialId?: string }) => {
           if (transaction.materialId) {
             usageCount[transaction.materialId] = (usageCount[transaction.materialId] || 0) + 1;
           }
