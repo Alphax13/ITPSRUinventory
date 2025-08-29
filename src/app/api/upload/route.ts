@@ -93,11 +93,11 @@ export async function POST(request: NextRequest) {
     const resourceType = getResourceType(file.type);
 
     // อัปโหลดขึ้น Cloudinary
-    const uploadResult = await new Promise<cloudinary.UploadApiResponse>((resolve, reject) => {
-      const uploadOptions: cloudinary.UploadApiOptions = {
+    const uploadResult = await new Promise<any>((resolve, reject) => {
+      const uploadOptions: any = {
         folder,
         public_id: publicId,
-        resource_type: resourceType as any,
+        resource_type: resourceType,
         overwrite: false,
         use_filename: false,
         unique_filename: false,
@@ -129,7 +129,7 @@ export async function POST(request: NextRequest) {
     });
 
     // ส่งข้อมูลกลับ
-    const response = {
+    const response: any = {
       success: true,
       url: uploadResult.secure_url,
       publicId: uploadResult.public_id,

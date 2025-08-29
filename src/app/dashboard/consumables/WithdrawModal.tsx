@@ -38,8 +38,9 @@ export default function WithdrawModal({ consumable, onClose, onSave }: WithdrawM
         throw new Error('เบิกวัสดุไม่สำเร็จ');
       }
       onSave();
-    } catch (e: any) {
-      setError(e.message || 'เกิดข้อผิดพลาด');
+    } catch (e: unknown) {
+      const errorMessage = e instanceof Error ? e.message : 'เกิดข้อผิดพลาด';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

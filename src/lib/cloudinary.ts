@@ -13,7 +13,7 @@ export function configureCloudinary() {
 // ฟังก์ชันสำหรับลบไฟล์จาก Cloudinary
 export async function deleteCloudinaryFile(publicId: string): Promise<boolean> {
   try {
-    const result = await new Promise<cloudinary.DeleteApiResponse>((resolve, reject) => {
+    const result = await new Promise<any>((resolve, reject) => {
       cloudinary.uploader.destroy(publicId, (error, result) => {
         if (error) reject(error);
         else resolve(result!);
@@ -36,7 +36,7 @@ export function getOptimizedImageUrl(publicId: string, options: {
 } = {}) {
   const { width, height, quality = 'auto:good', format = 'auto' } = options;
   
-  let url = cloudinary.url(publicId, {
+  const url = cloudinary.url(publicId, {
     quality,
     fetch_format: format,
     ...(width && { width }),
@@ -59,7 +59,7 @@ export function getThumbnailUrl(publicId: string, size: number = 150) {
 // ฟังก์ชันสำหรับตรวจสอบว่าไฟล์มีอยู่ใน Cloudinary หรือไม่
 export async function checkFileExists(publicId: string): Promise<boolean> {
   try {
-    const result = await new Promise<cloudinary.GetResourceApiResponse>((resolve, reject) => {
+    const result = await new Promise<any>((resolve, reject) => {
       cloudinary.api.resource(publicId, (error, result) => {
         if (error) reject(error);
         else resolve(result!);
@@ -67,7 +67,7 @@ export async function checkFileExists(publicId: string): Promise<boolean> {
     });
     
     return !!result;
-  } catch (error) {
+  } catch {
     return false;
   }
 }
@@ -75,7 +75,7 @@ export async function checkFileExists(publicId: string): Promise<boolean> {
 // ฟังก์ชันสำหรับดึงข้อมูลไฟล์
 export async function getFileInfo(publicId: string) {
   try {
-    const result = await new Promise<cloudinary.GetResourceApiResponse>((resolve, reject) => {
+    const result = await new Promise<any>((resolve, reject) => {
       cloudinary.api.resource(publicId, (error, result) => {
         if (error) reject(error);
         else resolve(result!);

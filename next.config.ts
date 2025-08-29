@@ -1,6 +1,17 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // ปิดการใช้งาน Turbopack ใน production build เพื่อความเสถียร
+  experimental: {
+    turbo: {
+      rules: {
+        '*.svg': {
+          loaders: ['@svgr/webpack'],
+          as: '*.js',
+        },
+      },
+    },
+  },
   images: {
     remotePatterns: [
       {
@@ -60,6 +71,15 @@ const nextConfig: NextConfig = {
     ],
     // เพิ่มการรองรับ unoptimized สำหรับ URL ที่ไม่สามารถ optimize ได้
     unoptimized: false,
+  },
+  // เพิ่มการตั้งค่าเพื่อรองรับ Vercel deployment
+  typescript: {
+    // อนุญาตให้ build สำเร็จแม้จะมี TypeScript errors
+    ignoreBuildErrors: false,
+  },
+  eslint: {
+    // อนุญาตให้ build สำเร็จแม้จะมี ESLint errors
+    ignoreDuringBuilds: false,
   },
 };
 
