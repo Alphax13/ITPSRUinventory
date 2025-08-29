@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Image from 'next/image';
+import SafeImage from '@/components/SafeImage';
 
 interface AssetFormModalProps {
   onClose: () => void;
@@ -36,6 +36,7 @@ export default function AssetFormModal({ onClose, onSave, editingAsset }: AssetF
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
   const [error, setError] = useState<string>('');
+  const [imageInputType, setImageInputType] = useState<'file' | 'url'>('file');
 
   const [formData, setFormData] = useState({
     id: '',
@@ -67,10 +68,10 @@ export default function AssetFormModal({ onClose, onSave, editingAsset }: AssetF
         purchasePrice: editingAsset.purchasePrice ? editingAsset.purchasePrice.toString() : '',
         location: editingAsset.location || 'Unassigned',
         condition: editingAsset.condition || 'GOOD',
-        imageUrl: editingAsset.imageUrl || '',
-        description: editingAsset.description || '',
+        imageUrl: editingAsset.imageUrl ?? '',
+        description: editingAsset.description ?? '',
       });
-      setImagePreview(editingAsset.imageUrl || '');
+      setImagePreview(editingAsset.imageUrl ?? '');
     } else {
       // Generate new asset number
       const newAssetNumber = `AST-${Date.now().toString().slice(-6)}`;
@@ -100,6 +101,11 @@ export default function AssetFormModal({ onClose, onSave, editingAsset }: AssetF
       ...prev,
       [name]: value
     }));
+
+    // ถ้าเป็นการเปลี่ยน imageUrl ให้อัพเดต preview ด้วย
+    if (name === 'imageUrl' && value) {
+      setImagePreview(value);
+    }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -126,6 +132,21 @@ export default function AssetFormModal({ onClose, onSave, editingAsset }: AssetF
       ...prev,
       imageUrl: ''
     }));
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.value = '';
+    }
+  };
+
+  const handleImageTypeChange = (type: 'file' | 'url') => {
+    setImageInputType(type);
+    setSelectedFile(null);
+    setImagePreview('');
+    setError(''); // ล้าง error เมื่อเปลี่ยนประเภท
+    
+    if (type === 'file') {
+      setFormData(prev => ({ ...prev, imageUrl: '' }));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -153,8 +174,9 @@ export default function AssetFormModal({ onClose, onSave, editingAsset }: AssetF
 
   const assetData: AssetFormData = { ...formData };
       
-      // อัปโหลดรูปภาพก่อน (ถ้ามี)
-      if (selectedFile) {
+      // จัดการรูปภาพ
+      if (imageInputType === 'file' && selectedFile) {
+        // อัปโหลดไฟล์รูปภาพ
         const formDataImage = new FormData();
         formDataImage.append('file', selectedFile);
         formDataImage.append('materialCode', formData.assetNumber);
@@ -167,7 +189,14 @@ export default function AssetFormModal({ onClose, onSave, editingAsset }: AssetF
         if (uploadResponse.ok) {
           const uploadResult = await uploadResponse.json();
           assetData.imageUrl = uploadResult.url;
+        } else {
+          setError('ไม่สามารถอัปโหลดรูปภาพได้');
+          setLoading(false);
+          return;
         }
+      } else if (imageInputType === 'url' && formData.imageUrl) {
+        // ใช้ URL ที่ใส่มา
+        assetData.imageUrl = formData.imageUrl;
       }
 
       const method = editingAsset ? 'PUT' : 'POST';
@@ -228,31 +257,88 @@ export default function AssetFormModal({ onClose, onSave, editingAsset }: AssetF
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">📸 รูปภาพครุภัณฑ์</label>
             
+            {/* ตัวเลือกประเภทการใส่รูป */}
+            <div className="flex space-x-4 mb-4">
+              <button
+                type="button"
+                onClick={() => handleImageTypeChange('file')}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  imageInputType === 'file'
+                    ? 'bg-orange-100 text-orange-700 border-2 border-orange-300'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                📁 อัพโหลดไฟล์
+              </button>
+              <button
+                type="button"
+                onClick={() => handleImageTypeChange('url')}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  imageInputType === 'url'
+                    ? 'bg-orange-100 text-orange-700 border-2 border-orange-300'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                🔗 ใส่ URL
+              </button>
+            </div>
+
+            {/* แสดงพรีวิวรูปภาพ */}
             {imagePreview && (
-              <div className="mb-3 relative">
-                <Image
-                  src={imagePreview}
-                  alt="Preview"
-                  width={400}
-                  height={160}
-                  className="w-full h-40 object-cover rounded-xl border border-orange-200"
-                />
-                <button
-                  type="button"
-                  onClick={removeImage}
-                  className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-red-600 transition-colors"
-                >
-                  ×
-                </button>
+              <div className="mb-4 relative">
+                <div className="relative overflow-hidden rounded-xl border border-orange-200">
+                  <SafeImage
+                    src={imagePreview}
+                    alt="Preview"
+                    width={400}
+                    height={160}
+                    className="w-full h-40 object-cover"
+                    onError={() => {
+                      setImagePreview('');
+                      setError('ไม่สามารถโหลดรูปภาพได้ กรุณาตรวจสอบ URL');
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={removeImage}
+                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-red-600 transition-colors shadow-lg"
+                  >
+                    ×
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  {imageInputType === 'url' ? '🔗 URL รูปภาพ' : '📁 ไฟล์ที่อัพโหลด'}
+                </p>
               </div>
             )}
             
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleFileChange}
-              className="w-full px-4 py-3 border border-orange-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-300 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"
-            />
+            {/* Input ตามประเภทที่เลือก */}
+            {imageInputType === 'file' ? (
+              <input
+                key="file-input"
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="w-full px-4 py-3 border border-orange-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-300 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"
+              />
+            ) : (
+              <input
+                key="url-input"
+                type="url"
+                name="imageUrl"
+                value={formData.imageUrl}
+                onChange={handleChange}
+                className="w-full px-4 py-3 border border-orange-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-300"
+                placeholder="https://example.com/image.jpg"
+              />
+            )}
+            
+            <p className="text-xs text-gray-500 mt-2">
+              {imageInputType === 'file' 
+                ? '📁 เลือกไฟล์รูปภาพจากเครื่องคอมพิวเตอร์'
+                : '🔗 ใส่ลิงค์รูปภาพจากอินเทอร์เน็ต (เช่น Google Drive, Imgur, หรือเว็บไซต์อื่นๆ)'
+              }
+            </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

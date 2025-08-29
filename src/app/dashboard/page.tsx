@@ -136,7 +136,7 @@ export default function DashboardPage() {
               ยินดีต้อนรับ, {user?.name || 'ผู้ใช้'} 👋
             </h1>
             <p className="text-orange-100 text-lg">
-              {user?.role === 'STAFF' ? '🔧 เจ้าหน้าที่' : '👨‍🏫 อาจารย์'} • {user?.department || 'ทั่วไป'}
+              {user?.role === 'ADMIN' ? '👑 ผู้ดูแลระบบ' : '👨‍🏫 อาจารย์'} • {user?.department || 'ทั่วไป'}
             </p>
             <p className="text-orange-100 mt-2">
               {new Date().toLocaleDateString('th-TH', { 
@@ -188,7 +188,7 @@ export default function DashboardPage() {
             </div>
           </Link>
 
-          {user?.role === 'STAFF' && (
+          {user?.role === 'ADMIN' && (
             <Link href="/dashboard/consumables" className="group">
               <div className="border-2 border-dashed border-green-200 hover:border-green-400 hover:bg-green-50 rounded-2xl p-6 text-center transition-all duration-300 group-hover:scale-105">
                 <div className="text-4xl mb-4 group-hover:scale-110 transition-transform">📦</div>
@@ -222,7 +222,7 @@ export default function DashboardPage() {
             </div>
           </Link>
 
-          {user?.role === 'STAFF' && (
+          {user?.role === 'ADMIN' && (
             <Link href="/dashboard/reports" className="group">
               <div className="border-2 border-dashed border-red-200 hover:border-red-400 hover:bg-red-50 rounded-2xl p-6 text-center transition-all duration-300 group-hover:scale-105">
                 <div className="text-4xl mb-4 group-hover:scale-110 transition-transform">📄</div>

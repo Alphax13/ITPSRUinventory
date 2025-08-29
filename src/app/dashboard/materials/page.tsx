@@ -29,7 +29,7 @@ export default function MaterialsPage() {
 
   const { user } = useAuthStore();
   const { isModalOpen, openModal, closeModal } = useMaterialStore();
-  const isStaff = user?.role === 'STAFF';
+  const isAdmin = user?.role === 'ADMIN';
 
   useEffect(() => {
     fetchMaterials();
@@ -71,7 +71,7 @@ export default function MaterialsPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!isStaff) {
+    if (!isAdmin) {
       alert('คุณไม่มีสิทธิ์ลบข้อมูล');
       return;
     }
@@ -117,17 +117,17 @@ export default function MaterialsPage() {
         <div>
           <h1 className="text-3xl font-bold text-gray-900 flex items-center">
             <span className="mr-3">📦</span>
-            {isStaff ? 'จัดการวัสดุ' : 'รายการวัสดุ'}
+            {isAdmin ? 'จัดการวัสดุ' : 'รายการวัสดุ'}
           </h1>
           <p className="text-gray-600 mt-2">
-            {isStaff 
+            {isAdmin 
               ? 'เพิ่ม แก้ไข และจัดการรายการวัสดุทั้งหมด' 
               : 'ดูรายการวัสดุที่มีในระบบ'
             }
           </p>
         </div>
         
-        {isStaff && (
+        {isAdmin && (
           <button 
             onClick={() => openModal()} 
             className="bg-gradient-to-r from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 text-white font-semibold px-6 py-3 rounded-xl transition-all duration-300 shadow-sm hover:shadow-md hover:transform hover:scale-105 flex items-center gap-2"
@@ -281,7 +281,7 @@ export default function MaterialsPage() {
                 </div>
 
                 {/* Actions */}
-                {isStaff ? (
+                {isAdmin ? (
                   <div className="flex gap-2">
                     <button 
                       onClick={() => openModal(material)} 
@@ -324,7 +324,7 @@ export default function MaterialsPage() {
       )}
 
       {/* Modal */}
-      {isModalOpen && isStaff && (
+      {isModalOpen && isAdmin && (
         <MaterialFormModal 
           onSave={() => {
             closeModal();

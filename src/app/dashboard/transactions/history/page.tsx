@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
+import { th } from 'date-fns/locale';
 
 interface Transaction {
   id: string;
@@ -19,11 +20,14 @@ interface Transaction {
     code: string;
     unit: string;
   };
+  source?: 'consumable' | 'legacy';
 }
 
 export default function TransactionHistoryPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<'ALL' | 'IN' | 'OUT'>('ALL');
+  const [sortBy, setSortBy] = useState<'date' | 'user' | 'material'>('date');
 
   useEffect(() => {
     fetchTransactions();
@@ -31,10 +35,17 @@ export default function TransactionHistoryPage() {
 
   const fetchTransactions = async () => {
     try {
+      console.log('Fetching transaction history...');
       const res = await fetch('/api/transactions');
       if (res.ok) {
         const data = await res.json();
+        console.log('Transaction history received:', data);
+        console.log('Number of transactions:', data.length);
         setTransactions(data);
+      } else {
+        console.error('Failed to fetch transaction history, status:', res.status);
+        const errorData = await res.json();
+        console.error('Error data:', errorData);
       }
     } catch (error) {
       console.error('Failed to fetch transactions:', error);
@@ -43,51 +54,203 @@ export default function TransactionHistoryPage() {
     }
   };
 
+  const filteredTransactions = transactions
+    .filter(tx => filter === 'ALL' || tx.type === filter)
+    .sort((a, b) => {
+      switch (sortBy) {
+        case 'date':
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        case 'user':
+          return a.user.name.localeCompare(b.user.name);
+        case 'material':
+          return a.material.name.localeCompare(b.material.name);
+        default:
+          return 0;
+      }
+    });
+
+  const getTransactionStats = () => {
+    const totalTransactions = transactions.length;
+    const inTransactions = transactions.filter(tx => tx.type === 'IN').length;
+    const outTransactions = transactions.filter(tx => tx.type === 'OUT').length;
+    const consumableTransactions = transactions.filter(tx => tx.source === 'consumable').length;
+    const legacyTransactions = transactions.filter(tx => tx.source === 'legacy').length;
+    
+    return { 
+      totalTransactions, 
+      inTransactions, 
+      outTransactions,
+      consumableTransactions,
+      legacyTransactions 
+    };
+  };
+
+  const stats = getTransactionStats();
+
   if (loading) {
-    return <div className="p-4 text-center">Loading transaction history...</div>;
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
   }
 
   return (
-    <div className="p-4">
-      <h1 className="text-2xl font-bold mb-4">Transaction History</h1>
-      <div className="overflow-x-auto bg-white rounded-lg shadow">
-        <table className="w-full table-auto border-collapse">
+    <div className="max-w-7xl mx-auto space-y-6">
+      {/* Header */}
+      <div className="text-center">
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">📊 ประวัติการทำรายการ</h1>
+        <p className="text-gray-600">ดูประวัติการเบิก-จ่ายวัสดุทั้งหมด</p>
+        {transactions.length > 0 && (
+          <p className="text-sm text-green-600 mt-1">
+            ✅ โหลดประวัติรายการแล้ว {transactions.length} รายการ
+          </p>
+        )}
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div className="bg-white rounded-lg shadow p-6 text-center">
+          <div className="text-2xl font-bold text-blue-600">{stats.totalTransactions}</div>
+          <div className="text-gray-600">รายการทั้งหมด</div>
+        </div>
+        <div className="bg-white rounded-lg shadow p-6 text-center">
+          <div className="text-2xl font-bold text-green-600">{stats.inTransactions}</div>
+          <div className="text-gray-600">📥 เพิ่มเข้า</div>
+        </div>
+        <div className="bg-white rounded-lg shadow p-6 text-center">
+          <div className="text-2xl font-bold text-red-600">{stats.outTransactions}</div>
+          <div className="text-gray-600">📤 เบิกออก</div>
+        </div>
+        <div className="bg-white rounded-lg shadow p-6 text-center">
+          <div className="text-2xl font-bold text-blue-500">{stats.consumableTransactions}</div>
+          <div className="text-gray-600">🧴 วัสดุสิ้นเปลือง</div>
+        </div>
+        <div className="bg-white rounded-lg shadow p-6 text-center">
+          <div className="text-2xl font-bold text-gray-600">{stats.legacyTransactions}</div>
+          <div className="text-gray-600">📦 วัสดุทั่วไป</div>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="bg-white rounded-lg shadow p-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center space-x-4">
+            <span className="text-gray-700 font-medium">กรองตาม:</span>
+            <select
+              value={filter}
+              onChange={(e) => setFilter(e.target.value as 'ALL' | 'IN' | 'OUT')}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="ALL">ทั้งหมด</option>
+              <option value="IN">📥 เพิ่มเข้า</option>
+              <option value="OUT">📤 เบิกออก</option>
+            </select>
+          </div>
+          
+          <div className="flex items-center space-x-4">
+            <span className="text-gray-700 font-medium">เรียงตาม:</span>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as 'date' | 'user' | 'material')}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="date">วันที่ (ล่าสุดก่อน)</option>
+              <option value="user">ผู้ใช้งาน</option>
+              <option value="material">วัสดุ</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* Transactions Table */}
+      <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full table-auto">
           <thead>
-            <tr className="bg-gray-200 text-left text-sm font-semibold text-gray-700">
-              <th className="p-3 border-b">Date</th>
-              <th className="p-3 border-b">Type</th>
-              <th className="p-3 border-b">Material</th>
-              <th className="p-3 border-b">Quantity</th>
-              <th className="p-3 border-b">User</th>
-              <th className="p-3 border-b">Reason</th>
+              <tr className="bg-gray-50 text-left text-sm font-semibold text-gray-700">
+                <th className="p-4 border-b">วันที่/เวลา</th>
+                <th className="p-4 border-b">ประเภท</th>
+                <th className="p-4 border-b">วัสดุ</th>
+                <th className="p-4 border-b">จำนวน</th>
+                <th className="p-4 border-b">ผู้ใช้งาน</th>
+                <th className="p-4 border-b">เหตุผล</th>
             </tr>
           </thead>
           <tbody>
-            {transactions.length > 0 ? (
-              transactions.map((tx) => (
-                <tr key={tx.id} className="border-b hover:bg-gray-50">
-                  <td className="p-3 text-sm">{format(new Date(tx.createdAt), 'MMM d, yyyy HH:mm')}</td>
-                  <td className="p-3 text-sm">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      tx.type === 'OUT' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
-                    }`}>
-                      {tx.type === 'OUT' ? 'OUT' : 'IN'}
+              {filteredTransactions.length > 0 ? (
+                filteredTransactions.map((tx) => (
+                  <tr key={tx.id} className="border-b hover:bg-gray-50 transition-colors">
+                    <td className="p-4 text-sm text-gray-900">
+                      <div>
+                        {format(new Date(tx.createdAt), 'dd MMM yyyy', { locale: th })}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {format(new Date(tx.createdAt), 'HH:mm น.')}
+                      </div>
+                    </td>
+                    <td className="p-4 text-sm">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        tx.type === 'OUT' 
+                          ? 'bg-red-100 text-red-800' 
+                          : 'bg-green-100 text-green-800'
+                      }`}>
+                        {tx.type === 'OUT' ? '📤 เบิกออก' : '📥 เพิ่มเข้า'}
+                      </span>
+                    </td>
+                    <td className="p-4 text-sm">
+                      <div className="font-medium text-gray-900">{tx.material.name}</div>
+                      <div className="text-xs text-gray-500 flex items-center space-x-2">
+                        <span>{tx.material.code}</span>
+                        {tx.source && (
+                          <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${
+                            tx.source === 'consumable' 
+                              ? 'bg-blue-100 text-blue-800' 
+                              : 'bg-gray-100 text-gray-800'
+                          }`}>
+                            {tx.source === 'consumable' ? '🧴 วัสดุสิ้นเปลือง' : '📦 วัสดุทั่วไป'}
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="p-4 text-sm">
+                      <span className="font-semibold text-gray-900">
+                        {tx.quantity.toLocaleString()} {tx.material.unit}
                     </span>
                   </td>
-                  <td className="p-3 text-sm">{tx.material.name} ({tx.material.code})</td>
-                  <td className="p-3 text-sm font-bold">{tx.quantity} {tx.material.unit}</td>
-                  <td className="p-3 text-sm">{tx.user.name}</td>
-                  <td className="p-3 text-sm">{tx.reason || '-'}</td>
+                    <td className="p-4 text-sm">
+                      <div className="font-medium text-gray-900">{tx.user.name}</div>
+                      {tx.user.department && (
+                        <div className="text-xs text-gray-500">{tx.user.department}</div>
+                      )}
+                    </td>
+                    <td className="p-4 text-sm text-gray-700">
+                      {tx.reason || <span className="text-gray-400">-</span>}
+                    </td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan={6} className="p-4 text-center text-gray-500">No transaction history found.</td>
+                  <td colSpan={6} className="p-8 text-center text-gray-500">
+                    <div className="text-4xl mb-2">📋</div>
+                    <div>ไม่พบประวัติการทำรายการ</div>
+                    {filter !== 'ALL' && (
+                      <div className="text-sm mt-1">ลองเปลี่ยนตัวกรองหรือล้างการค้นหา</div>
+                    )}
+                  </td>
               </tr>
             )}
           </tbody>
         </table>
       </div>
+      </div>
+
+      {/* Results Summary */}
+      {filteredTransactions.length > 0 && (
+        <div className="text-center text-sm text-gray-600">
+          แสดง {filteredTransactions.length} จาก {transactions.length} รายการ
+        </div>
+      )}
     </div>
   );
 }

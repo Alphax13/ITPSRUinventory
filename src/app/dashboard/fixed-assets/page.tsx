@@ -37,7 +37,7 @@ export default function AssetsPage() {
   const [editingAsset, setEditingAsset] = useState<FixedAsset | null>(null);
 
   const { user } = useAuthStore();
-  const isStaff = user?.role === 'STAFF';
+  const isAdmin = user?.role === 'ADMIN';
 
   useEffect(() => {
     fetchAssets();
@@ -163,7 +163,7 @@ export default function AssetsPage() {
             <p className="text-orange-100">อุปกรณ์ที่สามารถยืม-คืนได้ มีเลขกำกับ</p>
           </div>
           
-          {isStaff && (
+          {isAdmin && (
             <button 
               onClick={() => setIsModalOpen(true)}
               className="bg-white text-orange-500 font-bold py-3 px-6 rounded-xl hover:bg-orange-50 transition-all duration-200 shadow-md hover:shadow-lg flex items-center gap-2 whitespace-nowrap"
@@ -322,7 +322,7 @@ export default function AssetsPage() {
                 </div>
 
                 {/* Actions */}
-                {isStaff ? (
+                {isAdmin ? (
                   <div className="flex gap-2">
                     <button 
                       onClick={() => handleEdit(asset)}
@@ -372,7 +372,7 @@ export default function AssetsPage() {
       )}
 
       {/* Modal */}
-      {isModalOpen && isStaff && (
+      {isModalOpen && isAdmin && (
         <AssetFormModal 
           onClose={handleModalClose}
           onSave={handleModalSave}

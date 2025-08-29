@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Image from 'next/image';
+import SafeImage from '@/components/SafeImage';
 import { useMaterialStore } from '@/stores/materialStore';
 import { generateMaterialQRCode } from '@/utils/qrcode';
 
@@ -37,6 +37,8 @@ export default function MaterialFormModal({ onSave }: { onSave: () => void }) {
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
+  const [imageInputType, setImageInputType] = useState<'file' | 'url'>('file');
+  const [error, setError] = useState<string>('');
 
   useEffect(() => {
     fetchCategories();
@@ -53,9 +55,9 @@ export default function MaterialFormModal({ onSave }: { onSave: () => void }) {
         minStock: editingMaterial.minStock,
         currentStock: editingMaterial.currentStock ?? 0,
         isAsset: editingMaterial.isAsset,
-        imageUrl: editingMaterial.imageUrl || '',
+        imageUrl: editingMaterial.imageUrl ?? '',
       });
-      setImagePreview(editingMaterial.imageUrl || '');
+      setImagePreview(editingMaterial.imageUrl ?? '');
     } else {
       setFormData({
         id: '',
@@ -93,6 +95,11 @@ export default function MaterialFormModal({ onSave }: { onSave: () => void }) {
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
+
+    // ถ้าเป็นการเปลี่ยน imageUrl ให้อัพเดต preview ด้วย
+    if (name === 'imageUrl' && value) {
+      setImagePreview(value);
+    }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -122,6 +129,21 @@ export default function MaterialFormModal({ onSave }: { onSave: () => void }) {
       ...prev,
       imageUrl: ''
     }));
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.value = '';
+    }
+  };
+
+  const handleImageTypeChange = (type: 'file' | 'url') => {
+    setImageInputType(type);
+    setSelectedFile(null);
+    setImagePreview('');
+    setError(''); // ล้าง error เมื่อเปลี่ยนประเภท
+    
+    if (type === 'file') {
+      setFormData(prev => ({ ...prev, imageUrl: '' }));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -134,8 +156,9 @@ export default function MaterialFormModal({ onSave }: { onSave: () => void }) {
     try {
       const materialData: MaterialFormData = { ...formData };
       
-      // อัปโหลดรูปภาพก่อน (ถ้ามี)
-      if (selectedFile) {
+      // จัดการรูปภาพ
+      if (imageInputType === 'file' && selectedFile) {
+        // อัปโหลดไฟล์รูปภาพ
         const formDataImage = new FormData();
         formDataImage.append('file', selectedFile);
         formDataImage.append('materialCode', formData.code);
@@ -149,8 +172,13 @@ export default function MaterialFormModal({ onSave }: { onSave: () => void }) {
           const uploadResult = await uploadResponse.json();
           materialData.imageUrl = uploadResult.url;
         } else {
-          console.error('Image upload failed');
+          setError('ไม่สามารถอัปโหลดรูปภาพได้');
+          setLoading(false);
+          return;
         }
+      } else if (imageInputType === 'url' && formData.imageUrl) {
+        // ใช้ URL ที่ใส่มา
+        materialData.imageUrl = formData.imageUrl;
       }
 
       // Generate QR Code for new materials
@@ -251,36 +279,97 @@ export default function MaterialFormModal({ onSave }: { onSave: () => void }) {
 
           {/* รูปภาพของวัสดุ */}
           <div className="mb-4">
-            <label className="block text-gray-700 mb-2 font-medium">รูปภาพของวัสดุ</label>
+            <label className="block text-gray-700 mb-2 font-medium">📸 รูปภาพของวัสดุ</label>
             
-            {/* Image Preview */}
+            {/* ตัวเลือกประเภทการใส่รูป */}
+            <div className="flex space-x-4 mb-4">
+              <button
+                type="button"
+                onClick={() => handleImageTypeChange('file')}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  imageInputType === 'file'
+                    ? 'bg-blue-100 text-blue-700 border-2 border-blue-300'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                📁 อัพโหลดไฟล์
+              </button>
+              <button
+                type="button"
+                onClick={() => handleImageTypeChange('url')}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  imageInputType === 'url'
+                    ? 'bg-blue-100 text-blue-700 border-2 border-blue-300'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                🔗 ใส่ URL
+              </button>
+            </div>
+
+            {/* แสดงพรีวิวรูปภาพ */}
             {imagePreview && (
-              <div className="mb-3 relative">
-                <Image
-                  src={imagePreview}
-                  alt="Preview"
-                  width={400}
-                  height={160}
-                  className="w-full h-40 object-cover rounded-lg border border-gray-300"
-                />
-                <button
-                  type="button"
-                  onClick={removeImage}
-                  className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm hover:bg-red-600 transition-colors"
-                >
-                  ×
-                </button>
+              <div className="mb-4 relative">
+                <div className="relative overflow-hidden rounded-lg border border-gray-300">
+                  <SafeImage
+                    src={imagePreview}
+                    alt="Preview"
+                    width={400}
+                    height={160}
+                    className="w-full h-40 object-cover"
+                    onError={() => {
+                      setImagePreview('');
+                      setError('ไม่สามารถโหลดรูปภาพได้ กรุณาตรวจสอบ URL');
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={removeImage}
+                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm hover:bg-red-600 transition-colors shadow-lg"
+                  >
+                    ×
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  {imageInputType === 'url' ? '🔗 URL รูปภาพ' : '📁 ไฟล์ที่อัพโหลด'}
+                </p>
               </div>
             )}
             
-            {/* File Input */}
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleFileChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 file:mr-4 file:py-1 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"
-            />
-            <p className="text-xs text-gray-500 mt-1">รองรับไฟล์ JPG, PNG, GIF ขนาดไม่เกิน 5MB</p>
+            {/* Error Display */}
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-lg mb-3 text-sm">
+                {error}
+              </div>
+            )}
+            
+            {/* Input ตามประเภทที่เลือก */}
+            {imageInputType === 'file' ? (
+              <input
+                key="file-input"
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 file:mr-4 file:py-1 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"
+              />
+            ) : (
+              <input
+                key="url-input"
+                type="url"
+                name="imageUrl"
+                value={formData.imageUrl}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="https://example.com/image.jpg"
+                />
+            )}
+            
+            <p className="text-xs text-gray-500 mt-1">
+              {imageInputType === 'file' 
+                ? '📁 รองรับไฟล์ JPG, PNG, GIF ขนาดไม่เกิน 5MB'
+                : '🔗 ใส่ลิงค์รูปภาพจากอินเทอร์เน็ต (เช่น Google Drive, Imgur, หรือเว็บไซต์อื่นๆ)'
+              }
+            </p>
           </div>
           
           <div className="mb-4">

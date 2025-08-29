@@ -9,14 +9,14 @@ const navigation = [
   { 
     name: 'แดชบอร์ด', 
     href: '/dashboard', 
-    icon: '📊', 
-    roles: ['STAFF', 'LECTURER'] 
+    icon: '🏠', 
+    roles: ['ADMIN', 'LECTURER'] 
   },
   { 
     name: 'จัดการวัสดุสิ้นเปลือง', 
     href: '/dashboard/consumables', 
     icon: '📦', 
-    roles: ['STAFF'] 
+    roles: ['ADMIN'] 
   },
   { 
     name: 'ดูวัสดุสิ้นเปลือง', 
@@ -28,7 +28,7 @@ const navigation = [
     name: 'จัดการครุภัณฑ์', 
     href: '/dashboard/fixed-assets', 
     icon: '🏷️', 
-    roles: ['STAFF'] 
+    roles: ['ADMIN'] 
   },
   { 
     name: 'ดูครุภัณฑ์', 
@@ -39,26 +39,32 @@ const navigation = [
   { 
     name: 'เบิก-จ่ายวัสดุ', 
     href: '/dashboard/transactions', 
-    icon: '📦', 
-    roles: ['STAFF', 'LECTURER'] 
+    icon: '📋', 
+    roles: ['ADMIN', 'LECTURER'] 
   },
   { 
     name: 'ประวัติการเบิก', 
     href: '/dashboard/transactions/history', 
-    icon: '📜', 
-    roles: ['STAFF', 'LECTURER'] 
+    icon: '📊', 
+    roles: ['ADMIN', 'LECTURER'] 
   },
   { 
     name: 'คำขอซื้อ', 
     href: '/dashboard/purchase-requests', 
     icon: '🛒', 
-    roles: ['STAFF', 'LECTURER'] 
+    roles: ['ADMIN', 'LECTURER'] 
   },
   { 
     name: 'รายงาน', 
     href: '/dashboard/reports', 
     icon: '📄', 
-    roles: ['STAFF'] 
+    roles: ['ADMIN'] 
+  },
+  { 
+    name: 'จัดการสมาชิก', 
+    href: '/dashboard/users', 
+    icon: '👥', 
+    roles: ['ADMIN'] 
   },
 ];
 
@@ -103,9 +109,9 @@ export default function Sidebar() {
             <div className="flex-1 min-w-0">
               <p className="font-bold text-gray-800 truncate text-lg">{user?.name}</p>
               <p className="text-sm font-semibold text-orange-600">
-                {user?.role === 'STAFF' ? '🔧 เจ้าหน้าที่' : '👨‍🏫 อาจารย์'}
+                {user?.role === 'ADMIN' ? '👑 ผู้ดูแลระบบ' : '👨‍🏫 อาจารย์'}
               </p>
-              <p className="text-xs text-gray-500">{user?.email}</p>
+              <p className="text-xs text-gray-500">@{user?.username}</p>
             </div>
           </div>
         </div>

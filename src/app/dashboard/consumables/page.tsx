@@ -32,7 +32,7 @@ export default function ConsumablesPage() {
   const [adjustingConsumable, setAdjustingConsumable] = useState<ConsumableMaterial | null>(null);
 
   const { user } = useAuthStore();
-  const isStaff = user?.role === 'STAFF';
+  const isAdmin = user?.role === 'ADMIN';
 
   useEffect(() => {
     fetchConsumables();
@@ -146,7 +146,7 @@ export default function ConsumablesPage() {
             <p className="text-orange-100">วัสดุที่ใช้แล้วหมดไป เช่น เครื่องเขียน กระดาษ</p>
           </div>
           
-          {isStaff && (
+          {isAdmin && (
             <button 
               onClick={() => setIsModalOpen(true)}
               className="bg-white text-orange-500 font-bold py-3 px-6 rounded-xl hover:bg-orange-50 transition-all duration-200 shadow-md hover:shadow-lg flex items-center gap-2 whitespace-nowrap"
@@ -275,7 +275,7 @@ export default function ConsumablesPage() {
                 </div>
 
                 {/* Actions */}
-                {isStaff ? (
+                {isAdmin ? (
                   <div className="space-y-2">
                     {/* ปุ่มปรับสต็อค */}
                     <button 
@@ -330,7 +330,7 @@ export default function ConsumablesPage() {
       )}
 
       {/* Modals */}
-      {isModalOpen && isStaff && (
+      {isModalOpen && isAdmin && (
         <ConsumableFormModal 
           onClose={handleModalClose}
           onSave={handleModalSave}
@@ -338,7 +338,7 @@ export default function ConsumablesPage() {
         />
       )}
 
-      {isStockModalOpen && isStaff && adjustingConsumable && (
+      {isStockModalOpen && isAdmin && adjustingConsumable && (
         <StockAdjustmentModal 
           onClose={handleStockModalClose}
           onSave={handleStockModalSave}

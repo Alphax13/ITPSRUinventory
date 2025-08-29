@@ -6,9 +6,63 @@ import { prisma } from '@/lib/prisma';
 // GET: ดึงข้อมูลวัสดุทั้งหมด
 export async function GET() {
   try {
-    const materials = await prisma.material.findMany();
+    // ดึงข้อมูลจากทั้ง ConsumableMaterial และ Material (legacy)
+    const [consumables, legacyMaterials] = await Promise.all([
+      prisma.consumableMaterial.findMany({
+        select: {
+          id: true,
+          name: true,
+          category: true,
+          unit: true,
+          currentStock: true,
+          imageUrl: true,
+          description: true,
+          createdAt: true,
+        }
+      }),
+      prisma.material.findMany({
+        select: {
+          id: true,
+          name: true,
+          code: true,
+          category: true,
+          unit: true,
+          currentStock: true,
+          imageUrl: true,
+          isAsset: true,
+        }
+      })
+    ]);
+
+    // รวมข้อมูลและปรับโครงสร้างให้เหมือนกัน
+    const materials = [
+      ...consumables.map(item => ({
+        id: item.id,
+        name: item.name,
+        code: `CON-${item.id.slice(-6)}`, // สร้างรหัสชั่วคราว
+        category: item.category,
+        unit: item.unit,
+        currentStock: item.currentStock,
+        imageUrl: item.imageUrl,
+        isAsset: false,
+        type: 'consumable' as const
+      })),
+      ...legacyMaterials.map(item => ({
+        id: item.id,
+        name: item.name,
+        code: item.code || `MAT-${item.id.slice(-6)}`,
+        category: item.category,
+        unit: item.unit || 'ชิ้น',
+        currentStock: item.currentStock,
+        imageUrl: item.imageUrl,
+        isAsset: item.isAsset,
+        type: 'legacy' as const
+      }))
+    ];
+
     return NextResponse.json(materials, { status: 200 });
-  } catch {
+  } catch (error) {
+    console.error('Error fetching materials:', error);
     return NextResponse.json({ error: 'Failed to fetch materials' }, { status: 500 });
   }
 }

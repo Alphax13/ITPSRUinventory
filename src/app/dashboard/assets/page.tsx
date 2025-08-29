@@ -32,7 +32,7 @@ export default function AssetsPage() {
   const [materials, setMaterials] = useState<Material[]>([]);
   const { user } = useAuthStore();
 
-  const isStaff = user?.role === 'STAFF';
+  const isAdmin = user?.role === 'ADMIN';
 
   useEffect(() => {
     fetchAssets();
@@ -67,7 +67,7 @@ export default function AssetsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isStaff) return;
+    if (!isAdmin) return;
 
     try {
       const response = await fetch('/api/assets', {
@@ -128,7 +128,7 @@ export default function AssetsPage() {
           <h1 className="text-2xl font-bold text-gray-900">จัดการครุภัณฑ์</h1>
           <p className="text-gray-600 mt-1">ติดตามและจัดการครุภัณฑ์ทั้งหมด</p>
         </div>
-        {isStaff && (
+        {isAdmin && (
           <button
             onClick={() => setShowForm(true)}
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium"

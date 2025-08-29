@@ -60,7 +60,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
                 <div className="hidden sm:block text-left">
                   <p className="text-sm font-medium text-gray-900">{user?.name || 'ผู้ใช้'}</p>
                   <p className="text-xs text-orange-600 capitalize">
-                    {user?.role === 'STAFF' ? 'เจ้าหน้าที่' : 'อาจารย์'}
+                    {user?.role === 'ADMIN' ? 'เจ้าหน้าที่' : 'อาจารย์'}
                   </p>
                 </div>
               </button>
@@ -71,7 +71,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
                   <div className="px-4 py-2 border-b border-orange-100">
                     <p className="text-sm font-medium text-gray-900">{user?.email}</p>
                     <p className="text-xs text-orange-600">
-                      {user?.role === 'STAFF' ? '🔧 เจ้าหน้าที่' : '👨‍🏫 อาจารย์'}
+                      {user?.role === 'ADMIN' ? '🔧 เจ้าหน้าที่' : '👨‍🏫 อาจารย์'}
                     </p>
                   </div>
                   

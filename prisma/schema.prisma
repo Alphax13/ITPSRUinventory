@@ -14,7 +14,7 @@ datasource db {
 
 // Enum สำหรับ Role ของ User
 enum Role {
-  STAFF
+  ADMIN
   LECTURER
 }
 
@@ -43,10 +43,15 @@ enum RequestStatus {
 // Model สำหรับผู้ใช้งาน
 model User {
   id              String            @id @default(cuid())
-  email           String            @unique
+  email           String?           @unique // เปลี่ยนเป็น optional เพื่อ backward compatibility
+  username        String            @unique
+  password        String
   name            String
   role            Role              @default(LECTURER)
-  department      String?
+  department      String            @default("Information Technology")
+  isActive        Boolean           @default(true)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
   
   // ความสัมพันธ์กับการทำรายการวัสดุสิ้นเปลือง
   consumableTransactions ConsumableTransaction[] @relation("ConsumableTransactions")

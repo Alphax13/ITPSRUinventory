@@ -1,26 +1,73 @@
 // src/app/api/transactions/route.ts
 import { NextResponse } from 'next/server';
-import { PrismaClient, TransactionType } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { TransactionType } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 
 // GET: ดึงประวัติการทำรายการทั้งหมด
 export async function GET() {
   try {
-    const transactions = await prisma.transaction.findMany({
-      orderBy: {
-        createdAt: 'desc',
-      },
-      include: {
-        user: {
-          select: { name: true, department: true },
+    // ดึงข้อมูลจากทั้ง ConsumableTransaction และ Transaction (legacy)
+    const [consumableTransactions, legacyTransactions] = await Promise.all([
+      prisma.consumableTransaction.findMany({
+        orderBy: {
+          createdAt: 'desc',
         },
+        include: {
+          user: {
+            select: { name: true, department: true },
+          },
+          consumableMaterial: {
+            select: { name: true, unit: true, category: true },
+          },
+        },
+      }),
+      prisma.transaction.findMany({
+        orderBy: {
+          createdAt: 'desc',
+        },
+        include: {
+          user: {
+            select: { name: true, department: true },
+          },
+          material: {
+            select: { name: true, code: true, unit: true },
+          },
+        },
+      })
+    ]);
+
+    // รวมข้อมูลและปรับโครงสร้างให้เหมือนกัน
+    const allTransactions = [
+      ...consumableTransactions.map(tx => ({
+        id: tx.id,
+        quantity: tx.quantity,
+        type: tx.type,
+        reason: tx.note,
+        createdAt: tx.createdAt.toISOString(),
+        user: tx.user,
         material: {
-          select: { name: true, code: true, unit: true },
+          name: tx.consumableMaterial.name,
+          code: `CON-${tx.consumableMaterialId.slice(-6)}`, // สร้างรหัสชั่วคราว
+          unit: tx.consumableMaterial.unit,
         },
-      },
-    });
-    return NextResponse.json(transactions, { status: 200 });
+        source: 'consumable' as const
+      })),
+      ...legacyTransactions.map(tx => ({
+        id: tx.id,
+        quantity: tx.quantity,
+        type: tx.type,
+        reason: tx.reason,
+        createdAt: tx.createdAt.toISOString(),
+        user: tx.user,
+        material: tx.material,
+        source: 'legacy' as const
+      }))
+    ];
+
+    // เรียงลำดับตามวันที่ล่าสุดก่อน
+    allTransactions.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    return NextResponse.json(allTransactions, { status: 200 });
   } catch (error) {
     console.error('Error fetching transactions:', error);
     return NextResponse.json({ error: 'Failed to fetch transaction history' }, { status: 500 });
