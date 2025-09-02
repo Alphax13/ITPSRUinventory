@@ -2,18 +2,21 @@
 'use client';
 
 import { useAuthStore } from '@/stores/authStore';
-import { Bars3Icon, BellIcon, UserCircleIcon } from '@heroicons/react/24/outline';
+import { useRouter } from 'next/navigation';
+import { Bars3Icon, UserCircleIcon } from '@heroicons/react/24/outline';
+import NotificationDropdown from './NotificationDropdown';
 
 interface NavbarProps {
   onMenuClick: () => void;
 }
 
 export default function Navbar({ onMenuClick }: NavbarProps) {
-  const { user, logout } = useAuthStore();
+  const { user, logout, isLoading } = useAuthStore();
+  const router = useRouter();
 
-  const handleLogout = () => {
-    logout();
-    window.location.href = '/login';
+  const handleLogout = async () => {
+    await logout();
+    router.replace('/login');
   };
 
   return (
@@ -47,11 +50,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
           {/* Right side - notifications and user menu */}
           <div className="flex items-center gap-4">
             {/* Notifications */}
-            <button className="relative p-2 text-orange-600 hover:text-orange-700 hover:bg-orange-50 rounded-lg transition-colors duration-200">
-              <BellIcon className="h-6 w-6" />
-              {/* Notification badge */}
-              <span className="absolute top-1 right-1 h-3 w-3 bg-red-500 rounded-full text-xs"></span>
-            </button>
+            <NotificationDropdown />
 
             {/* User menu */}
             <div className="relative group">
@@ -77,9 +76,10 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
                   
                   <button
                     onClick={handleLogout}
-                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors duration-200"
+                    disabled={isLoading}
+                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    🚪 ออกจากระบบ
+                    {isLoading ? '🔄 กำลังออกจากระบบ...' : '🚪 ออกจากระบบ'}
                   </button>
                 </div>
               </div>

@@ -62,6 +62,9 @@ model User {
   // ความสัมพันธ์เดิม (สำหรับ backward compatibility)
   transactions    Transaction[]
   purchaseRequests PurchaseRequest[]
+  
+  // ความสัมพันธ์กับการแจ้งเตือน
+  notifications   Notification[]
 }
 
 // Model สำหรับวัสดุสิ้นเปลือง (ไม่มีรหัสสินค้า)
@@ -186,6 +189,33 @@ model Transaction {
   user        User            @relation(fields: [userId], references: [id])
   materialId  String?         // เปลี่ยนเป็น optional สำหรับกรณีวัสดุถูกลบแล้ว
   material    Material?       @relation(fields: [materialId], references: [id])
+}
+
+// Model สำหรับระบบแจ้งเตือน
+model Notification {
+  id        String              @id @default(cuid())
+  userId    String
+  user      User                @relation(fields: [userId], references: [id])
+  title     String
+  message   String
+  type      NotificationType    @default(INFO)
+  isRead    Boolean             @default(false)
+  actionUrl String?             // URL สำหรับ action หากมี
+  metadata  Json?               // ข้อมูลเพิ่มเติมใน JSON format
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+}
+
+// Enum สำหรับประเภทการแจ้งเตือน
+enum NotificationType {
+  INFO        // ข้อมูลทั่วไป
+  WARNING     // คำเตือน
+  ERROR       // ข้อผิดพลาด
+  SUCCESS     // สำเร็จ
+  LOW_STOCK   // สต็อกต่ำ
+  OVERDUE     // เกินกำหนด
+  MAINTENANCE // การบำรุงรักษา
+  REQUEST     // คำขอต่างๆ
 }
 
 // Model สำหรับคำขอซื้อ

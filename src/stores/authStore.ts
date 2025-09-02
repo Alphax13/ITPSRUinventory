@@ -14,9 +14,10 @@ interface User {
 interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
+  isLoading: boolean;
   login: (username: string, password: string) => Promise<boolean>;
   register: (username: string, password: string, name: string, role?: string) => Promise<boolean>;
-  logout: () => void;
+  logout: () => Promise<void>;
   setUser: (user: User) => void;
 }
 
@@ -25,6 +26,7 @@ export const useAuthStore = create<AuthState>()(
     (set) => ({
       user: null,
       isAuthenticated: false,
+      isLoading: false,
 
       login: async (username: string, password: string) => {
         try {
@@ -76,15 +78,23 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      logout: () => {
-        // เรียก logout API เพื่อลบ cookie
-        fetch('/api/auth/logout', {
-          method: 'POST',
-        }).catch(console.error);
+      logout: async () => {
+        set({ isLoading: true });
         
+        try {
+          // เรียก logout API เพื่อลบ cookie
+          await fetch('/api/auth/logout', {
+            method: 'POST',
+          });
+        } catch (error) {
+          console.error('Logout API error:', error);
+        }
+        
+        // Clear user state
         set({ 
           user: null,
-          isAuthenticated: false
+          isAuthenticated: false,
+          isLoading: false
         });
       },
 

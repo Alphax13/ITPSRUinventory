@@ -67,6 +67,12 @@ const navigation = [
     roles: ['ADMIN', 'LECTURER'] 
   },
   { 
+    name: 'การแจ้งเตือน', 
+    href: '/dashboard/notifications', 
+    icon: '🔔', 
+    roles: ['ADMIN', 'LECTURER'] 
+  },
+  { 
     name: 'รายงาน', 
     href: '/dashboard/reports', 
     icon: '📄', 
@@ -83,11 +89,11 @@ const navigation = [
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, logout } = useAuthStore();
+  const { user, logout, isLoading } = useAuthStore();
 
-  const handleLogout = () => {
-    logout();
-    router.push('/login');
+  const handleLogout = async () => {
+    await logout();
+    router.replace('/login');
   };
 
   const filteredNavigation = navigation.filter(item => 
@@ -157,10 +163,11 @@ export default function Sidebar() {
         <div className="p-6 border-t border-orange-200 bg-gradient-to-r from-orange-50 to-white">
           <button
             onClick={handleLogout}
-            className="w-full flex items-center justify-center gap-3 py-4 px-4 bg-gradient-to-r from-red-400 to-red-500 hover:from-red-500 hover:to-red-600 text-white font-bold rounded-xl transition-all duration-300 shadow-sm hover:shadow-md hover:transform hover:scale-105"
+            disabled={isLoading}
+            className="w-full flex items-center justify-center gap-3 py-4 px-4 bg-gradient-to-r from-red-400 to-red-500 hover:from-red-500 hover:to-red-600 text-white font-bold rounded-xl transition-all duration-300 shadow-sm hover:shadow-md hover:transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
           >
-            <span className="text-lg">🚪</span>
-            <span>ออกจากระบบ</span>
+            <span className="text-lg">{isLoading ? '🔄' : '🚪'}</span>
+            <span>{isLoading ? 'กำลังออกจากระบบ...' : 'ออกจากระบบ'}</span>
           </button>
         </div>
       </div>

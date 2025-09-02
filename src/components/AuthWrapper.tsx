@@ -27,16 +27,12 @@ export default function AuthWrapper({ children }: AuthWrapperProps) {
     const isPublicPath = publicPaths.includes(pathname);
     const hasUser = !!user;
 
-    // ใช้ timeout เพื่อป้องกัน race condition
-    const timer = setTimeout(() => {
-      if (!hasUser && !isPublicPath) {
-        router.replace('/login');
-      } else if (hasUser && pathname === '/login') {
-        router.replace('/dashboard');
-      }
-    }, 100);
-
-    return () => clearTimeout(timer);
+    // Redirect logic - ใช้ immediate redirect แทน timeout
+    if (!hasUser && !isPublicPath) {
+      router.replace('/login');
+    } else if (hasUser && pathname === '/login') {
+      router.replace('/dashboard');
+    }
   }, [user, pathname, router, isClient]);
 
   // รอให้ client-side rendering เสร็จก่อน
