@@ -35,6 +35,7 @@ interface BorrowRecord {
 export default function AssetBorrowsPage() {
   const [borrows, setBorrows] = useState<BorrowRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [showDetails, setShowDetails] = useState<string | null>(null);
   const [showImageModal, setShowImageModal] = useState<string | null>(null);
@@ -45,17 +46,34 @@ export default function AssetBorrowsPage() {
   useEffect(() => {
     const loadBorrows = async () => {
       try {
+        setLoading(true);
+        setError(null);
         const url = statusFilter === 'ALL' 
           ? '/api/assets/borrow' 
           : `/api/assets/borrow?status=${statusFilter}`;
         
-        const response = await fetch(url);
-        if (response.ok) {
-          const data = await response.json();
-          setBorrows(data);
+        const response = await fetch(url, {
+          method: 'GET',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('API Error:', response.status, errorText);
+          setError(`ไม่สามารถโหลดข้อมูลได้ (${response.status}): ${errorText}`);
+          return;
         }
+        
+        const data = await response.json();
+        setBorrows(data);
       } catch (error) {
         console.error('Error fetching borrows:', error);
+        setError('เกิดข้อผิดพลาดในการโหลดข้อมูล');
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -129,8 +147,49 @@ export default function AssetBorrowsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">การยืมคืนครุภัณฑ์</h1>
+            <p className="text-gray-600 mt-1">ติดตามและจัดการการยืมคืนครุภัณฑ์</p>
+          </div>
+        </div>
+        <div className="bg-white rounded-lg shadow p-8">
+          <div className="flex flex-col items-center justify-center space-y-4">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            <p className="text-gray-600">กำลังโหลดข้อมูล...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">การยืมคืนครุภัณฑ์</h1>
+            <p className="text-gray-600 mt-1">ติดตามและจัดการการยืมคืนครุภัณฑ์</p>
+          </div>
+        </div>
+        <div className="bg-white rounded-lg shadow p-8">
+          <div className="text-center">
+            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+              <svg className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">เกิดข้อผิดพลาด</h3>
+            <p className="text-gray-600 mb-4">{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+            >
+              โหลดใหม่
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
