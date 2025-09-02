@@ -43,13 +43,19 @@ export default function PurchaseRequestsPage() {
 
   const fetchRequests = async () => {
     try {
-      const response = await fetch('/api/purchase-requests');
+      const response = await fetch('/api/purchase-requests', {
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
       if (response.ok) {
         const data = await response.json();
         setRequests(data);
       } else if (response.status === 401) {
         console.error('Unauthorized access to purchase requests');
-        alert('ไม่สามารถเข้าถึงข้อมูลได้ กรุณาเข้าสู่ระบบใหม่');
+        window.location.href = '/login';
+        return;
       } else {
         console.error('Failed to fetch requests, status:', response.status);
         alert('เกิดข้อผิดพลาดในการโหลดข้อมูล');

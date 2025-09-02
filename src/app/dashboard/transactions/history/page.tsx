@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { th } from 'date-fns/locale';
 import { useAuthStore } from '@/stores/authStore';
+import ApiClient from '@/utils/apiClient';
 
 interface Transaction {
   id: string;
@@ -40,19 +41,29 @@ export default function TransactionHistoryPage() {
   const fetchTransactions = async () => {
     try {
       console.log('Fetching transaction history...');
-      const res = await fetch('/api/transactions');
-      if (res.ok) {
-        const data = await res.json();
-        console.log('Transaction history received:', data);
-        console.log('Number of transactions:', data.length);
-        setTransactions(data);
-      } else {
-        console.error('Failed to fetch transaction history, status:', res.status);
-        const errorData = await res.json();
-        console.error('Error data:', errorData);
-      }
+      setLoading(true);
+      
+      const response = await ApiClient.get('/api/transactions');
+      const data = await response.json();
+      
+      console.log('Transaction history received:', data);
+      console.log('Number of transactions:', data.length);
+      setTransactions(data);
+      
     } catch (error) {
       console.error('Failed to fetch transactions:', error);
+      
+      // แสดง error message ที่เหมาะสม
+      if (error instanceof Error) {
+        if (error.message === 'Unauthorized') {
+          // ApiClient จะ redirect ไปหน้า login อัตโนมัติ
+          return;
+        } else {
+          alert(`เกิดข้อผิดพลาด: ${error.message}`);
+        }
+      } else {
+        alert('เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์');
+      }
     } finally {
       setLoading(false);
     }
