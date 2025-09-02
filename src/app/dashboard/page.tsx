@@ -118,7 +118,7 @@ export default function DashboardPage() {
       link: '/dashboard/fixed-assets'
     },
     {
-      title: 'คำขอรอพิจารณา',
+      title: 'คำขอรอพิจารณาซื้อ',
       value: data.pendingRequests,
       subtitle: 'คำขอซื้อใหม่',
       color: 'bg-gradient-to-r from-purple-400 to-purple-500',
@@ -205,15 +205,15 @@ export default function DashboardPage() {
               <p className="text-sm text-gray-600">ดู/ยืมครุภัณฑ์</p>
             </div>
           </Link>
-          {user?.role === 'ADMIN' && (
-            <Link href="/dashboard/purchase-requests" className="group">
-              <div className="border-2 border-dashed border-purple-200 hover:border-purple-400 hover:bg-purple-50 rounded-2xl p-6 text-center transition-all duration-300 group-hover:scale-105">
-                <div className="text-4xl mb-4 group-hover:scale-110 transition-transform">🛒</div>
-                <h3 className="font-bold text-gray-900 mb-2">คำขอซื้อ</h3>
-                <p className="text-sm text-gray-600">สร้างคำขอซื้อใหม่</p>
-              </div>
-            </Link>
-          )}
+
+          <Link href="/dashboard/purchase-requests" className="group">
+            <div className="border-2 border-dashed border-purple-200 hover:border-purple-400 hover:bg-purple-50 rounded-2xl p-6 text-center transition-all duration-300 group-hover:scale-105">
+              <div className="text-4xl mb-4 group-hover:scale-110 transition-transform">🛒</div>
+              <h3 className="font-bold text-gray-900 mb-2">คำขอซื้อ</h3>
+              <p className="text-sm text-gray-600">สร้างคำขอซื้อใหม่</p>
+            </div>
+          </Link>
+
           <Link href="/dashboard/transactions/history" className="group">
             <div className="border-2 border-dashed border-yellow-200 hover:border-yellow-400 hover:bg-yellow-50 rounded-2xl p-6 text-center transition-all duration-300 group-hover:scale-105">
               <div className="text-4xl mb-4 group-hover:scale-110 transition-transform">📊</div>
