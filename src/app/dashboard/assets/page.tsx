@@ -450,7 +450,7 @@ export default function AssetsPage() {
               className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="">ทั้งหมด</option>
-              <option value="AVAILABLE">พร้อมใช้งาน</option>
+              <option value="AVAILABLE">ว่าง</option>
               <option value="BORROWED">ถูกยืม</option>
             </select>
           </div>
@@ -854,7 +854,7 @@ export default function AssetsPage() {
                       </div>
                     ) : (
                       <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                        พร้อมใช้งาน
+                        ว่าง
                       </span>
                     )}
                   </td>
