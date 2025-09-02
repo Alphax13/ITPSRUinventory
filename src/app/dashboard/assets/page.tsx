@@ -532,7 +532,7 @@ export default function AssetsPage() {
               )}
               {filterStatus && (
                 <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                  สถานะ: {filterStatus === 'AVAILABLE' ? 'พร้อมใช้งาน' : 'ถูกยืม'}
+                  สถานะ: {filterStatus === 'AVAILABLE' ? 'ว่าง' : 'ถูกยืม'}
                   <button
                     onClick={() => setFilterStatus('')}
                     className="ml-1 hover:text-purple-600"
