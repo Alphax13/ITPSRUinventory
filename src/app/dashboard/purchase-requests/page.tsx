@@ -60,32 +60,65 @@ export default function PurchaseRequestsPage() {
       alert('กรุณาเข้าสู่ระบบก่อนส่งคำขอ');
       return;
     }
+
+    // Validate that there's at least one item with a name
+    const validItems = formData.items.filter(item => item.name.trim() !== '');
+    if (validItems.length === 0) {
+      alert('กรุณาเพิ่มรายการสินค้าอย่างน้อย 1 รายการ');
+      return;
+    }
     
     setLoading(true);
 
     try {
+      const requestBody = {
+        requesterId: user.id,
+        items: validItems,
+        reason: formData.reason,
+      };
+
+      console.log('Sending purchase request:', requestBody);
+
       const response = await fetch('/api/purchase-requests', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          requesterId: user?.id,
-          items: formData.items.filter(item => item.name.trim() !== ''),
-          reason: formData.reason,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
+      const responseText = await response.text();
+      console.log('Purchase request response:', response.status, responseText);
+
       if (response.ok) {
-        setFormData({
-          items: [{ name: '', quantity: 1, imageUrl: '' }],
-          reason: '',
-        });
-        setShowForm(false);
-        fetchRequests();
+        try {
+          const data = JSON.parse(responseText);
+          console.log('Purchase request created successfully:', data);
+          
+          setFormData({
+            items: [{ name: '', quantity: 1, imageUrl: '' }],
+            reason: '',
+          });
+          setShowForm(false);
+          fetchRequests();
+          alert('ส่งคำขอจัดซื้อเรียบร้อยแล้ว');
+        } catch (parseError) {
+          console.error('Failed to parse JSON response:', parseError);
+          alert('เกิดข้อผิดพลาดในการประมวลผลข้อมูลจากเซิร์ฟเวอร์');
+        }
+      } else {
+        console.error('Request failed with status:', response.status);
+        try {
+          const errorData = JSON.parse(responseText);
+          alert('เกิดข้อผิดพลาดในการส่งคำขอ: ' + (errorData.error || 'Unknown error'));
+        } catch (parseError) {
+          alert('เกิดข้อผิดพลาดในการส่งคำขอ (HTTP ' + response.status + ')');
+        }
       }
     } catch (error) {
       console.error('Error creating request:', error);
+      const errorMessage = error instanceof Error ? error.message : 'ไม่ทราบสาเหตุ';
+      alert('เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + errorMessage);
     } finally {
       setLoading(false);
     }
@@ -132,24 +165,42 @@ export default function PurchaseRequestsPage() {
     setUploadingImages(prev => ({ ...prev, [index]: true }));
 
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('folder', 'purchase-requests');
+      const uploadFormData = new FormData();
+      uploadFormData.append('file', file);
+      uploadFormData.append('folder', 'purchase-requests');
+
+      console.log('Uploading file:', file.name, 'Size:', file.size, 'Type:', file.type);
 
       const response = await fetch('/api/upload', {
         method: 'POST',
-        body: formData,
+        body: uploadFormData,
       });
 
+      const responseText = await response.text();
+      console.log('Upload response:', response.status, responseText);
+
       if (response.ok) {
-        const data = await response.json();
-        updateItem(index, 'imageUrl', data.url);
+        try {
+          const data = JSON.parse(responseText);
+          console.log('Upload success:', data);
+          updateItem(index, 'imageUrl', data.url);
+        } catch (parseError) {
+          console.error('Failed to parse JSON response:', parseError);
+          alert('เกิดข้อผิดพลาดในการประมวลผลข้อมูลจากเซิร์ฟเวอร์');
+        }
       } else {
-        alert('เกิดข้อผิดพลาดในการอัปโหลดรูปภาพ');
+        console.error('Upload failed with status:', response.status);
+        try {
+          const errorData = JSON.parse(responseText);
+          alert('เกิดข้อผิดพลาดในการอัปโหลดรูปภาพ: ' + (errorData.error || 'Unknown error'));
+        } catch (parseError) {
+          alert('เกิดข้อผิดพลาดในการอัปโหลดรูปภาพ (HTTP ' + response.status + ')');
+        }
       }
     } catch (error) {
       console.error('Error uploading image:', error);
-      alert('เกิดข้อผิดพลาดในการอัปโหลดรูปภาพ');
+      const errorMessage = error instanceof Error ? error.message : 'ไม่ทราบสาเหตุ';
+      alert('เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + errorMessage);
     } finally {
       setUploadingImages(prev => ({ ...prev, [index]: false }));
     }
@@ -224,6 +275,61 @@ export default function PurchaseRequestsPage() {
     } catch (error) {
       console.error('Error updating status:', error);
       alert('เกิดข้อผิดพลาดในการอัปเดตสถานะ');
+    } finally {
+      setProcessingStatus(prev => ({ ...prev, [requestId]: false }));
+    }
+  };
+
+  const handleDelete = async (requestId: string) => {
+    if (!user?.id) {
+      alert('กรุณาเข้าสู่ระบบก่อน');
+      return;
+    }
+
+    console.log('User data:', user);
+    console.log('User role:', user.role);
+
+    if (user.role !== 'ADMIN') {
+      alert('คุณไม่มีสิทธิ์ในการลบคำขอ');
+      return;
+    }
+
+    if (!confirm('คุณต้องการลบคำขอนี้หรือไม่? การดำเนินการนี้ไม่สามารถย้อนกลับได้')) {
+      return;
+    }
+
+    setProcessingStatus(prev => ({ ...prev, [requestId]: true }));
+
+    try {
+      const requestBody = {
+        adminId: user.id,
+      };
+      
+      console.log('Sending delete request:', requestBody);
+
+      const response = await fetch(`/api/purchase-requests/${requestId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
+
+      if (response.ok) {
+        // ลบรายการออกจากตาราง
+        setRequests(prev => prev.filter(request => request.id !== requestId));
+        alert('ลบคำขอเรียบร้อยแล้ว');
+      } else {
+        const error = await response.json();
+        console.log('Error response:', error);
+        alert('เกิดข้อผิดพลาด: ' + error.error);
+      }
+    } catch (error) {
+      console.error('Error deleting request:', error);
+      alert('เกิดข้อผิดพลาดในการลบคำขอ');
     } finally {
       setProcessingStatus(prev => ({ ...prev, [requestId]: false }));
     }
@@ -490,42 +596,60 @@ export default function PurchaseRequestsPage() {
                   </td>
                   {user?.role === 'ADMIN' && (
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      {request.status === 'PENDING' ? (
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleStatusUpdate(request.id, 'APPROVED')}
-                            disabled={processingStatus[request.id]}
-                            className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-lg text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
-                          >
-                            {processingStatus[request.id] ? (
-                              <div className="animate-spin w-3 h-3 border-2 border-white border-t-transparent rounded-full"></div>
-                            ) : (
-                              <>
-                                <span>✓</span>
-                                อนุมัติ
-                              </>
-                            )}
-                          </button>
-                          <button
-                            onClick={() => handleStatusUpdate(request.id, 'REJECTED')}
-                            disabled={processingStatus[request.id]}
-                            className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
-                          >
-                            {processingStatus[request.id] ? (
-                              <div className="animate-spin w-3 h-3 border-2 border-white border-t-transparent rounded-full"></div>
-                            ) : (
-                              <>
-                                <span>✕</span>
-                                ปฏิเสธ
-                              </>
-                            )}
-                          </button>
-                        </div>
-                      ) : (
-                        <span className="text-gray-400 text-xs">
-                          {request.status === 'APPROVED' ? 'อนุมัติแล้ว' : 'ปฏิเสธแล้ว'}
-                        </span>
-                      )}
+                      <div className="flex gap-2 items-center">
+                        {request.status === 'PENDING' ? (
+                          <>
+                            <button
+                              onClick={() => handleStatusUpdate(request.id, 'APPROVED')}
+                              disabled={processingStatus[request.id]}
+                              className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-lg text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                            >
+                              {processingStatus[request.id] ? (
+                                <div className="animate-spin w-3 h-3 border-2 border-white border-t-transparent rounded-full"></div>
+                              ) : (
+                                <>
+                                  <span>✓</span>
+                                  อนุมัติ
+                                </>
+                              )}
+                            </button>
+                            <button
+                              onClick={() => handleStatusUpdate(request.id, 'REJECTED')}
+                              disabled={processingStatus[request.id]}
+                              className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded-lg text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                            >
+                              {processingStatus[request.id] ? (
+                                <div className="animate-spin w-3 h-3 border-2 border-white border-t-transparent rounded-full"></div>
+                              ) : (
+                                <>
+                                  <span>✕</span>
+                                  ปฏิเสธ
+                                </>
+                              )}
+                            </button>
+                          </>
+                        ) : (
+                          <span className="text-gray-400 text-xs">
+                            {request.status === 'APPROVED' ? 'อนุมัติแล้ว' : 'ปฏิเสธแล้ว'}
+                          </span>
+                        )}
+                        
+                        <button
+                          onClick={() => handleDelete(request.id)}
+                          disabled={processingStatus[request.id]}
+                          className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 ml-2"
+                          title="ลบคำขอ"
+                        >
+                          {processingStatus[request.id] ? (
+                            <div className="animate-spin w-3 h-3 border-2 border-white border-t-transparent rounded-full"></div>
+                          ) : (
+                            <>
+                              <span>🗑️</span>
+                              ลบ
+                            </>
+                          )}
+                        </button>
+                      </div>
                     </td>
                   )}
                 </tr>

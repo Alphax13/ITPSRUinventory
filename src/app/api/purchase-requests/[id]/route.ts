@@ -82,3 +82,60 @@ export async function GET(
     }, { status: 500 });
   }
 }
+
+// DELETE: ลบคำขอซื้อ (เฉพาะ Admin เท่านั้น)
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const body = await request.json();
+    const { adminId } = body;
+
+    console.log('DELETE request data:', { id, adminId, body });
+
+    // ตรวจสอบว่ามี adminId
+    if (!adminId) {
+      return NextResponse.json({ error: 'Admin ID is required' }, { status: 400 });
+    }
+
+    // ตรวจสอบว่า admin มีสิทธิ์หรือไม่
+    const admin = await prisma.user.findUnique({
+      where: { id: adminId },
+    });
+
+    console.log('Admin found:', admin ? { id: admin.id, role: admin.role, name: admin.name } : null);
+
+    if (!admin) {
+      return NextResponse.json({ error: 'Admin not found' }, { status: 404 });
+    }
+
+    if (admin.role !== 'ADMIN') {
+      console.log('User role mismatch:', admin.role, 'Expected: ADMIN');
+      return NextResponse.json({ error: 'Unauthorized - Admin access required' }, { status: 403 });
+    }
+
+    // ตรวจสอบว่าคำขอซื้อมีอยู่หรือไม่
+    const purchaseRequest = await prisma.purchaseRequest.findUnique({
+      where: { id },
+    });
+
+    if (!purchaseRequest) {
+      return NextResponse.json({ error: 'Purchase request not found' }, { status: 404 });
+    }
+
+    // ลบคำขอซื้อ
+    await prisma.purchaseRequest.delete({
+      where: { id },
+    });
+
+    console.log('Purchase request deleted successfully:', id);
+    return NextResponse.json({ message: 'Purchase request deleted successfully' }, { status: 200 });
+  } catch (error) {
+    console.error('Error deleting purchase request:', error);
+    return NextResponse.json({ 
+      error: 'Failed to delete purchase request: ' + (error as Error).message 
+    }, { status: 500 });
+  }
+}

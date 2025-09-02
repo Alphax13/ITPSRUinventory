@@ -22,7 +22,7 @@ export default function ConsumableFormModal({ onClose, onSave, editingConsumable
     name: '',
     category: '',
     unit: 'ชิ้น',
-    minStock: 10,
+    minStock: 2,
     currentStock: 0,
     location: '',
     imageUrl: '',
