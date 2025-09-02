@@ -54,7 +54,7 @@ export default function TransactionHistoryPage() {
       // Debug: ตรวจสอบข้อมูล imageUrl
       if (data.length > 0) {
         console.log('Sample transaction material data:', data[0].material);
-        data.forEach((tx, index) => {
+        data.forEach((tx: Transaction, index: number) => {
           if (tx.material.imageUrl) {
             console.log(`Transaction ${index}: ${tx.material.name} has imageUrl:`, tx.material.imageUrl);
           } else {
