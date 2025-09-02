@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { useState } from 'react';
 
 interface SafeImageProps {
-  src: string;
+  src: string | undefined | null;
   alt: string;
   width: number;
   height: number;
@@ -27,6 +27,9 @@ export default function SafeImage({ src, alt, width, height, className, onError,
     }
   };
 
+  // ใช้ fallback image หาก src ไม่มีค่า
+  const imageSrc = src || '/placeholder-material.svg';
+
   const handleError = () => {
     setError(true);
     if (onError) {
@@ -35,7 +38,7 @@ export default function SafeImage({ src, alt, width, height, className, onError,
   };
 
   const handleLoad = () => {
-    setIsExternal(checkIfExternal(src));
+    setIsExternal(checkIfExternal(imageSrc));
   };
 
   if (error) {
@@ -54,12 +57,12 @@ export default function SafeImage({ src, alt, width, height, className, onError,
 
   return (
     <Image
-      src={src}
+      src={imageSrc}
       alt={alt}
       width={width}
       height={height}
       className={className}
-      unoptimized={isExternal || checkIfExternal(src)}
+      unoptimized={isExternal || checkIfExternal(imageSrc)}
       onError={handleError}
       onLoad={handleLoad}
       onClick={onClick}

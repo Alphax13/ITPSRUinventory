@@ -6,6 +6,7 @@ import { format } from 'date-fns';
 import { th } from 'date-fns/locale';
 import { useAuthStore } from '@/stores/authStore';
 import ApiClient from '@/utils/apiClient';
+import SafeImage from '@/components/SafeImage';
 
 interface Transaction {
   id: string;
@@ -21,6 +22,7 @@ interface Transaction {
     name: string;
     code: string;
     unit: string;
+    imageUrl?: string;
   };
   source?: 'consumable' | 'legacy';
 }
@@ -48,6 +50,19 @@ export default function TransactionHistoryPage() {
       
       console.log('Transaction history received:', data);
       console.log('Number of transactions:', data.length);
+      
+      // Debug: ตรวจสอบข้อมูล imageUrl
+      if (data.length > 0) {
+        console.log('Sample transaction material data:', data[0].material);
+        data.forEach((tx, index) => {
+          if (tx.material.imageUrl) {
+            console.log(`Transaction ${index}: ${tx.material.name} has imageUrl:`, tx.material.imageUrl);
+          } else {
+            console.log(`Transaction ${index}: ${tx.material.name} has no imageUrl`);
+          }
+        });
+      }
+      
       setTransactions(data);
       
     } catch (error) {
@@ -229,18 +244,31 @@ export default function TransactionHistoryPage() {
                       </span>
                     </td>
                     <td className="p-4 text-sm">
-                      <div className="font-medium text-gray-900">{tx.material.name}</div>
-                      <div className="text-xs text-gray-500 flex items-center space-x-2">
-                        <span>{tx.material.code}</span>
-                        {tx.source && (
-                          <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${
-                            tx.source === 'consumable' 
-                              ? 'bg-blue-100 text-blue-800' 
-                              : 'bg-gray-100 text-gray-800'
-                          }`}>
-                            {tx.source === 'consumable' ? '🧴 วัสดุสิ้นเปลือง' : '📦 วัสดุทั่วไป'}
-                          </span>
-                        )}
+                      <div className="flex items-center space-x-3">
+                        <div className="flex-shrink-0">
+                          <SafeImage
+                            src={tx.material.imageUrl || '/placeholder-material.svg'}
+                            alt={tx.material.name}
+                            width={40}
+                            height={40}
+                            className="rounded-lg object-cover"
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-gray-900">{tx.material.name}</div>
+                          <div className="text-xs text-gray-500 flex items-center space-x-2">
+                            <span>{tx.material.code}</span>
+                            {tx.source && (
+                              <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${
+                                tx.source === 'consumable' 
+                                  ? 'bg-blue-100 text-blue-800' 
+                                  : 'bg-gray-100 text-gray-800'
+                              }`}>
+                                {tx.source === 'consumable' ? '🧴 วัสดุสิ้นเปลือง' : '📦 วัสดุทั่วไป'}
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     </td>
                     <td className="p-4 text-sm">

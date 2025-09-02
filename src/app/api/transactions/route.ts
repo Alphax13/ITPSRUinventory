@@ -32,7 +32,7 @@ export async function GET() {
             select: { name: true, department: true },
           },
           consumableMaterial: {
-            select: { name: true, unit: true, category: true },
+            select: { name: true, unit: true, category: true, imageUrl: true },
           },
         },
       }),
@@ -46,7 +46,7 @@ export async function GET() {
             select: { name: true, department: true },
           },
           material: {
-            select: { name: true, code: true, unit: true },
+            select: { name: true, code: true, unit: true, imageUrl: true },
           },
         },
       })
@@ -65,6 +65,7 @@ export async function GET() {
           name: tx.consumableMaterial.name,
           code: `CON-${tx.consumableMaterialId.slice(-6)}`, // สร้างรหัสชั่วคราว
           unit: tx.consumableMaterial.unit,
+          imageUrl: tx.consumableMaterial.imageUrl,
         },
         source: 'consumable' as const
       })),
