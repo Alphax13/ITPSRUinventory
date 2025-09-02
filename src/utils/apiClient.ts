@@ -1,7 +1,5 @@
 // src/utils/apiClient.ts
-interface ApiClientOptions extends RequestInit {
-  // Future options can be added here
-}
+type ApiClientOptions = RequestInit;
 
 export class ApiClient {
   private static async handleResponse(response: Response) {

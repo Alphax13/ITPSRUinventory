@@ -5,11 +5,13 @@ import { prisma } from '@/lib/prisma';
 // GET: ดึงข้อมูลการยืมเฉพาะ ID
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
+    
     const borrow = await prisma.assetBorrow.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         fixedAsset: true,
         user: {
@@ -37,9 +39,10 @@ export async function GET(
 // PUT: อัปเดตการยืม (คืนครุภัณฑ์หรือแก้ไขข้อมูล)
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const body = await request.json();
     const { 
       status, 
@@ -50,7 +53,7 @@ export async function PUT(
     } = body;
 
     const borrow = await prisma.assetBorrow.findUnique({
-      where: { id: params.id }
+      where: { id }
     });
 
     if (!borrow) {
@@ -71,7 +74,7 @@ export async function PUT(
     }
 
     const updatedBorrow = await prisma.assetBorrow.update({
-      where: { id: params.id },
+      where: { id },
       data: updateData,
       include: {
         fixedAsset: {
@@ -102,11 +105,13 @@ export async function PUT(
 // DELETE: ลบรายการยืม (เฉพาะกรณีที่ยังไม่ได้คืน)
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
+    
     const borrow = await prisma.assetBorrow.findUnique({
-      where: { id: params.id }
+      where: { id }
     });
 
     if (!borrow) {
@@ -120,7 +125,7 @@ export async function DELETE(
     }
 
     await prisma.assetBorrow.delete({
-      where: { id: params.id }
+      where: { id }
     });
 
     return NextResponse.json({ message: 'Borrow record deleted successfully' }, { status: 200 });
