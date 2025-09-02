@@ -258,15 +258,6 @@ export default function TransactionHistoryPage() {
                           <div className="font-medium text-gray-900">{tx.material.name}</div>
                           <div className="text-xs text-gray-500 flex items-center space-x-2">
                             <span>{tx.material.code}</span>
-                            {tx.source && (
-                              <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${
-                                tx.source === 'consumable' 
-                                  ? 'bg-blue-100 text-blue-800' 
-                                  : 'bg-gray-100 text-gray-800'
-                              }`}>
-                                {tx.source === 'consumable' ? '🧴 วัสดุสิ้นเปลือง' : '📦 วัสดุทั่วไป'}
-                              </span>
-                            )}
                           </div>
                         </div>
                       </div>
