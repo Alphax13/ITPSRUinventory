@@ -2,13 +2,28 @@
 import { NextResponse } from 'next/server';
 import { TransactionType } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
+import { cookies } from 'next/headers';
 
-// GET: ดึงประวัติการทำรายการทั้งหมด
-export async function GET() {
+// GET: ดึงประวัติการทำรายการ (ผู้ใช้เห็นเฉพาะของตัวเอง, ADMIN เห็นทั้งหมด)
+export async function GET(request: Request) {
   try {
+    const cookieStore = await cookies();
+    const userCookie = cookieStore.get('user')?.value;
+    
+    if (!userCookie) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const currentUser = JSON.parse(userCookie);
+    const isAdmin = currentUser.role === 'ADMIN';
+
+    // สร้าง where condition สำหรับการกรองข้อมูล
+    const userFilter = isAdmin ? {} : { userId: currentUser.id };
+
     // ดึงข้อมูลจากทั้ง ConsumableTransaction และ Transaction (legacy)
     const [consumableTransactions, legacyTransactions] = await Promise.all([
       prisma.consumableTransaction.findMany({
+        where: userFilter,
         orderBy: {
           createdAt: 'desc',
         },
@@ -22,6 +37,7 @@ export async function GET() {
         },
       }),
       prisma.transaction.findMany({
+        where: userFilter,
         orderBy: {
           createdAt: 'desc',
         },

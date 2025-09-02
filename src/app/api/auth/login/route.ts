@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
+import { cookies } from 'next/headers';
 
 export async function POST(request: Request) {
   try {
@@ -33,16 +34,28 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'รหัสผ่านไม่ถูกต้อง' }, { status: 401 });
     }
 
+    // สร้างข้อมูลผู้ใช้
+    const userData = {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      department: user.department,
+    };
+
+    // เซ็ต cookie สำหรับ session
+    const cookieStore = await cookies();
+    cookieStore.set('user', JSON.stringify(userData), {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7, // 7 วัน
+    });
+
     // ส่งข้อมูลผู้ใช้กลับ (ไม่รวม password)
     return NextResponse.json({
-      user: {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        name: user.name,
-        role: user.role,
-        department: user.department,
-      }
+      user: userData
     }, { status: 200 });
 
   } catch (error) {

@@ -47,9 +47,16 @@ export default function PurchaseRequestsPage() {
       if (response.ok) {
         const data = await response.json();
         setRequests(data);
+      } else if (response.status === 401) {
+        console.error('Unauthorized access to purchase requests');
+        alert('ไม่สามารถเข้าถึงข้อมูลได้ กรุณาเข้าสู่ระบบใหม่');
+      } else {
+        console.error('Failed to fetch requests, status:', response.status);
+        alert('เกิดข้อผิดพลาดในการโหลดข้อมูล');
       }
     } catch (error) {
       console.error('Error fetching requests:', error);
+      alert('เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์');
     }
   };
 
@@ -343,6 +350,17 @@ export default function PurchaseRequestsPage() {
           <div>
             <h1 className="text-3xl font-bold mb-2">🛒 คำขอจัดซื้อ</h1>
             <p className="text-blue-100">สร้างคำขอจัดซื้อวัสดุ อุปกรณ์ และครุภัณฑ์</p>
+            <div className="flex items-center gap-2 mt-2">
+              {user?.role === 'ADMIN' ? (
+                <span className="bg-yellow-500 text-white px-3 py-1 rounded-full text-sm font-medium">
+                  👑 ดูได้ทั้งหมด
+                </span>
+              ) : (
+                <span className="bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-medium">
+                  👤 เฉพาะของฉัน
+                </span>
+              )}
+            </div>
           </div>
           
           <button

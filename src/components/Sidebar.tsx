@@ -26,15 +26,21 @@ const navigation = [
   },
   { 
     name: 'จัดการครุภัณฑ์', 
-    href: '/dashboard/fixed-assets', 
+    href: '/dashboard/assets', 
     icon: '🏷️', 
     roles: ['ADMIN'] 
   },
   { 
     name: 'ดูครุภัณฑ์', 
-    href: '/dashboard/fixed-assets', 
+    href: '/dashboard/assets', 
     icon: '👀', 
     roles: ['LECTURER'] 
+  },
+  { 
+    name: 'ยืม-คืนครุภัณฑ์', 
+    href: '/dashboard/asset-borrows', 
+    icon: '🔄', 
+    roles: ['ADMIN', 'LECTURER'] 
   },
   { 
     name: 'เบิก-จ่ายวัสดุ', 

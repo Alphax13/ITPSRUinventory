@@ -77,6 +77,11 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: () => {
+        // เรียก logout API เพื่อลบ cookie
+        fetch('/api/auth/logout', {
+          method: 'POST',
+        }).catch(console.error);
+        
         set({ 
           user: null,
           isAuthenticated: false

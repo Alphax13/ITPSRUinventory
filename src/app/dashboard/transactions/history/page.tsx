@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { th } from 'date-fns/locale';
+import { useAuthStore } from '@/stores/authStore';
 
 interface Transaction {
   id: string;
@@ -28,6 +29,9 @@ export default function TransactionHistoryPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'ALL' | 'IN' | 'OUT'>('ALL');
   const [sortBy, setSortBy] = useState<'date' | 'user' | 'material'>('date');
+  const { user } = useAuthStore();
+
+  const isAdmin = user?.role === 'ADMIN';
 
   useEffect(() => {
     fetchTransactions();
@@ -99,11 +103,24 @@ export default function TransactionHistoryPage() {
     <div className="max-w-7xl mx-auto space-y-6">
       {/* Header */}
       <div className="text-center">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">📊 ประวัติการทำรายการ</h1>
-        <p className="text-gray-600">ดูประวัติการเบิก-จ่ายวัสดุทั้งหมด</p>
+        <div className="flex items-center justify-center space-x-2 mb-2">
+          <h1 className="text-2xl font-bold text-gray-900">📊 ประวัติการทำรายการ</h1>
+          {isAdmin && (
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+              ผู้ดูแลระบบ - เห็นทั้งหมด
+            </span>
+          )}
+        </div>
+        <p className="text-gray-600">
+          {isAdmin 
+            ? 'ดูประวัติการเบิก-จ่ายวัสดุทั้งหมดในระบบ' 
+            : 'ดูประวัติการเบิก-จ่ายวัสดุของคุณ'
+          }
+        </p>
         {transactions.length > 0 && (
           <p className="text-sm text-green-600 mt-1">
             ✅ โหลดประวัติรายการแล้ว {transactions.length} รายการ
+            {!isAdmin && ' (เฉพาะรายการของคุณ)'}
           </p>
         )}
       </div>
@@ -112,7 +129,9 @@ export default function TransactionHistoryPage() {
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <div className="bg-white rounded-lg shadow p-6 text-center">
           <div className="text-2xl font-bold text-blue-600">{stats.totalTransactions}</div>
-          <div className="text-gray-600">รายการทั้งหมด</div>
+          <div className="text-gray-600">
+            {isAdmin ? 'รายการทั้งหมด' : 'รายการของคุณ'}
+          </div>
         </div>
         <div className="bg-white rounded-lg shadow p-6 text-center">
           <div className="text-2xl font-bold text-green-600">{stats.inTransactions}</div>
@@ -223,6 +242,9 @@ export default function TransactionHistoryPage() {
                       {tx.user.department && (
                         <div className="text-xs text-gray-500">{tx.user.department}</div>
                       )}
+                      {!isAdmin && tx.user.name === user?.name && (
+                        <div className="text-xs text-blue-600 font-medium">คุณ</div>
+                      )}
                     </td>
                     <td className="p-4 text-sm text-gray-700">
                       {tx.reason || <span className="text-gray-400">-</span>}
@@ -233,7 +255,12 @@ export default function TransactionHistoryPage() {
               <tr>
                   <td colSpan={6} className="p-8 text-center text-gray-500">
                     <div className="text-4xl mb-2">📋</div>
-                    <div>ไม่พบประวัติการทำรายการ</div>
+                    <div>
+                      {isAdmin 
+                        ? 'ไม่พบประวัติการทำรายการในระบบ' 
+                        : 'คุณยังไม่มีประวัติการทำรายการ'
+                      }
+                    </div>
                     {filter !== 'ALL' && (
                       <div className="text-sm mt-1">ลองเปลี่ยนตัวกรองหรือล้างการค้นหา</div>
                     )}

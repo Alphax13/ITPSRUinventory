@@ -3,41 +3,152 @@
 
 import { useEffect, useState } from 'react';
 import { useAuthStore } from '@/stores/authStore';
+import SafeImage from '@/components/SafeImage';
+import AssetFormModal from './AssetFormModal';
 import type { Material } from '../materials/page';
 
 export interface Asset {
   id: string;
   assetNumber: string;
-  materialId: string;
+  name: string;
+  category: string;
+  brand?: string;
+  model?: string;
+  serialNumber?: string;
+  purchaseDate?: string;
+  purchasePrice?: number;
   location: string;
   condition: 'GOOD' | 'DAMAGED' | 'NEEDS_REPAIR' | 'DISPOSED';
+  imageUrl?: string;
+  description?: string;
   createdAt: string;
-  material: {
+  borrowHistory?: BorrowRecord[];
+}
+
+export interface BorrowRecord {
+  id: string;
+  borrowDate: string;
+  expectedReturnDate?: string;
+  actualReturnDate?: string;
+  purpose?: string;
+  note?: string;
+  status: 'BORROWED' | 'RETURNED' | 'OVERDUE' | 'LOST';
+  user: {
     name: string;
-    code: string;
-    category: string;
+    email?: string;
   };
 }
 
 export default function AssetsPage() {
   const [assets, setAssets] = useState<Asset[]>([]);
+  const [filteredAssets, setFilteredAssets] = useState<Asset[]>([]);
   const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
   const [showForm, setShowForm] = useState(false);
-  const [formData, setFormData] = useState({
-  assetNumber: '',
-  materialId: '',
-  location: '',
-  condition: 'GOOD' as Asset['condition'],
+  const [showBorrowForm, setShowBorrowForm] = useState(false);
+  const [showReturnForm, setShowReturnForm] = useState(false);
+  const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
+  const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
+  const [users, setUsers] = useState<any[]>([]);
+  const [borrows, setBorrows] = useState<BorrowRecord[]>([]);
+  const [showImageModal, setShowImageModal] = useState<string | null>(null);
+  
+  // Search and filter states
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterCategory, setFilterCategory] = useState('');
+  const [filterCondition, setFilterCondition] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
+  const [sortBy, setSortBy] = useState('assetNumber');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+
+  const [borrowFormData, setBorrowFormData] = useState({
+    userId: '',
+    expectedReturnDate: '',
+    purpose: '',
+    note: '',
   });
-  const [materials, setMaterials] = useState<Material[]>([]);
+  const [returnFormData, setReturnFormData] = useState({
+    borrowId: '',
+    condition: 'GOOD' as Asset['condition'],
+    note: '',
+  });
   const { user } = useAuthStore();
 
   const isAdmin = user?.role === 'ADMIN';
 
   useEffect(() => {
     fetchAssets();
-    fetchMaterials();
+    fetchUsers();
+    fetchBorrows();
   }, []);
+
+  // Filter and search effect
+  useEffect(() => {
+    let filtered = [...assets];
+
+    // Search by multiple fields
+    if (searchTerm) {
+      const lowercaseSearch = searchTerm.toLowerCase();
+      filtered = filtered.filter(asset => 
+        asset.name.toLowerCase().includes(lowercaseSearch) ||
+        asset.assetNumber.toLowerCase().includes(lowercaseSearch) ||
+        asset.category.toLowerCase().includes(lowercaseSearch) ||
+        asset.brand?.toLowerCase().includes(lowercaseSearch) ||
+        asset.model?.toLowerCase().includes(lowercaseSearch) ||
+        asset.serialNumber?.toLowerCase().includes(lowercaseSearch) ||
+        asset.location.toLowerCase().includes(lowercaseSearch)
+      );
+    }
+
+    // Filter by category
+    if (filterCategory) {
+      filtered = filtered.filter(asset => asset.category === filterCategory);
+    }
+
+    // Filter by condition
+    if (filterCondition) {
+      filtered = filtered.filter(asset => asset.condition === filterCondition);
+    }
+
+    // Filter by status (borrowed/available)
+    if (filterStatus) {
+      filtered = filtered.filter(asset => {
+        const currentBorrow = asset.borrowHistory?.find(b => b.status === 'BORROWED');
+        if (filterStatus === 'BORROWED') {
+          return !!currentBorrow;
+        } else if (filterStatus === 'AVAILABLE') {
+          return !currentBorrow;
+        }
+        return true;
+      });
+    }
+
+    // Sort the filtered results
+    const sorted = filtered.sort((a, b) => {
+      let aValue: any = a[sortBy as keyof Asset];
+      let bValue: any = b[sortBy as keyof Asset];
+
+      // Handle special cases
+      if (sortBy === 'purchasePrice') {
+        aValue = a.purchasePrice || 0;
+        bValue = b.purchasePrice || 0;
+      } else if (sortBy === 'purchaseDate') {
+        aValue = new Date(a.purchaseDate || '1970-01-01');
+        bValue = new Date(b.purchaseDate || '1970-01-01');
+      } else {
+        aValue = String(aValue || '').toLowerCase();
+        bValue = String(bValue || '').toLowerCase();
+      }
+
+      if (sortOrder === 'asc') {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    });
+
+    setFilteredAssets(sorted);
+  }, [assets, searchTerm, filterCategory, filterCondition, filterStatus, sortBy, sortOrder]);
 
   const fetchAssets = async () => {
     try {
@@ -53,43 +164,160 @@ export default function AssetsPage() {
     }
   };
 
-  const fetchMaterials = async () => {
+  const fetchUsers = async () => {
     try {
-      const response = await fetch('/api/materials');
+      const response = await fetch('/api/users');
       if (response.ok) {
         const data = await response.json();
-        setMaterials(data);
+        setUsers(data);
       }
     } catch (error) {
-      console.error('Error fetching materials:', error);
+      console.error('Error fetching users:', error);
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const fetchBorrows = async () => {
+    try {
+      const response = await fetch('/api/assets/borrow');
+      if (response.ok) {
+        const data = await response.json();
+        setBorrows(data);
+      }
+    } catch (error) {
+      console.error('Error fetching borrows:', error);
+    }
+  };
+
+  // Get unique categories for filter dropdown
+  const getUniqueCategories = () => {
+    const categories = assets.map(asset => asset.category);
+    return [...new Set(categories)].sort();
+  };
+
+  // Clear all filters
+  const clearFilters = () => {
+    setSearchTerm('');
+    setFilterCategory('');
+    setFilterCondition('');
+    setFilterStatus('');
+  };
+
+  // Handle sort
+  const handleSort = (field: string) => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(field);
+      setSortOrder('asc');
+    }
+  };
+
+  // Get sort icon
+  const getSortIcon = (field: string) => {
+    if (sortBy !== field) {
+      return (
+        <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+        </svg>
+      );
+    }
+    
+    if (sortOrder === 'asc') {
+      return (
+        <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+        </svg>
+      );
+    } else {
+      return (
+        <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      );
+    }
+  };
+
+  const handleBorrowSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isAdmin) return;
+    if (!selectedAsset) return;
 
     try {
-      const response = await fetch('/api/assets', {
+      const response = await fetch('/api/assets/borrow', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          fixedAssetId: selectedAsset.id,
+          ...borrowFormData,
+        }),
       });
 
       if (response.ok) {
         fetchAssets();
-        setFormData({
-          assetNumber: '',
-          materialId: '',
-          location: '',
-          condition: 'GOOD',
+        fetchBorrows();
+        setBorrowFormData({
+          userId: '',
+          expectedReturnDate: '',
+          purpose: '',
+          note: '',
         });
-        setShowForm(false);
+        setShowBorrowForm(false);
+        setSelectedAsset(null);
       }
     } catch (error) {
-      console.error('Error creating asset:', error);
+      console.error('Error borrowing asset:', error);
+    }
+  };
+
+  const handleReturnSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    try {
+      const response = await fetch('/api/assets/return', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(returnFormData),
+      });
+
+      if (response.ok) {
+        fetchAssets();
+        fetchBorrows();
+        setReturnFormData({
+          borrowId: '',
+          condition: 'GOOD',
+          note: '',
+        });
+        setShowReturnForm(false);
+      }
+    } catch (error) {
+      console.error('Error returning asset:', error);
+    }
+  };
+
+  const handleDelete = async (asset: Asset) => {
+    if (!confirm(`คุณต้องการลบครุภัณฑ์ "${asset.name}" หรือไม่?`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/assets/${asset.id}`, {
+        method: 'DELETE',
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        fetchAssets();
+        alert('ลบครุภัณฑ์สำเร็จ');
+      } else {
+        alert('เกิดข้อผิดพลาด: ' + result.error);
+      }
+    } catch (error) {
+      console.error('Error deleting asset:', error);
+      alert('เกิดข้อผิดพลาดในการลบครุภัณฑ์');
     }
   };
 
@@ -129,51 +357,235 @@ export default function AssetsPage() {
           <p className="text-gray-600 mt-1">ติดตามและจัดการครุภัณฑ์ทั้งหมด</p>
         </div>
         {isAdmin && (
-          <button
-            onClick={() => setShowForm(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium"
-          >
-            + เพิ่มครุภัณฑ์
-          </button>
+          <div className="flex space-x-2">
+            <button
+              onClick={() => setShowForm(true)}
+              className="inline-flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              <span>เพิ่มครุภัณฑ์</span>
+            </button>
+            <button
+              onClick={() => setShowReturnForm(true)}
+              className="inline-flex items-center space-x-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 15v-1a4 4 0 00-4-4H8m0 0l3 3m-3-3l3-3m9 14V5a2 2 0 00-2-2H6a2 2 0 00-2 2v16l4-2 4 2 4-2 4 2z" />
+              </svg>
+              <span>คืนครุภัณฑ์</span>
+            </button>
+          </div>
         )}
       </div>
 
-      {/* Add Asset Form Modal */}
+      {/* Search and Filter Section */}
+      <div className="bg-white rounded-lg shadow p-6 space-y-4">
+        <div className="flex flex-col lg:flex-row gap-4">
+          {/* Search Input */}
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              ค้นหาครุภัณฑ์
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                placeholder="ค้นหาด้วย ชื่อ, เลขครุภัณฑ์, หมวดหมู่, ยี่ห้อ, รุ่น, เลขซีเรียล หรือสถานที่..."
+              />
+            </div>
+          </div>
+
+          {/* Category Filter */}
+          <div className="lg:w-48">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              หมวดหมู่
+            </label>
+            <select
+              value={filterCategory}
+              onChange={(e) => setFilterCategory(e.target.value)}
+              className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="">ทั้งหมด</option>
+              {getUniqueCategories().map((category) => (
+                <option key={category} value={category}>
+                  {category}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Condition Filter */}
+          <div className="lg:w-48">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              สภาพ
+            </label>
+            <select
+              value={filterCondition}
+              onChange={(e) => setFilterCondition(e.target.value)}
+              className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="">ทั้งหมด</option>
+              <option value="GOOD">ดี</option>
+              <option value="DAMAGED">เสียหาย</option>
+              <option value="NEEDS_REPAIR">ต้องซ่อม</option>
+              <option value="DISPOSED">จำหน่ายแล้ว</option>
+            </select>
+          </div>
+
+          {/* Status Filter */}
+          <div className="lg:w-48">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              สถานะการใช้งาน
+            </label>
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="">ทั้งหมด</option>
+              <option value="AVAILABLE">พร้อมใช้งาน</option>
+              <option value="BORROWED">ถูกยืม</option>
+            </select>
+          </div>
+
+          {/* Clear Filters Button */}
+          <div className="lg:w-auto flex items-end">
+            <button
+              onClick={clearFilters}
+              className="px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors flex items-center space-x-2"
+              title="ล้างตัวกรอง"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              <span>ล้าง</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Results Summary */}
+        <div className="flex items-center justify-between text-sm text-gray-600">
+          <div className="flex items-center space-x-4">
+            <span>
+              แสดง {filteredAssets.length} จาก {assets.length} รายการ
+              {(searchTerm || filterCategory || filterCondition || filterStatus) && (
+                <span className="ml-2 text-blue-600">
+                  (กำลังกรองข้อมูล)
+                </span>
+              )}
+            </span>
+            
+            {/* Sort Info */}
+            <span className="text-gray-400">
+              เรียงตาม: {
+                sortBy === 'assetNumber' ? 'เลขครุภัณฑ์' :
+                sortBy === 'name' ? 'ชื่อ' :
+                sortBy === 'category' ? 'หมวดหมู่' :
+                sortBy === 'location' ? 'สถานที่' :
+                sortBy === 'condition' ? 'สภาพ' : sortBy
+              } ({sortOrder === 'asc' ? 'น้อยไปมาก' : 'มากไปน้อย'})
+            </span>
+          </div>
+          
+          {/* Active Filters */}
+          {(searchTerm || filterCategory || filterCondition || filterStatus) && (
+            <div className="flex flex-wrap gap-2">
+              {searchTerm && (
+                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                  ค้นหา: {searchTerm}
+                  <button
+                    onClick={() => setSearchTerm('')}
+                    className="ml-1 hover:text-blue-600"
+                  >
+                    ×
+                  </button>
+                </span>
+              )}
+              {filterCategory && (
+                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                  หมวดหมู่: {filterCategory}
+                  <button
+                    onClick={() => setFilterCategory('')}
+                    className="ml-1 hover:text-green-600"
+                  >
+                    ×
+                  </button>
+                </span>
+              )}
+              {filterCondition && (
+                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                  สภาพ: {getConditionText(filterCondition)}
+                  <button
+                    onClick={() => setFilterCondition('')}
+                    className="ml-1 hover:text-yellow-600"
+                  >
+                    ×
+                  </button>
+                </span>
+              )}
+              {filterStatus && (
+                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                  สถานะ: {filterStatus === 'AVAILABLE' ? 'พร้อมใช้งาน' : 'ถูกยืม'}
+                  <button
+                    onClick={() => setFilterStatus('')}
+                    className="ml-1 hover:text-purple-600"
+                  >
+                    ×
+                  </button>
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Asset Form Modal */}
       {showForm && (
+        <AssetFormModal
+          onClose={() => {
+            setShowForm(false);
+            setEditingAsset(null);
+          }}
+          onSave={() => {
+            fetchAssets();
+            setShowForm(false);
+            setEditingAsset(null);
+          }}
+          editingAsset={editingAsset || undefined}
+        />
+      )}
+
+      {/* Borrow Asset Form Modal */}
+      {showBorrowForm && selectedAsset && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-lg font-semibold mb-4">เพิ่มครุภัณฑ์ใหม่</h2>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <h2 className="text-lg font-semibold mb-4">
+              ยืมครุภัณฑ์: {selectedAsset.assetNumber}
+            </h2>
+            <form onSubmit={handleBorrowSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  เลขครุภัณฑ์
-                </label>
-                <input
-                  type="text"
-                  value={formData.assetNumber}
-                  onChange={(e) => setFormData({ ...formData, assetNumber: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                  placeholder="เช่น ASSET-001"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  วัสดุ
+                  ผู้ยืม *
                 </label>
                 <select
-                  value={formData.materialId}
-                  onChange={(e) => setFormData({ ...formData, materialId: e.target.value })}
+                  value={borrowFormData.userId}
+                  onChange={(e) => setBorrowFormData({ ...borrowFormData, userId: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                   required
                 >
-                  <option value="">เลือกวัสดุ</option>
-                  {materials
-                    .filter(material => material.isAsset)
-                    .map((material) => (
-                    <option key={material.id} value={material.id}>
-                      {material.code} - {material.name}
+                  <option value="">เลือกผู้ยืม</option>
+                  {users.map((user) => (
+                    <option key={user.id} value={user.id}>
+                      {user.name} ({user.email})
                     </option>
                   ))}
                 </select>
@@ -181,24 +593,107 @@ export default function AssetsPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  สถานที่
+                  วันที่คาดว่าจะคืน
                 </label>
                 <input
-                  type="text"
-                  value={formData.location}
-                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                  type="date"
+                  value={borrowFormData.expectedReturnDate}
+                  onChange={(e) => setBorrowFormData({ ...borrowFormData, expectedReturnDate: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                  placeholder="เช่น ห้อง 101"
+                  min={new Date().toISOString().split('T')[0]}
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  สภาพ
+                  วัตถุประสงค์การยืม
+                </label>
+                <input
+                  type="text"
+                  value={borrowFormData.purpose}
+                  onChange={(e) => setBorrowFormData({ ...borrowFormData, purpose: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  placeholder="เช่น สำหรับการสอน, งานวิจัย"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  หมายเหตุ
+                </label>
+                <textarea
+                  value={borrowFormData.note}
+                  onChange={(e) => setBorrowFormData({ ...borrowFormData, note: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  rows={3}
+                  placeholder="หมายเหตุเพิ่มเติม"
+                />
+              </div>
+
+              <div className="flex space-x-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowBorrowForm(false);
+                    setSelectedAsset(null);
+                  }}
+                  className="flex-1 inline-flex items-center justify-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  <span>ยกเลิก</span>
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 inline-flex items-center justify-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                  </svg>
+                  <span>ยืม</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Return Asset Form Modal */}
+      {showReturnForm && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h2 className="text-lg font-semibold mb-4">คืนครุภัณฑ์</h2>
+            <form onSubmit={handleReturnSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  เลือกรายการยืม *
                 </label>
                 <select
-                  value={formData.condition}
-                  onChange={(e) => setFormData({ ...formData, condition: e.target.value as Asset['condition'] })}
+                  value={returnFormData.borrowId}
+                  onChange={(e) => setReturnFormData({ ...returnFormData, borrowId: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  required
+                >
+                  <option value="">เลือกรายการยืม</option>
+                  {borrows
+                    .filter(borrow => borrow.status === 'BORROWED' || borrow.status === 'OVERDUE')
+                    .map((borrow) => (
+                    <option key={borrow.id} value={borrow.id}>
+                      {/* @ts-ignore */}
+                      {borrow.fixedAsset?.assetNumber} - {borrow.user.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  สภาพครุภัณฑ์เมื่อคืน
+                </label>
+                <select
+                  value={returnFormData.condition}
+                  onChange={(e) => setReturnFormData({ ...returnFormData, condition: e.target.value as Asset['condition'] })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                 >
                   <option value="GOOD">ดี</option>
@@ -207,19 +702,38 @@ export default function AssetsPage() {
                 </select>
               </div>
 
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  หมายเหตุการคืน
+                </label>
+                <textarea
+                  value={returnFormData.note}
+                  onChange={(e) => setReturnFormData({ ...returnFormData, note: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  rows={3}
+                  placeholder="สภาพการคืน, ปัญหาที่พบ"
+                />
+              </div>
+
               <div className="flex space-x-3">
                 <button
                   type="button"
-                  onClick={() => setShowForm(false)}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                  onClick={() => setShowReturnForm(false)}
+                  className="flex-1 inline-flex items-center justify-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                 >
-                  ยกเลิก
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  <span>ยกเลิก</span>
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+                  className="flex-1 inline-flex items-center justify-center space-x-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors"
                 >
-                  บันทึก
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 15v-1a4 4 0 00-4-4H8m0 0l3 3m-3-3l3-3m9 14V5a2 2 0 00-2-2H6a2 2 0 00-2 2v16l4-2 4 2 4-2 4 2z" />
+                  </svg>
+                  <span>คืน</span>
                 </button>
               </div>
             </form>
@@ -232,67 +746,209 @@ export default function AssetsPage() {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                เลขครุภัณฑ์
+              <th 
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
+                onClick={() => handleSort('assetNumber')}
+              >
+                <div className="flex items-center space-x-1">
+                  <span>เลขครุภัณฑ์</span>
+                  {getSortIcon('assetNumber')}
+                </div>
+              </th>
+              <th 
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
+                onClick={() => handleSort('name')}
+              >
+                <div className="flex items-center space-x-1">
+                  <span>รายการ</span>
+                  {getSortIcon('name')}
+                </div>
+              </th>
+              <th 
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
+                onClick={() => handleSort('category')}
+              >
+                <div className="flex items-center space-x-1">
+                  <span>หมวดหมู่</span>
+                  {getSortIcon('category')}
+                </div>
+              </th>
+              <th 
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
+                onClick={() => handleSort('location')}
+              >
+                <div className="flex items-center space-x-1">
+                  <span>สถานที่</span>
+                  {getSortIcon('location')}
+                </div>
+              </th>
+              <th 
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
+                onClick={() => handleSort('condition')}
+              >
+                <div className="flex items-center space-x-1">
+                  <span>สภาพ</span>
+                  {getSortIcon('condition')}
+                </div>
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                รายการ
+                สถานะ
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                หมวดหมู่
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                สถานที่
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                สภาพ
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                วันที่เพิ่ม
+                การดำเนินการ
               </th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {assets.map((asset) => (
-              <tr key={asset.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                  {asset.assetNumber}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div>
-                    <div className="text-sm font-medium text-gray-900">
-                      {asset.material.name}
+            {filteredAssets.map((asset) => {
+              const currentBorrow = asset.borrowHistory?.find(b => b.status === 'BORROWED');
+              return (
+                <tr key={asset.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    {asset.assetNumber}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center space-x-3">
+                      {asset.imageUrl && (
+                        <div className="flex-shrink-0">
+                          <SafeImage
+                            src={asset.imageUrl}
+                            alt={asset.name}
+                            width={48}
+                            height={48}
+                            className="rounded-lg border border-gray-200 object-cover cursor-pointer hover:opacity-80"
+                            onClick={() => setShowImageModal(asset.imageUrl || null)}
+                          />
+                        </div>
+                      )}
+                      <div>
+                        <div className="text-sm font-medium text-gray-900">
+                          {asset.name}
+                        </div>
+                        {asset.brand && (
+                          <div className="text-sm text-gray-500">
+                            {asset.brand} {asset.model && `- ${asset.model}`}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <div className="text-sm text-gray-500">
-                      {asset.material.code}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {asset.category}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {asset.location}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getConditionColor(asset.condition)}`}>
+                      {getConditionText(asset.condition)}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {currentBorrow ? (
+                      <div>
+                        <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                          ถูกยืม
+                        </span>
+                        <div className="text-xs text-gray-500 mt-1">
+                          โดย: {currentBorrow.user.name}
+                        </div>
+                      </div>
+                    ) : (
+                      <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                        พร้อมใช้งาน
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <div className="flex items-center space-x-2">
+                      {!currentBorrow && asset.condition !== 'DISPOSED' && asset.condition !== 'DAMAGED' && (
+                        <button
+                          onClick={() => {
+                            setSelectedAsset(asset);
+                            setShowBorrowForm(true);
+                          }}
+                          className="inline-flex items-center justify-center w-8 h-8 text-blue-600 hover:text-white hover:bg-blue-600 rounded-full transition-colors"
+                          title="ยืมครุภัณฑ์"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                          </svg>
+                        </button>
+                      )}
+                      {isAdmin && (
+                        <>
+                          <button
+                            onClick={() => {
+                              setEditingAsset(asset);
+                              setShowForm(true);
+                            }}
+                            className="inline-flex items-center justify-center w-8 h-8 text-green-600 hover:text-white hover:bg-green-600 rounded-full transition-colors"
+                            title="แก้ไขครุภัณฑ์"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => handleDelete(asset)}
+                            className="inline-flex items-center justify-center w-8 h-8 text-red-600 hover:text-white hover:bg-red-600 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            title="ลบครุภัณฑ์"
+                            disabled={!!currentBorrow}
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </>
+                      )}
                     </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {asset.material.category}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {asset.location}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getConditionColor(asset.condition)}`}>
-                    {getConditionText(asset.condition)}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {new Date(asset.createdAt).toLocaleDateString('th-TH')}
-                </td>
-              </tr>
-            ))}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
 
-        {assets.length === 0 && (
+        {filteredAssets.length === 0 && !loading && (
           <div className="text-center py-12">
-            <p className="text-gray-500">ยังไม่มีครุภัณฑ์ในระบบ</p>
+            {assets.length === 0 ? (
+              <p className="text-gray-500">ยังไม่มีครุภัณฑ์ในระบบ</p>
+            ) : (
+              <div>
+                <p className="text-gray-500">ไม่พบครุภัณฑ์ที่ตรงกับเงื่อนไขการค้นหา</p>
+                <button
+                  onClick={clearFilters}
+                  className="mt-2 text-blue-600 hover:text-blue-800 underline"
+                >
+                  ล้างตัวกรองทั้งหมด
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
+
+      {/* Image Modal */}
+      {showImageModal && (
+        <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50" onClick={() => setShowImageModal(null)}>
+          <div className="relative max-w-4xl max-h-[90vh] p-4">
+            <button
+              onClick={() => setShowImageModal(null)}
+              className="absolute top-2 right-2 bg-white/20 hover:bg-white/30 text-white rounded-full w-10 h-10 flex items-center justify-center text-xl z-10"
+            >
+              ×
+            </button>
+            <SafeImage
+              src={showImageModal}
+              alt="Asset image"
+              width={800}
+              height={600}
+              className="rounded-lg max-w-full max-h-full object-contain"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

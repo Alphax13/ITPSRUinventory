@@ -10,9 +10,10 @@ interface SafeImageProps {
   height: number;
   className?: string;
   onError?: () => void;
+  onClick?: () => void;
 }
 
-export default function SafeImage({ src, alt, width, height, className, onError }: SafeImageProps) {
+export default function SafeImage({ src, alt, width, height, className, onError, onClick }: SafeImageProps) {
   const [error, setError] = useState(false);
   const [isExternal, setIsExternal] = useState(false);
 
@@ -61,7 +62,9 @@ export default function SafeImage({ src, alt, width, height, className, onError 
       unoptimized={isExternal || checkIfExternal(src)}
       onError={handleError}
       onLoad={handleLoad}
+      onClick={onClick}
       priority={false}
+      style={{ cursor: onClick ? 'pointer' : 'default' }}
     />
   );
 }

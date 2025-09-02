@@ -1,11 +1,28 @@
 // src/app/api/purchase-requests/route.ts
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 import { prisma } from '@/lib/prisma';
 
-// GET: ดึงคำขอซื้อทั้งหมด
+// GET: ดึงคำขอซื้อตามสิทธิ์ผู้ใช้
 export async function GET() {
   try {
+    const cookieStore = await cookies();
+    const userCookie = cookieStore.get('user');
+    
+    if (!userCookie) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const user = JSON.parse(userCookie.value);
+    let whereCondition = {};
+
+    // ถ้าไม่ใช่ ADMIN จะเห็นเฉพาะคำขอของตัวเอง
+    if (user.role !== 'ADMIN') {
+      whereCondition = { requesterId: user.id };
+    }
+
     const requests = await prisma.purchaseRequest.findMany({
+      where: whereCondition,
       include: {
         requester: {
           select: { name: true, email: true, department: true },
