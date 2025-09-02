@@ -151,7 +151,7 @@ export default function AssetFormModal({ onClose, onSave, editingAsset }: AssetF
         return;
       }
 
-      const assetData: any = { ...formData };
+      const assetData: Record<string, unknown> = { ...formData };
       
       // จัดการรูปภาพ
       if (imageInputType === 'file' && selectedFile) {
@@ -180,10 +180,10 @@ export default function AssetFormModal({ onClose, onSave, editingAsset }: AssetF
       }
 
       // แปลงข้อมูลตัวเลข
-      if (assetData.purchasePrice) {
+      if (assetData.purchasePrice && typeof assetData.purchasePrice === 'string') {
         assetData.purchasePrice = parseFloat(assetData.purchasePrice);
       }
-      if (assetData.purchaseDate) {
+      if (assetData.purchaseDate && typeof assetData.purchaseDate === 'string') {
         assetData.purchaseDate = new Date(assetData.purchaseDate).toISOString();
       }
 

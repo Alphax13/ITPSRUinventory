@@ -124,7 +124,7 @@ export default function PurchaseRequestsPage() {
         try {
           const errorData = JSON.parse(responseText);
           alert('เกิดข้อผิดพลาดในการส่งคำขอ: ' + (errorData.error || 'Unknown error'));
-        } catch (parseError) {
+        } catch {
           alert('เกิดข้อผิดพลาดในการส่งคำขอ (HTTP ' + response.status + ')');
         }
       }
@@ -206,7 +206,7 @@ export default function PurchaseRequestsPage() {
         try {
           const errorData = JSON.parse(responseText);
           alert('เกิดข้อผิดพลาดในการอัปโหลดรูปภาพ: ' + (errorData.error || 'Unknown error'));
-        } catch (parseError) {
+        } catch {
           alert('เกิดข้อผิดพลาดในการอัปโหลดรูปภาพ (HTTP ' + response.status + ')');
         }
       }

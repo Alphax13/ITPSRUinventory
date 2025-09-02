@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status'); // BORROWED, RETURNED, OVERDUE, LOST
     const userId = searchParams.get('userId');
     
-    const where: any = {};
+    const where: Record<string, string> = {};
     if (status) where.status = status;
     if (userId) where.userId = userId;
 

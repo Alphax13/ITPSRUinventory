@@ -1,6 +1,6 @@
 // src/utils/apiClient.ts
 interface ApiClientOptions extends RequestInit {
-  requireAuth?: boolean;
+  // Future options can be added here
 }
 
 export class ApiClient {
@@ -29,7 +29,7 @@ export class ApiClient {
   }
 
   static async fetch(url: string, options: ApiClientOptions = {}) {
-    const { requireAuth = true, ...fetchOptions } = options;
+    const { ...fetchOptions } = options;
 
     const defaultOptions: RequestInit = {
       credentials: 'include',
@@ -55,7 +55,7 @@ export class ApiClient {
     return this.fetch(url, { ...options, method: 'GET' });
   }
 
-  static async post(url: string, data?: any, options?: ApiClientOptions) {
+  static async post(url: string, data?: Record<string, unknown>, options?: ApiClientOptions) {
     return this.fetch(url, {
       ...options,
       method: 'POST',
@@ -63,7 +63,7 @@ export class ApiClient {
     });
   }
 
-  static async put(url: string, data?: any, options?: ApiClientOptions) {
+  static async put(url: string, data?: Record<string, unknown>, options?: ApiClientOptions) {
     return this.fetch(url, {
       ...options,
       method: 'PUT',
@@ -75,7 +75,7 @@ export class ApiClient {
     return this.fetch(url, { ...options, method: 'DELETE' });
   }
 
-  static async patch(url: string, data?: any, options?: ApiClientOptions) {
+  static async patch(url: string, data?: Record<string, unknown>, options?: ApiClientOptions) {
     return this.fetch(url, {
       ...options,
       method: 'PATCH',

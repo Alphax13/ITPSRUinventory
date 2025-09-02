@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { cookies } from 'next/headers';
 
 // GET: ดึงประวัติการทำรายการ (ผู้ใช้เห็นเฉพาะของตัวเอง, ADMIN เห็นทั้งหมด)
-export async function GET(request: Request) {
+export async function GET() {
   try {
     const cookieStore = await cookies();
     const userCookie = cookieStore.get('user')?.value;

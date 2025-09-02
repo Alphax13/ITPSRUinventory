@@ -43,7 +43,23 @@ export default function AssetBorrowsPage() {
   const isAdmin = user?.role === 'ADMIN';
 
   useEffect(() => {
-    fetchBorrows();
+    const loadBorrows = async () => {
+      try {
+        const url = statusFilter === 'ALL' 
+          ? '/api/assets/borrow' 
+          : `/api/assets/borrow?status=${statusFilter}`;
+        
+        const response = await fetch(url);
+        if (response.ok) {
+          const data = await response.json();
+          setBorrows(data);
+        }
+      } catch (error) {
+        console.error('Error fetching borrows:', error);
+      }
+    };
+
+    loadBorrows();
   }, [statusFilter]);
 
   const fetchBorrows = async () => {

@@ -5,7 +5,6 @@ import { useEffect, useState } from 'react';
 import { useAuthStore } from '@/stores/authStore';
 import SafeImage from '@/components/SafeImage';
 import AssetFormModal from './AssetFormModal';
-import type { Material } from '../materials/page';
 
 export interface Asset {
   id: string;
@@ -43,13 +42,12 @@ export default function AssetsPage() {
   const [assets, setAssets] = useState<Asset[]>([]);
   const [filteredAssets, setFilteredAssets] = useState<Asset[]>([]);
   const [loading, setLoading] = useState(true);
-  const [uploading, setUploading] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [showBorrowForm, setShowBorrowForm] = useState(false);
   const [showReturnForm, setShowReturnForm] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
   const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
-  const [users, setUsers] = useState<any[]>([]);
+  const [users, setUsers] = useState<{ id: string; name: string; email: string }[]>([]);
   const [borrows, setBorrows] = useState<BorrowRecord[]>([]);
   const [showImageModal, setShowImageModal] = useState<string | null>(null);
   
@@ -125,8 +123,8 @@ export default function AssetsPage() {
 
     // Sort the filtered results
     const sorted = filtered.sort((a, b) => {
-      let aValue: any = a[sortBy as keyof Asset];
-      let bValue: any = b[sortBy as keyof Asset];
+      let aValue: string | number | Date = a[sortBy as keyof Asset] as string | number | Date;
+      let bValue: string | number | Date = b[sortBy as keyof Asset] as string | number | Date;
 
       // Handle special cases
       if (sortBy === 'purchasePrice') {
@@ -680,7 +678,7 @@ export default function AssetsPage() {
                     .filter(borrow => borrow.status === 'BORROWED' || borrow.status === 'OVERDUE')
                     .map((borrow) => (
                     <option key={borrow.id} value={borrow.id}>
-                      {/* @ts-ignore */}
+                      {/* @ts-expect-error - API response includes fixedAsset */}
                       {borrow.fixedAsset?.assetNumber} - {borrow.user.name}
                     </option>
                   ))}

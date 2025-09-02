@@ -57,7 +57,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Borrow record not found' }, { status: 404 });
     }
 
-    const updateData: any = {};
+    const updateData: Record<string, unknown> = {};
     
     if (status) updateData.status = status;
     if (actualReturnDate !== undefined) updateData.actualReturnDate = actualReturnDate ? new Date(actualReturnDate) : null;
