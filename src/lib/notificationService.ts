@@ -270,6 +270,151 @@ export class NotificationService {
     }
   }
 
+  // แจ้งเตือนการเบิกวัสดุสิ้นเปลือง
+  static async notifyConsumableWithdrawal(
+    consumableId: string, 
+    userId: string, 
+    quantity: number
+  ) {
+    try {
+      const consumable = await prisma.consumableMaterial.findUnique({
+        where: { id: consumableId },
+      });
+
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+      });
+
+      if (!consumable || !user) {
+        throw new Error('Consumable or user not found');
+      }
+
+      const admins = await prisma.user.findMany({
+        where: { 
+          role: 'ADMIN',
+          isActive: true 
+        },
+      });
+
+      const notifications: CreateNotificationParams[] = [];
+
+      for (const admin of admins) {
+        notifications.push({
+          userId: admin.id,
+          title: 'การเบิกวัสดุสิ้นเปลือง',
+          message: `${user.name} เบิก ${consumable.name} จำนวน ${quantity} ${consumable.unit}`,
+          type: 'INFO',
+          actionUrl: '/dashboard/consumables',
+          metadata: {
+            consumableId: consumable.id,
+            userId: user.id,
+            quantity,
+            type: 'WITHDRAWAL',
+          },
+        });
+      }
+
+      if (notifications.length > 0) {
+        await this.createBulkNotifications(notifications);
+      }
+
+      return notifications.length;
+    } catch (error) {
+      console.error('Error notifying consumable withdrawal:', error);
+      throw error;
+    }
+  }
+
+  // แจ้งเตือนการยืมครุภัณฑ์
+  static async notifyAssetBorrow(borrowId: string) {
+    try {
+      const borrow = await prisma.assetBorrow.findUnique({
+        where: { id: borrowId },
+        include: {
+          fixedAsset: true,
+          user: true,
+        },
+      });
+
+      if (!borrow) {
+        throw new Error('Borrow record not found');
+      }
+
+      const admins = await prisma.user.findMany({
+        where: { 
+          role: 'ADMIN',
+          isActive: true 
+        },
+      });
+
+      const notifications: CreateNotificationParams[] = [];
+
+      for (const admin of admins) {
+        notifications.push({
+          userId: admin.id,
+          title: 'การยืมครุภัณฑ์',
+          message: `${borrow.user.name} ยืม ${borrow.fixedAsset.name} (${borrow.fixedAsset.assetNumber})`,
+          type: 'INFO',
+          actionUrl: '/dashboard/asset-borrows',
+          metadata: {
+            borrowId: borrow.id,
+            assetId: borrow.fixedAssetId,
+            userId: borrow.userId,
+            type: 'BORROW',
+          },
+        });
+      }
+
+      if (notifications.length > 0) {
+        await this.createBulkNotifications(notifications);
+      }
+
+      return notifications.length;
+    } catch (error) {
+      console.error('Error notifying asset borrow:', error);
+      throw error;
+    }
+  }
+
+  // แจ้งเตือนการอนุมัติคำขอซื้อ
+  static async notifyPurchaseRequestApproval(requestId: string, status: string) {
+    try {
+      const request = await prisma.purchaseRequest.findUnique({
+        where: { id: requestId },
+        include: { requester: true },
+      });
+
+      if (!request) {
+        throw new Error('Purchase request not found');
+      }
+
+      // แจ้งเตือนผู้ขอเมื่อคำขอได้รับอนุมัติหรือถูกปฏิเสธ
+      const title = status === 'APPROVED' ? 'คำขอซื้อได้รับอนุมัติ' : 'คำขอซื้อถูกปฏิเสธ';
+      const message = status === 'APPROVED' 
+        ? 'คำขอซื้อของคุณได้รับอนุมัติแล้ว' 
+        : 'คำขอซื้อของคุณถูกปฏิเสธ';
+      const type = status === 'APPROVED' ? 'SUCCESS' : 'WARNING';
+
+      await this.createNotification({
+        userId: request.requesterId,
+        title,
+        message,
+        type,
+        actionUrl: '/dashboard/purchase-requests',
+        metadata: {
+          requestId: request.id,
+          status,
+          type: 'PURCHASE_REQUEST_UPDATE',
+        },
+      });
+
+      return 1;
+    } catch (error) {
+      console.error('Error notifying purchase request approval:', error);
+      throw error;
+    }
+  }
+
   // รันการตรวจสอบทั้งหมด
   static async runAllChecks() {
     try {

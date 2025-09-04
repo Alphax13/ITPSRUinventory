@@ -16,6 +16,7 @@ import {
 
 export default function NotificationDropdown() {
   const [isOpen, setIsOpen] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { user } = useAuthStore();
   const {
@@ -26,7 +27,8 @@ export default function NotificationDropdown() {
     fetchNotifications,
     markAsRead,
     markAllAsRead,
-    deleteNotification
+    deleteNotification,
+    setError
   } = useNotificationStore();
 
   useEffect(() => {
@@ -71,7 +73,19 @@ export default function NotificationDropdown() {
 
   const handleDeleteNotification = async (notificationId: string, event: React.MouseEvent) => {
     event.stopPropagation();
-    await deleteNotification(notificationId);
+    
+    // เคลียร์ error ก่อนหน้านี้และเซ็ต loading state
+    setError(null);
+    setDeletingId(notificationId);
+    
+    try {
+      await deleteNotification(notificationId);
+    } catch (error) {
+      // Error จะถูก handle ใน store และแสดงใน UI แล้ว
+      console.error('Failed to delete notification:', error);
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   const getNotificationIcon = (type: Notification['type']) => {
@@ -89,6 +103,8 @@ export default function NotificationDropdown() {
         return <ExclamationTriangleIcon className={`${className} text-blue-500`} />;
       case 'REQUEST':
         return <InformationCircleIcon className={`${className} text-purple-500`} />;
+      case 'INFO':
+        return <InformationCircleIcon className={`${className} text-blue-500`} />;
       default:
         return <InformationCircleIcon className={`${className} text-gray-500`} />;
     }
@@ -103,6 +119,7 @@ export default function NotificationDropdown() {
       case 'ERROR': return 'border-l-red-400 bg-red-50';
       case 'MAINTENANCE': return 'border-l-blue-400 bg-blue-50';
       case 'REQUEST': return 'border-l-purple-400 bg-purple-50';
+      case 'INFO': return 'border-l-blue-400 bg-blue-50';
       default: return 'border-l-gray-400 bg-gray-50';
     }
   };
@@ -154,6 +171,26 @@ export default function NotificationDropdown() {
 
           {/* Content */}
           <div className="flex-1 overflow-y-auto">
+            {error && (
+              <div className="p-4 bg-red-50 border-l-4 border-red-400 mb-2 mx-2 rounded">
+                <div className="flex">
+                  <XCircleIcon className="h-5 w-5 text-red-400" />
+                  <div className="ml-3">
+                    <p className="text-sm text-red-700">{error}</p>
+                    <button
+                      onClick={() => {
+                        setError(null);
+                        if (user?.id) fetchNotifications(user.id);
+                      }}
+                      className="text-xs text-red-600 hover:text-red-800 font-medium"
+                    >
+                      ลองใหม่
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+            
             {isLoading ? (
               <div className="p-4 text-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto"></div>
@@ -195,10 +232,15 @@ export default function NotificationDropdown() {
                               )}
                               <button
                                 onClick={(e) => handleDeleteNotification(notification.id, e)}
-                                className="p-1 text-gray-400 hover:text-gray-600 rounded"
+                                disabled={deletingId === notification.id}
+                                className="p-1 text-gray-400 hover:text-gray-600 rounded disabled:opacity-50 disabled:cursor-not-allowed"
                                 title="ลบการแจ้งเตือน"
                               >
-                                <XMarkIcon className="h-4 w-4" />
+                                {deletingId === notification.id ? (
+                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
+                                ) : (
+                                  <XMarkIcon className="h-4 w-4" />
+                                )}
                               </button>
                             </div>
                           </div>

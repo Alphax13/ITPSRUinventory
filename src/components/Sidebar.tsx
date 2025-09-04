@@ -5,85 +5,110 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuthStore } from '@/stores/authStore';
 
-const navigation = [
-  { 
-    name: 'แดชบอร์ด', 
-    href: '/dashboard', 
-    icon: '🏠', 
-    roles: ['ADMIN', 'LECTURER'] 
+const navigationCategories = [
+  {
+    category: 'หน้าหลัก',
+    items: [
+      { 
+        name: 'แดชบอร์ด', 
+        href: '/dashboard', 
+        icon: '🏠', 
+        roles: ['ADMIN', 'LECTURER'] 
+      }
+    ]
   },
-  { 
-    name: 'จัดการวัสดุสิ้นเปลือง', 
-    href: '/dashboard/consumables', 
-    icon: '📦', 
-    roles: ['ADMIN'] 
+  {
+    category: 'วัสดุสิ้นเปลือง',
+    items: [
+      { 
+        name: 'จัดการวัสดุสิ้นเปลือง', 
+        href: '/dashboard/consumables', 
+        icon: '📦', 
+        roles: ['ADMIN'] 
+      },
+      { 
+        name: 'ดูวัสดุสิ้นเปลือง', 
+        href: '/dashboard/consumables', 
+        icon: '👁️', 
+        roles: ['LECTURER'] 
+      },
+      { 
+        name: 'เบิก-จ่ายวัสดุ', 
+        href: '/dashboard/transactions', 
+        icon: '📋', 
+        roles: ['ADMIN', 'LECTURER'] 
+      },
+      { 
+        name: 'ประวัติการเบิก', 
+        href: '/dashboard/transactions/history', 
+        icon: '📊', 
+        roles: ['ADMIN', 'LECTURER'] 
+      },
+      { 
+        name: 'จัดการประวัติ', 
+        href: '/dashboard/transactions/manage', 
+        icon: '🗂️', 
+        roles: ['ADMIN'] 
+      }
+    ]
   },
-  { 
-    name: 'ดูวัสดุสิ้นเปลือง', 
-    href: '/dashboard/consumables', 
-    icon: '👁️', 
-    roles: ['LECTURER'] 
+  {
+    category: 'ครุภัณฑ์',
+    items: [
+      { 
+        name: 'จัดการครุภัณฑ์', 
+        href: '/dashboard/assets', 
+        icon: '🏷️', 
+        roles: ['ADMIN'] 
+      },
+      { 
+        name: 'ดูครุภัณฑ์', 
+        href: '/dashboard/assets', 
+        icon: '👀', 
+        roles: ['LECTURER'] 
+      },
+      { 
+        name: 'ยืม-คืนครุภัณฑ์', 
+        href: '/dashboard/asset-borrows', 
+        icon: '🔄', 
+        roles: ['ADMIN', 'LECTURER'] 
+      }
+    ]
   },
-  { 
-    name: 'จัดการครุภัณฑ์', 
-    href: '/dashboard/assets', 
-    icon: '🏷️', 
-    roles: ['ADMIN'] 
+  {
+    category: 'คำขอและรายงาน',
+    items: [
+      { 
+        name: 'การแจ้งเตือน', 
+        href: '/dashboard/notifications', 
+        icon: '🔔', 
+        roles: ['ADMIN', 'LECTURER'] 
+      },
+      { 
+        name: 'คำขอซื้อ', 
+        href: '/dashboard/purchase-requests', 
+        icon: '🛒', 
+        roles: ['ADMIN', 'LECTURER'] 
+      },
+      { 
+        name: 'รายงาน', 
+        href: '/dashboard/reports', 
+        icon: '📄', 
+        roles: ['ADMIN'] 
+      }
+    ]
   },
-  { 
-    name: 'ดูครุภัณฑ์', 
-    href: '/dashboard/assets', 
-    icon: '👀', 
-    roles: ['LECTURER'] 
-  },
-  { 
-    name: 'ยืม-คืนครุภัณฑ์', 
-    href: '/dashboard/asset-borrows', 
-    icon: '🔄', 
-    roles: ['ADMIN', 'LECTURER'] 
-  },
-  { 
-    name: 'เบิก-จ่ายวัสดุ', 
-    href: '/dashboard/transactions', 
-    icon: '📋', 
-    roles: ['ADMIN', 'LECTURER'] 
-  },
-  { 
-    name: 'ประวัติการเบิก', 
-    href: '/dashboard/transactions/history', 
-    icon: '📊', 
-    roles: ['ADMIN', 'LECTURER'] 
-  },
-  { 
-    name: 'จัดการประวัติ', 
-    href: '/dashboard/transactions/manage', 
-    icon: '🗂️', 
-    roles: ['ADMIN'] 
-  },
-  { 
-    name: 'คำขอซื้อ', 
-    href: '/dashboard/purchase-requests', 
-    icon: '🛒', 
-    roles: ['ADMIN', 'LECTURER'] 
-  },
-  { 
-    name: 'การแจ้งเตือน', 
-    href: '/dashboard/notifications', 
-    icon: '🔔', 
-    roles: ['ADMIN', 'LECTURER'] 
-  },
-  { 
-    name: 'รายงาน', 
-    href: '/dashboard/reports', 
-    icon: '📄', 
-    roles: ['ADMIN'] 
-  },
-  { 
-    name: 'จัดการสมาชิก', 
-    href: '/dashboard/users', 
-    icon: '👥', 
-    roles: ['ADMIN'] 
-  },
+  {
+    category: 'จัดการระบบ',
+    items: [
+      { 
+        name: 'จัดการสมาชิก', 
+        href: '/dashboard/users', 
+        icon: '👥', 
+        roles: ['ADMIN'] 
+      }
+    ]
+  }
 ];
 
 export default function Sidebar() {
@@ -96,9 +121,12 @@ export default function Sidebar() {
     router.replace('/login');
   };
 
-  const filteredNavigation = navigation.filter(item => 
-    item.roles.includes(user?.role || 'LECTURER')
-  );
+  const filteredNavigationCategories = navigationCategories.map(category => ({
+    ...category,
+    items: category.items.filter(item => 
+      item.roles.includes(user?.role || 'LECTURER')
+    )
+  })).filter(category => category.items.length > 0);
 
   return (
     <div className="fixed inset-y-0 left-0 z-50 w-72 h-screen bg-gradient-to-b from-orange-50 to-white border-r border-orange-200">
@@ -132,31 +160,46 @@ export default function Sidebar() {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-4 py-6 space-y-3 overflow-y-auto">
-          {filteredNavigation.map((item) => {
-            const isActive = pathname === item.href;
-            return (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={`
-                  flex items-center gap-4 px-4 py-4 rounded-xl font-semibold transition-all duration-300 group relative
-                  ${isActive
-                    ? 'bg-gradient-to-r from-orange-400 to-orange-500 text-white shadow-lg transform scale-105'
-                    : 'text-gray-700 hover:bg-white hover:text-orange-600 hover:shadow-md hover:transform hover:scale-102'
-                  }
-                `}
-              >
-                <span className={`text-xl ${isActive ? 'scale-110' : 'group-hover:scale-110'} transition-transform duration-300`}>
-                  {item.icon}
-                </span>
-                <span className="text-base">{item.name}</span>
-                {isActive && (
-                  <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-1 h-8 bg-orange-600 rounded-r-full"></div>
-                )}
-              </Link>
-            );
-          })}
+        <nav className="flex-1 px-4 py-6 space-y-6 overflow-y-auto">
+          {filteredNavigationCategories.map((category) => (
+            <div key={category.category} className="space-y-3">
+              {/* Category Header */}
+              <div className="px-2">
+                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                  {category.category}
+                </h3>
+                <div className="mt-1 h-px bg-gradient-to-r from-orange-200 to-transparent"></div>
+              </div>
+              
+              {/* Category Items */}
+              <div className="space-y-2">
+                {category.items.map((item) => {
+                  const isActive = pathname === item.href;
+                  return (
+                    <Link
+                      key={item.name}
+                      href={item.href}
+                      className={`
+                        flex items-center gap-3 px-3 py-3 rounded-lg font-medium transition-all duration-300 group relative
+                        ${isActive
+                          ? 'bg-gradient-to-r from-orange-400 to-orange-500 text-white shadow-lg transform scale-105'
+                          : 'text-gray-700 hover:bg-white hover:text-orange-600 hover:shadow-md hover:transform hover:scale-102'
+                        }
+                      `}
+                    >
+                      <span className={`text-lg ${isActive ? 'scale-110' : 'group-hover:scale-110'} transition-transform duration-300`}>
+                        {item.icon}
+                      </span>
+                      <span className="text-sm">{item.name}</span>
+                      {isActive && (
+                        <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-1 h-6 bg-orange-600 rounded-r-full"></div>
+                      )}
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </nav>
 
         {/* Footer */}

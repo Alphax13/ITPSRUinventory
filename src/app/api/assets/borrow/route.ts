@@ -1,6 +1,7 @@
 // src/app/api/assets/borrow/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { NotificationService } from '@/lib/notificationService';
 
 // GET: ดึงรายการการยืมทั้งหมด
 export async function GET(request: NextRequest) {
@@ -122,6 +123,14 @@ export async function POST(request: NextRequest) {
         }
       }
     });
+
+    // แจ้งเตือน Admin เมื่อมีการยืมครุภัณฑ์
+    try {
+      await NotificationService.notifyAssetBorrow(borrow.id);
+    } catch (notificationError) {
+      console.error('Error sending borrow notification:', notificationError);
+      // ไม่ให้ notification error ทำให้ transaction fail
+    }
 
     return NextResponse.json(borrow, { status: 201 });
   } catch (error) {

@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { prisma } from '@/lib/prisma';
+import { NotificationService } from '@/lib/notificationService';
 
 // GET: ดึงคำขอซื้อตามสิทธิ์ผู้ใช้
 export async function GET() {
@@ -63,6 +64,14 @@ export async function POST(request: Request) {
         },
       },
     });
+
+    // แจ้งเตือน Admin เมื่อมีคำขอซื้อใหม่
+    try {
+      await NotificationService.notifyNewPurchaseRequest(purchaseRequest.id, requesterId);
+    } catch (notificationError) {
+      console.error('Error sending purchase request notification:', notificationError);
+      // ไม่ให้ notification error ทำให้ transaction fail
+    }
 
     return NextResponse.json(purchaseRequest, { status: 201 });
   } catch (error) {

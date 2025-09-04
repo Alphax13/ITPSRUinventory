@@ -138,7 +138,8 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
       });
 
       if (!response.ok) {
-        throw new Error('Failed to delete notification');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to delete notification');
       }
 
       // อัพเดต state ในหน่วยความจำ
@@ -151,12 +152,15 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
 
       set({ 
         notifications: updatedNotifications,
-        unreadCount: Math.max(0, newUnreadCount)
+        unreadCount: Math.max(0, newUnreadCount),
+        error: null // เคลียร์ error เมื่อสำเร็จ
       });
 
     } catch (error) {
       console.error('Error deleting notification:', error);
-      set({ error: error instanceof Error ? error.message : 'Failed to delete notification' });
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete notification';
+      set({ error: errorMessage });
+      throw error; // throw error เพื่อให้ component catch ได้
     }
   },
 

@@ -92,14 +92,38 @@ export async function DELETE(
   try {
     const { id } = await params;
 
+    // ตรวจสอบว่า notification มีอยู่จริง
+    const existingNotification = await prisma.notification.findUnique({
+      where: { id },
+    });
+
+    if (!existingNotification) {
+      return NextResponse.json(
+        { error: 'Notification not found' },
+        { status: 404 }
+      );
+    }
+
     await prisma.notification.delete({
       where: { id },
     });
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ 
+      success: true,
+      message: 'Notification deleted successfully' 
+    });
 
   } catch (error) {
     console.error('Error deleting notification:', error);
+    
+    // ถ้าเป็น P2025 (Record not found) จาก Prisma
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'P2025') {
+      return NextResponse.json(
+        { error: 'Notification not found' },
+        { status: 404 }
+      );
+    }
+    
     return NextResponse.json(
       { error: 'Failed to delete notification' },
       { status: 500 }

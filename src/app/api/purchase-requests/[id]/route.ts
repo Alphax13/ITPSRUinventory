@@ -1,6 +1,7 @@
 // src/app/api/purchase-requests/[id]/route.ts
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { NotificationService } from '@/lib/notificationService';
 
 // PATCH: อัปเดตสถานะคำขอซื้อ
 export async function PATCH(
@@ -44,6 +45,14 @@ export async function PATCH(
         },
       },
     });
+
+    // แจ้งเตือนผู้ขอเมื่อคำขอได้รับการอนุมัติหรือปฏิเสธ
+    try {
+      await NotificationService.notifyPurchaseRequestApproval(id, status);
+    } catch (notificationError) {
+      console.error('Error sending purchase request approval notification:', notificationError);
+      // ไม่ให้ notification error ทำให้ transaction fail
+    }
 
     return NextResponse.json(updatedRequest, { status: 200 });
   } catch (error) {

@@ -1,6 +1,16 @@
 // src/utils/pdfGenerator.ts
 import jsPDF from 'jspdf';
-import type { Material } from '../app/dashboard/materials/page';
+import type { MaterialReportData, TransactionReportData, PurchaseRequestReportData } from './excelGenerator';
+
+// สำหรับ backward compatibility
+export interface Material {
+  id: string;
+  code: string;
+  name: string;
+  category: string;
+  currentStock: number;
+  unit: string;
+}
 
 interface Transaction {
   id: string;
@@ -123,4 +133,73 @@ export const generateTransactionReport = async (transactions: Transaction[], sta
 
 export const downloadPDF = (pdf: jsPDF, filename: string) => {
   pdf.save(filename);
+};
+
+// สร้าง PDF สำหรับรายงานคำขอซื้อ
+export const generatePurchaseRequestReport = async (requests: PurchaseRequestReportData[]) => {
+  const pdf = new jsPDF();
+  
+  pdf.setFont('helvetica');
+  
+  // Title
+  pdf.setFontSize(20);
+  pdf.text('รายงานคำขอซื้อ', 20, 30);
+  
+  // Date
+  pdf.setFontSize(12);
+  pdf.text(`วันที่: ${new Date().toLocaleDateString('th-TH')}`, 20, 45);
+  
+  // Headers
+  let yPosition = 65;
+  pdf.setFontSize(9);
+  pdf.text('วันที่ขอ', 20, yPosition);
+  pdf.text('ผู้ขอ', 45, yPosition);
+  pdf.text('สถานะ', 80, yPosition);
+  pdf.text('รายการ', 110, yPosition);
+  pdf.text('เหตุผล', 160, yPosition);
+  
+  // Draw line
+  pdf.line(20, yPosition + 5, 200, yPosition + 5);
+  yPosition += 15;
+  
+  // Data rows
+  requests.forEach((request) => {
+    if (yPosition > 270) {
+      pdf.addPage();
+      yPosition = 30;
+    }
+    
+    const date = new Date(request.requestDate).toLocaleDateString('th-TH', {
+      day: '2-digit',
+      month: '2-digit'
+    });
+    
+    const status = request.status === 'PENDING' ? 'รออนุมัติ' : 
+                   request.status === 'APPROVED' ? 'อนุมัติ' : 'ปฏิเสธ';
+    
+    pdf.text(date, 20, yPosition);
+    pdf.text(request.requesterName.substring(0, 15), 45, yPosition);
+    pdf.text(status, 80, yPosition);
+    pdf.text(request.items.substring(0, 25), 110, yPosition);
+    pdf.text(request.reason.substring(0, 20), 160, yPosition);
+    
+    yPosition += 10;
+  });
+  
+  // Summary
+  pdf.addPage();
+  pdf.setFontSize(16);
+  pdf.text('สรุป', 20, 30);
+  
+  pdf.setFontSize(12);
+  const pending = requests.filter(r => r.status === 'PENDING').length;
+  const approved = requests.filter(r => r.status === 'APPROVED').length;
+  const rejected = requests.filter(r => r.status === 'REJECTED').length;
+  
+  pdf.text(`คำขอทั้งหมด: ${requests.length}`, 20, 50);
+  pdf.text(`รออนุมัติ: ${pending}`, 20, 65);
+  pdf.text(`อนุมัติแล้ว: ${approved}`, 20, 80);
+  pdf.text(`ปฏิเสธ: ${rejected}`, 20, 95);
+  
+  return pdf;
 };

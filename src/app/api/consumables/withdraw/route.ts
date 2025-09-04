@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { TransactionType } from '@prisma/client';
+import { NotificationService } from '@/lib/notificationService';
 
 export async function POST(request: NextRequest) {
   try {
@@ -65,6 +66,14 @@ export async function POST(request: NextRequest) {
         message: `เบิกวัสดุ ${consumable.name} จำนวน ${amount} ${consumable.unit} เรียบร้อยแล้ว`
       };
     });
+
+    // แจ้งเตือน Admin เมื่อมีการเบิกวัสดุ
+    try {
+      await NotificationService.notifyConsumableWithdrawal(id, userId || 'system', amount);
+    } catch (notificationError) {
+      console.error('Error sending withdrawal notification:', notificationError);
+      // ไม่ให้ notification error ทำให้ transaction fail
+    }
 
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
