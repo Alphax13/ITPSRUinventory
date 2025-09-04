@@ -153,36 +153,42 @@ export default function ReportPreviewModal({
               <td className="px-4 py-2 border text-gray-800">{item.department}</td>
               <td className="px-4 py-2 border text-gray-800">
                 <div className="max-w-xs">
-                  {Array.isArray(item.items) ? (
-                    <ul className="list-disc list-inside text-sm">
-                      {item.items.slice(0, 3).map((reqItem: any, idx: number) => (
-                        <li key={idx}>
-                          {reqItem.name} ({reqItem.quantity} {reqItem.unit})
-                        </li>
-                      ))}
-                      {item.items.length > 3 && (
-                        <li className="text-gray-500">และอีก {item.items.length - 3} รายการ</li>
-                      )}
-                    </ul>
-                  ) : (
-                    <div className="text-sm">
-                      {(() => {
-                        const itemNames = parseItemsToNames(item.items);
-                        return itemNames.length > 0 ? (
-                          <ul className="list-disc list-inside">
-                            {itemNames.slice(0, 3).map((name, idx) => (
-                              <li key={idx}>{name}</li>
+                  {(() => {
+                    try {
+                      const parsedItems = JSON.parse(item.items);
+                      if (Array.isArray(parsedItems)) {
+                        return (
+                          <ul className="list-disc list-inside text-sm">
+                            {parsedItems.slice(0, 3).map((reqItem: any, idx: number) => (
+                              <li key={idx}>
+                                {reqItem.name} ({reqItem.quantity} {reqItem.unit})
+                              </li>
                             ))}
-                            {itemNames.length > 3 && (
-                              <li className="text-gray-500">และอีก {itemNames.length - 3} รายการ</li>
+                            {parsedItems.length > 3 && (
+                              <li className="text-gray-500">และอีก {parsedItems.length - 3} รายการ</li>
                             )}
                           </ul>
-                        ) : (
-                          <span className="text-gray-500">-</span>
                         );
-                      })()}
-                    </div>
-                  )}
+                      }
+                    } catch (error) {
+                      // Fall through to simple text display
+                    }
+                    
+                    // Fallback to simple text display
+                    const itemNames = parseItemsToNames(item.items);
+                    return itemNames.length > 0 ? (
+                      <ul className="list-disc list-inside text-sm">
+                        {itemNames.slice(0, 3).map((name, idx) => (
+                          <li key={idx}>{name}</li>
+                        ))}
+                        {itemNames.length > 3 && (
+                          <li className="text-gray-500">และอีก {itemNames.length - 3} รายการ</li>
+                        )}
+                      </ul>
+                    ) : (
+                      <span className="text-gray-500">-</span>
+                    );
+                  })()}
                 </div>
               </td>
               <td className="px-4 py-2 border">
