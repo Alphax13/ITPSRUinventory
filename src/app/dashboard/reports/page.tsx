@@ -1,12 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuthStore } from '@/stores/authStore';
-import { 
-  generateStockReport, 
-  generateTransactionReport, 
-  generatePurchaseRequestReport
-} from '@/utils/pdfGenerator';
 import { 
   generateSimpleStockPDF,
   generateSimpleTransactionPDF,
@@ -28,7 +23,7 @@ export default function ReportsPage() {
   const [previewModal, setPreviewModal] = useState<{
     isOpen: boolean;
     type: 'stock' | 'transactions' | 'purchase-requests';
-    data: any[];
+    data: MaterialReportData[] | TransactionReportData[] | PurchaseRequestReportData[];
     dateRange?: { startDate: string; endDate: string };
   }>({
     isOpen: false,
@@ -49,11 +44,7 @@ export default function ReportsPage() {
 
   const { user } = useAuthStore();
 
-  useEffect(() => {
-    loadStats();
-  }, []);
-
-  const loadStats = async () => {
+  const loadStats = useCallback(async () => {
     try {
       const [stockRes, transactionRes, purchaseRes] = await Promise.all([
         fetch('/api/reports/stock'),
@@ -88,7 +79,11 @@ export default function ReportsPage() {
     } catch (error) {
       console.error('Error loading stats:', error);
     }
-  };
+  }, [dateRange.startDate, dateRange.endDate]);
+
+  useEffect(() => {
+    loadStats();
+  }, [loadStats]);
 
   if (user?.role !== 'ADMIN') {
     return (
@@ -142,7 +137,7 @@ export default function ReportsPage() {
         let pdf;
         switch (type) {
           case 'stock':
-            const materials = data.map((item: MaterialReportData) => ({
+            const materials = (data as MaterialReportData[]).map((item: MaterialReportData) => ({
               id: item.id,
               code: item.code,
               name: item.name,
@@ -156,7 +151,7 @@ export default function ReportsPage() {
             pdf = await generateSimpleStockPDF(materials);
             break;
           case 'transactions':
-            const transactions = data.map((item: TransactionReportData) => ({
+            const transactions = (data as TransactionReportData[]).map((item: TransactionReportData) => ({
               id: item.id,
               type: item.type,
               quantity: item.quantity,
@@ -170,23 +165,23 @@ export default function ReportsPage() {
             pdf = await generateSimpleTransactionPDF(transactions, dateRange.startDate, dateRange.endDate);
             break;
           case 'purchase-requests':
-            pdf = await generateSimplePurchaseRequestPDF(data);
+            pdf = await generateSimplePurchaseRequestPDF(data as PurchaseRequestReportData[]);
             break;
         }
         downloadPDF(pdf!, `${filename}.pdf`);
       } else {
         switch (type) {
           case 'stock':
-            generateStockExcel(data, `${filename}.xlsx`);
+            generateStockExcel(data as MaterialReportData[], `${filename}.xlsx`);
             break;
           case 'transactions':
-            generateTransactionExcel(data, `${filename}.xlsx`, { 
+            generateTransactionExcel(data as TransactionReportData[], `${filename}.xlsx`, { 
               start: dateRange.startDate, 
               end: dateRange.endDate 
             });
             break;
           case 'purchase-requests':
-            generatePurchaseRequestExcel(data, `${filename}.xlsx`);
+            generatePurchaseRequestExcel(data as PurchaseRequestReportData[], `${filename}.xlsx`);
             break;
         }
       }
@@ -217,7 +212,7 @@ export default function ReportsPage() {
         let pdf;
         switch (type) {
           case 'stock':
-            const materials = data.map((item: MaterialReportData) => ({
+            const materials = (data as MaterialReportData[]).map((item: MaterialReportData) => ({
               id: item.id,
               code: item.code,
               name: item.name,
@@ -232,7 +227,7 @@ export default function ReportsPage() {
             pdf = await generateSimpleStockPDF(materials);
             break;
           case 'transactions':
-            const transactions = data.map((item: TransactionReportData) => ({
+            const transactions = (data as TransactionReportData[]).map((item: TransactionReportData) => ({
               id: item.id,
               type: item.type,
               quantity: item.quantity,
@@ -249,7 +244,7 @@ export default function ReportsPage() {
             break;
           case 'purchase-requests':
             console.log('Purchase requests prepared:', data.length); // Debug log
-            pdf = await generateSimplePurchaseRequestPDF(data);
+            pdf = await generateSimplePurchaseRequestPDF(data as PurchaseRequestReportData[]);
             break;
         }
         
@@ -262,17 +257,17 @@ export default function ReportsPage() {
       } else {
         switch (type) {
           case 'stock':
-            generateStockExcel(data, `${filename}.xlsx`);
+            generateStockExcel(data as MaterialReportData[], `${filename}.xlsx`);
             break;
           case 'transactions':
             const modalDateRange = previewModal.dateRange || dateRange;
-            generateTransactionExcel(data, `${filename}.xlsx`, { 
+            generateTransactionExcel(data as TransactionReportData[], `${filename}.xlsx`, { 
               start: modalDateRange.startDate, 
               end: modalDateRange.endDate 
             });
             break;
           case 'purchase-requests':
-            generatePurchaseRequestExcel(data, `${filename}.xlsx`);
+            generatePurchaseRequestExcel(data as PurchaseRequestReportData[], `${filename}.xlsx`);
             break;
         }
       }

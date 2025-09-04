@@ -147,7 +147,7 @@ export default function ReportPreviewModal({
           {currentData.map((item: PurchaseRequestReportData, index) => (
             <tr key={item.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
               <td className="px-4 py-2 border text-gray-800">
-                {new Date(item.createdAt).toLocaleDateString('th-TH')}
+                {new Date(item.requestDate).toLocaleDateString('th-TH')}
               </td>
               <td className="px-4 py-2 border text-gray-800">{item.requesterName}</td>
               <td className="px-4 py-2 border text-gray-800">{item.department}</td>

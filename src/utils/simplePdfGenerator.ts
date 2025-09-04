@@ -37,7 +37,6 @@ const parseItemsToNames = (itemsJson: string): string => {
 
 // รอให้ webfont โหลด (รองรับ browser ที่มี/ไม่มี Font Loading API)
 const waitForFonts = async (extraDelayMs = FONT_WAIT_MS) => {
-  // @ts-ignore
   const fonts = (document as any).fonts;
   if (fonts?.ready) {
     try {
@@ -78,12 +77,8 @@ const addCanvasAsMultipage = async (
   pageWmm: number,
   pageHmm: number
 ) => {
-  const pageRatio = pageWmm / pageHmm; // landscape จะกว้างกว่า
-  const imgRatio = canvas.width / canvas.height;
-
   // คำนวณสเกลภาพ -> ให้พอดีกว้างหน้า
   const pdfImgWidthMM = pageWmm;
-  const pdfImgHeightMM = pdfImgWidthMM / imgRatio;
 
   // แปลง mm -> px ตามสัดส่วนเดียวกันเพื่อหา "ความสูงภาพต่อหน้า"
   // อัตราส่วนเทียบจากความกว้าง
