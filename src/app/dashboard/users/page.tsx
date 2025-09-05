@@ -208,7 +208,7 @@ export default function UsersPage() {
               <tr className="bg-gray-50 text-left text-sm font-semibold text-gray-700">
                 <th className="p-4 border-b">ผู้ใช้</th>
                 <th className="p-4 border-b">ตำแหน่ง</th>
-                <th className="p-4 border-b">แผนก</th>
+                <th className="p-4 border-b">สาขา</th>
                 <th className="p-4 border-b">สถานะ</th>
                 <th className="p-4 border-b">วันที่สร้าง</th>
                 <th className="p-4 border-b">การจัดการ</th>

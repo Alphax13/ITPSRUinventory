@@ -59,6 +59,11 @@ export default function AssetsPage() {
   const [sortBy, setSortBy] = useState('assetNumber');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [paginatedAssets, setPaginatedAssets] = useState<Asset[]>([]);
+
   const [borrowFormData, setBorrowFormData] = useState({
     userId: '',
     expectedReturnDate: '',
@@ -148,6 +153,18 @@ export default function AssetsPage() {
     setFilteredAssets(sorted);
   }, [assets, searchTerm, filterCategory, filterCondition, filterStatus, sortBy, sortOrder]);
 
+  // Pagination effect
+  useEffect(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    setPaginatedAssets(filteredAssets.slice(startIndex, endIndex));
+  }, [filteredAssets, currentPage, itemsPerPage]);
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterCategory, filterCondition, filterStatus]);
+
   const fetchAssets = async () => {
     try {
       const response = await fetch('/api/assets');
@@ -233,6 +250,54 @@ export default function AssetsPage() {
         </svg>
       );
     }
+  };
+
+  // Pagination functions
+  const totalPages = Math.ceil(filteredAssets.length / itemsPerPage);
+  const totalItems = filteredAssets.length;
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handleItemsPerPageChange = (items: number) => {
+    setItemsPerPage(items);
+    setCurrentPage(1);
+  };
+
+  const getPaginationRange = () => {
+    const range = [];
+    const maxVisible = 5;
+    
+    if (totalPages <= maxVisible) {
+      for (let i = 1; i <= totalPages; i++) {
+        range.push(i);
+      }
+    } else {
+      if (currentPage <= 3) {
+        for (let i = 1; i <= 4; i++) {
+          range.push(i);
+        }
+        range.push('...');
+        range.push(totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        range.push(1);
+        range.push('...');
+        for (let i = totalPages - 3; i <= totalPages; i++) {
+          range.push(i);
+        }
+      } else {
+        range.push(1);
+        range.push('...');
+        for (let i = currentPage - 1; i <= currentPage + 1; i++) {
+          range.push(i);
+        }
+        range.push('...');
+        range.push(totalPages);
+      }
+    }
+    
+    return range;
   };
 
   const handleBorrowSubmit = async (e: React.FormEvent) => {
@@ -740,65 +805,89 @@ export default function AssetsPage() {
       )}
 
       {/* Assets Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th 
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
-                onClick={() => handleSort('assetNumber')}
-              >
-                <div className="flex items-center space-x-1">
-                  <span>เลขครุภัณฑ์</span>
-                  {getSortIcon('assetNumber')}
-                </div>
-              </th>
-              <th 
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
-                onClick={() => handleSort('name')}
-              >
-                <div className="flex items-center space-x-1">
-                  <span>รายการ</span>
-                  {getSortIcon('name')}
-                </div>
-              </th>
-              <th 
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
-                onClick={() => handleSort('category')}
-              >
-                <div className="flex items-center space-x-1">
-                  <span>หมวดหมู่</span>
-                  {getSortIcon('category')}
-                </div>
-              </th>
-              <th 
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
-                onClick={() => handleSort('location')}
-              >
-                <div className="flex items-center space-x-1">
-                  <span>สถานที่</span>
-                  {getSortIcon('location')}
-                </div>
-              </th>
-              <th 
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
-                onClick={() => handleSort('condition')}
-              >
-                <div className="flex items-center space-x-1">
-                  <span>สภาพ</span>
-                  {getSortIcon('condition')}
-                </div>
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                สถานะ
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                การดำเนินการ
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {filteredAssets.map((asset) => {
+      <div className="bg-white rounded-lg shadow">
+        {/* Table Info and Controls */}
+        <div className="px-6 py-4 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center space-x-4">
+            <p className="text-sm text-gray-700">
+              แสดง {((currentPage - 1) * itemsPerPage) + 1} ถึง {Math.min(currentPage * itemsPerPage, totalItems)} จาก {totalItems} รายการ
+            </p>
+          </div>
+          <div className="flex items-center space-x-2">
+            <label className="text-sm text-gray-700">แสดงต่อหน้า:</label>
+            <select
+              value={itemsPerPage}
+              onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
+              className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value={5}>5</option>
+              <option value={10}>10</option>
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Desktop Table */}
+        <div className="hidden lg:block overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th 
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
+                  onClick={() => handleSort('assetNumber')}
+                >
+                  <div className="flex items-center space-x-1">
+                    <span>เลขครุภัณฑ์</span>
+                    {getSortIcon('assetNumber')}
+                  </div>
+                </th>
+                <th 
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
+                  onClick={() => handleSort('name')}
+                >
+                  <div className="flex items-center space-x-1">
+                    <span>รายการ</span>
+                    {getSortIcon('name')}
+                  </div>
+                </th>
+                <th 
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
+                  onClick={() => handleSort('category')}
+                >
+                  <div className="flex items-center space-x-1">
+                    <span>หมวดหมู่</span>
+                    {getSortIcon('category')}
+                  </div>
+                </th>
+                <th 
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
+                  onClick={() => handleSort('location')}
+                >
+                  <div className="flex items-center space-x-1">
+                    <span>สถานที่</span>
+                    {getSortIcon('location')}
+                  </div>
+                </th>
+                <th 
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
+                  onClick={() => handleSort('condition')}
+                >
+                  <div className="flex items-center space-x-1">
+                    <span>สภาพ</span>
+                    {getSortIcon('condition')}
+                  </div>
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  สถานะ
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  การดำเนินการ
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {paginatedAssets.map((asset) => {
               const currentBorrow = asset.borrowHistory?.find(b => b.status === 'BORROWED');
               return (
                 <tr key={asset.id} className="hover:bg-gray-50">
@@ -828,6 +917,9 @@ export default function AssetsPage() {
                             {asset.brand} {asset.model && `- ${asset.model}`}
                           </div>
                         )}
+                         <div className="text-xs text-red-700">
+                          {asset.description}
+                        </div>
                       </div>
                     </div>
                   </td>
@@ -907,8 +999,201 @@ export default function AssetsPage() {
             })}
           </tbody>
         </table>
+        </div>
 
-        {filteredAssets.length === 0 && !loading && (
+        {/* Mobile Cards */}
+        <div className="lg:hidden">
+          {paginatedAssets.map((asset) => {
+            const currentBorrow = borrows.find(
+              borrow => borrow.id && 
+              typeof borrow === 'object' && 
+              'fixedAsset' in borrow && 
+              borrow.fixedAsset && 
+              typeof borrow.fixedAsset === 'object' && 
+              'id' in borrow.fixedAsset && 
+              borrow.fixedAsset.id === asset.id && 
+              (borrow.status === 'BORROWED' || borrow.status === 'OVERDUE')
+            );
+
+            return (
+              <div key={asset.id} className="border-b border-gray-200 p-4 hover:bg-gray-50">
+                <div className="flex items-start space-x-4">
+                  {asset.imageUrl && (
+                    <div className="flex-shrink-0">
+                      <SafeImage
+                        src={asset.imageUrl}
+                        alt={asset.name}
+                        width={64}
+                        height={64}
+                        className="rounded-lg border border-gray-200 object-cover cursor-pointer hover:opacity-80"
+                        onClick={() => setShowImageModal(asset.imageUrl || null)}
+                      />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h3 className="text-sm font-medium text-gray-900 truncate">
+                          {asset.name}
+                        </h3>
+                        <p className="text-sm text-gray-600">#{asset.assetNumber}</p>
+                        {asset.brand && (
+                          <p className="text-xs text-gray-500">
+                            {asset.brand} {asset.model && `- ${asset.model}`}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        {!currentBorrow && asset.condition !== 'DISPOSED' && asset.condition !== 'DAMAGED' && (
+                          <button
+                            onClick={() => {
+                              setSelectedAsset(asset);
+                              setShowBorrowForm(true);
+                            }}
+                            className="inline-flex items-center justify-center w-8 h-8 text-blue-600 hover:text-white hover:bg-blue-600 rounded-full transition-colors"
+                            title="ยืมครุภัณฑ์"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                            </svg>
+                          </button>
+                        )}
+                        {isAdmin && (
+                          <>
+                            <button
+                              onClick={() => {
+                                setEditingAsset(asset);
+                                setShowForm(true);
+                              }}
+                              className="inline-flex items-center justify-center w-8 h-8 text-green-600 hover:text-white hover:bg-green-600 rounded-full transition-colors"
+                              title="แก้ไขครุภัณฑ์"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                              </svg>
+                            </button>
+                            <button
+                              onClick={() => handleDelete(asset)}
+                              className="inline-flex items-center justify-center w-8 h-8 text-red-600 hover:text-white hover:bg-red-600 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              title="ลบครุภัณฑ์"
+                              disabled={!!currentBorrow}
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
+                      <div>
+                        <span className="text-gray-500">หมวดหมู่:</span>
+                        <span className="ml-1 text-gray-900">{asset.category}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">สถานที่:</span>
+                        <span className="ml-1 text-gray-900">{asset.location}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">สภาพ:</span>
+                        <span className={`ml-1 px-2 py-0.5 text-xs font-semibold rounded-full ${getConditionColor(asset.condition)}`}>
+                          {getConditionText(asset.condition)}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">สถานะ:</span>
+                        {currentBorrow ? (
+                          <div className="ml-1">
+                            <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                              ถูกยืม
+                            </span>
+                            <div className="text-xs text-gray-500 mt-1">
+                              โดย: {currentBorrow.user.name}
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="ml-1 px-2 py-0.5 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                            ว่าง
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {asset.description && (
+                      <div className="mt-2">
+                        <span className="text-xs text-gray-500">รายละเอียด:</span>
+                        <p className="text-xs text-gray-700 mt-1">{asset.description}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="px-6 py-4 border-t border-gray-200">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="text-sm text-gray-700">
+                หน้า {currentPage} จาก {totalPages}
+              </div>
+              
+              <div className="flex items-center space-x-1">
+                {/* Previous Button */}
+                <button
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  ก่อนหน้า
+                </button>
+                
+                {/* Page Numbers */}
+                <div className="hidden sm:flex space-x-1">
+                  {getPaginationRange().map((page, index) => (
+                    <div key={index}>
+                      {page === '...' ? (
+                        <span className="px-3 py-2 text-sm font-medium text-gray-500">...</span>
+                      ) : (
+                        <button
+                          onClick={() => handlePageChange(page as number)}
+                          className={`px-3 py-2 text-sm font-medium rounded-md ${
+                            currentPage === page
+                              ? 'bg-blue-600 text-white'
+                              : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Mobile Page Info */}
+                <div className="sm:hidden px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md">
+                  {currentPage} / {totalPages}
+                </div>
+                
+                {/* Next Button */}
+                <button
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  ถัดไป
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* No Data Message */}
+        {paginatedAssets.length === 0 && !loading && (
           <div className="text-center py-12">
             {assets.length === 0 ? (
               <p className="text-gray-500">ยังไม่มีครุภัณฑ์ในระบบ</p>

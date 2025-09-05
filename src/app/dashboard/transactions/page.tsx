@@ -430,15 +430,6 @@ export default function TransactionPage() {
                   </div>
                 )}
               </div>
-              
-              <button
-                type="button"
-                onClick={() => setShowScanner(true)}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium flex items-center space-x-2"
-              >
-                <span>📷</span>
-                <span>สแกน QR</span>
-              </button>
             </div>
           </div>
         </div>

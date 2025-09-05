@@ -137,7 +137,7 @@ export default function ReportPreviewModal({
           <tr className="bg-gray-50">
             <th className="px-4 py-2 border text-left font-semibold text-gray-700">วันที่ขอซื้อ</th>
             <th className="px-4 py-2 border text-left font-semibold text-gray-700">ผู้ขอซื้อ</th>
-            <th className="px-4 py-2 border text-left font-semibold text-gray-700">แผนก</th>
+            <th className="px-4 py-2 border text-left font-semibold text-gray-700">สาขา</th>
             <th className="px-4 py-2 border text-left font-semibold text-gray-700">รายการ</th>
             <th className="px-4 py-2 border text-left font-semibold text-gray-700">สถานะ</th>
             <th className="px-4 py-2 border text-left font-semibold text-gray-700">เหตุผล</th>

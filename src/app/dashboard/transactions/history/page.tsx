@@ -32,6 +32,11 @@ export default function TransactionHistoryPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'ALL' | 'IN' | 'OUT'>('ALL');
   const [sortBy, setSortBy] = useState<'date' | 'user' | 'material'>('date');
+  
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
+  
   const { user } = useAuthStore();
 
   const isAdmin = user?.role === 'ADMIN';
@@ -98,6 +103,35 @@ export default function TransactionHistoryPage() {
           return 0;
       }
     });
+
+  // Pagination calculations
+  const totalItems = filteredTransactions.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentTransactions = filteredTransactions.slice(startIndex, endIndex);
+
+  // Reset to first page when filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filter, sortBy]);
+
+  // Pagination functions
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(prev => prev - 1);
+    }
+  };
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(prev => prev + 1);
+    }
+  };
 
   const getTransactionStats = () => {
     const totalTransactions = transactions.length;
@@ -210,9 +244,10 @@ export default function TransactionHistoryPage() {
 
       {/* Transactions Table */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="overflow-x-auto">
+        {/* Desktop Table View */}
+        <div className="hidden lg:block overflow-x-auto">
           <table className="w-full table-auto">
-          <thead>
+            <thead>
               <tr className="bg-gray-50 text-left text-sm font-semibold text-gray-700">
                 <th className="p-4 border-b">วันที่/เวลา</th>
                 <th className="p-4 border-b">ประเภท</th>
@@ -220,11 +255,11 @@ export default function TransactionHistoryPage() {
                 <th className="p-4 border-b">จำนวน</th>
                 <th className="p-4 border-b">ผู้ใช้งาน</th>
                 <th className="p-4 border-b">เหตุผล</th>
-            </tr>
-          </thead>
-          <tbody>
-              {filteredTransactions.length > 0 ? (
-                filteredTransactions.map((tx) => (
+              </tr>
+            </thead>
+            <tbody>
+              {currentTransactions.length > 0 ? (
+                currentTransactions.map((tx) => (
                   <tr key={tx.id} className="border-b hover:bg-gray-50 transition-colors">
                     <td className="p-4 text-sm text-gray-900">
                       <div>
@@ -265,8 +300,8 @@ export default function TransactionHistoryPage() {
                     <td className="p-4 text-sm">
                       <span className="font-semibold text-gray-900">
                         {tx.quantity.toLocaleString()} {tx.material.unit}
-                    </span>
-                  </td>
+                      </span>
+                    </td>
                     <td className="p-4 text-sm">
                       <div className="font-medium text-gray-900">{tx.user.name}</div>
                       {tx.user.department && (
@@ -279,10 +314,10 @@ export default function TransactionHistoryPage() {
                     <td className="p-4 text-sm text-gray-700">
                       {tx.reason || <span className="text-gray-400">-</span>}
                     </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
+                  </tr>
+                ))
+              ) : (
+                <tr>
                   <td colSpan={6} className="p-8 text-center text-gray-500">
                     <div className="text-4xl mb-2">📋</div>
                     <div>
@@ -295,17 +330,210 @@ export default function TransactionHistoryPage() {
                       <div className="text-sm mt-1">ลองเปลี่ยนตัวกรองหรือล้างการค้นหา</div>
                     )}
                   </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Mobile Card View */}
+        <div className="lg:hidden">
+          {currentTransactions.length > 0 ? (
+            <div className="space-y-4 p-4">
+              {currentTransactions.map((tx) => (
+                <div key={tx.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                  {/* Header with date and type */}
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="text-sm text-gray-600">
+                      <div className="font-medium">
+                        {format(new Date(tx.createdAt), 'dd MMM yyyy', { locale: th })}
+                      </div>
+                      <div className="text-xs">
+                        {format(new Date(tx.createdAt), 'HH:mm น.')}
+                      </div>
+                    </div>
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      tx.type === 'OUT' 
+                        ? 'bg-red-100 text-red-800' 
+                        : 'bg-green-100 text-green-800'
+                    }`}>
+                      {tx.type === 'OUT' ? '📤 เบิกออก' : '📥 เพิ่มเข้า'}
+                    </span>
+                  </div>
+
+                  {/* Material Info */}
+                  <div className="flex items-center space-x-3 mb-3">
+                    <div className="flex-shrink-0">
+                      <SafeImage
+                        src={tx.material.imageUrl || '/placeholder-material.svg'}
+                        alt={tx.material.name}
+                        width={50}
+                        height={50}
+                        className="rounded-lg object-cover"
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-gray-900 text-base">{tx.material.name}</div>
+                      <div className="text-sm text-gray-500">{tx.material.code}</div>
+                      <div className="text-sm font-semibold text-blue-600">
+                        {tx.quantity.toLocaleString()} {tx.material.unit}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* User Info */}
+                  <div className="mb-2">
+                    <div className="text-sm">
+                      <span className="text-gray-600">ผู้ใช้งาน: </span>
+                      <span className="font-medium text-gray-900">{tx.user.name}</span>
+                      {!isAdmin && tx.user.name === user?.name && (
+                        <span className="text-blue-600 font-medium"> (คุณ)</span>
+                      )}
+                    </div>
+                    {tx.user.department && (
+                      <div className="text-xs text-gray-500">{tx.user.department}</div>
+                    )}
+                  </div>
+
+                  {/* Reason */}
+                  {tx.reason && (
+                    <div className="text-sm">
+                      <span className="text-gray-600">เหตุผล: </span>
+                      <span className="text-gray-900">{tx.reason}</span>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="p-8 text-center text-gray-500">
+              <div className="text-4xl mb-2">📋</div>
+              <div>
+                {isAdmin 
+                  ? 'ไม่พบประวัติการทำรายการในระบบ' 
+                  : 'คุณยังไม่มีประวัติการทำรายการ'
+                }
+              </div>
+              {filter !== 'ALL' && (
+                <div className="text-sm mt-1">ลองเปลี่ยนตัวกรองหรือล้างการค้นหา</div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Results Summary */}
-      {filteredTransactions.length > 0 && (
-        <div className="text-center text-sm text-gray-600">
-          แสดง {filteredTransactions.length} จาก {transactions.length} รายการ
+      {/* Pagination and Results Summary */}
+      {totalItems > 0 && (
+        <div className="bg-white rounded-lg shadow p-4">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+            {/* Results Summary */}
+            <div className="text-sm text-gray-600">
+              แสดง {startIndex + 1}-{Math.min(endIndex, totalItems)} จาก {totalItems} รายการ
+            </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="flex items-center gap-2">
+                {/* Previous Button */}
+                <button
+                  onClick={handlePrevPage}
+                  disabled={currentPage === 1}
+                  className={`px-3 py-2 rounded-md text-sm font-medium ${
+                    currentPage === 1
+                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                      : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  ← ก่อนหน้า
+                </button>
+
+                {/* Page Numbers */}
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .filter(page => {
+                      const start = Math.max(1, currentPage - 2);
+                      const end = Math.min(totalPages, currentPage + 2);
+                      return page >= start && page <= end;
+                    })
+                    .map(page => (
+                      <button
+                        key={page}
+                        onClick={() => handlePageChange(page)}
+                        className={`px-3 py-2 rounded-md text-sm font-medium ${
+                          page === currentPage
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    ))}
+                </div>
+
+                {/* Next Button */}
+                <button
+                  onClick={handleNextPage}
+                  disabled={currentPage === totalPages}
+                  className={`px-3 py-2 rounded-md text-sm font-medium ${
+                    currentPage === totalPages
+                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                      : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  ถัดไป →
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Mobile Pagination (Simplified) */}
+          {totalPages > 1 && (
+            <div className="flex md:hidden justify-center items-center gap-2 mt-4">
+              <button
+                onClick={handlePrevPage}
+                disabled={currentPage === 1}
+                className={`px-4 py-2 rounded-md text-sm ${
+                  currentPage === 1
+                    ? 'bg-gray-100 text-gray-400'
+                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                }`}
+              >
+                ←
+              </button>
+              
+              <span className="px-4 py-2 text-sm text-gray-700">
+                {currentPage} / {totalPages}
+              </span>
+              
+              <button
+                onClick={handleNextPage}
+                disabled={currentPage === totalPages}
+                className={`px-4 py-2 rounded-md text-sm ${
+                  currentPage === totalPages
+                    ? 'bg-gray-100 text-gray-400'
+                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                }`}
+              >
+                →
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* No Results */}
+      {totalItems === 0 && !loading && (
+        <div className="bg-white rounded-lg shadow p-8 text-center text-gray-500">
+          <div className="text-4xl mb-2">📋</div>
+          <div>
+            {isAdmin 
+              ? 'ไม่พบประวัติการทำรายการในระบบ' 
+              : 'คุณยังไม่มีประวัติการทำรายการ'
+            }
+          </div>
+          {filter !== 'ALL' && (
+            <div className="text-sm mt-1">ลองเปลี่ยนตัวกรองหรือล้างการค้นหา</div>
+          )}
         </div>
       )}
     </div>
