@@ -6,10 +6,11 @@ import { generatePDFWithHeaderFooter } from '@/utils/puppeteerPdfGenerator';
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const borrowId = params.id;
+    const { id } = await params;
+    const borrowId = id;
 
     // ดึงข้อมูลการยืม
     const borrow = await prisma.assetBorrow.findUnique({
