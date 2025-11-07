@@ -19,32 +19,42 @@ export async function GET(request: Request) {
       whereCondition.isRead = false;
     }
 
-    const notifications = await prisma.notification.findMany({
-      where: whereCondition,
-      orderBy: { createdAt: 'desc' },
-      take: limit,
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            role: true,
-          },
+    // ใช้ Promise.all เพื่อรัน queries พร้อมกัน แทนการรันทีละตัว
+    const [notifications, unreadCount] = await Promise.all([
+      prisma.notification.findMany({
+        where: whereCondition,
+        orderBy: { createdAt: 'desc' },
+        take: limit,
+        // ลบ user relation ออก เพราะไม่จำเป็นต้องใช้ในหน้า notification list
+        select: {
+          id: true,
+          userId: true,
+          title: true,
+          message: true,
+          type: true,
+          isRead: true,
+          actionUrl: true,
+          metadata: true,
+          createdAt: true,
+          updatedAt: true,
         },
-      },
-    });
-
-    // นับจำนวน notifications ที่ยังไม่อ่าน
-    const unreadCount = await prisma.notification.count({
-      where: {
-        userId,
-        isRead: false,
-      },
-    });
+      }),
+      // นับจำนวน notifications ที่ยังไม่อ่าน
+      prisma.notification.count({
+        where: {
+          userId,
+          isRead: false,
+        },
+      }),
+    ]);
 
     return NextResponse.json({
       notifications,
       unreadCount,
+    }, {
+      headers: {
+        'Cache-Control': 'private, no-cache, no-store, must-revalidate',
+      }
     });
 
   } catch (error) {
@@ -78,14 +88,18 @@ export async function POST(request: Request) {
         actionUrl,
         metadata,
       },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            role: true,
-          },
-        },
+      // ลบ user relation ออกเพราะไม่จำเป็น
+      select: {
+        id: true,
+        userId: true,
+        title: true,
+        message: true,
+        type: true,
+        isRead: true,
+        actionUrl: true,
+        metadata: true,
+        createdAt: true,
+        updatedAt: true,
       },
     });
 

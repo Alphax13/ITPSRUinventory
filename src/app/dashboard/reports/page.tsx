@@ -2,21 +2,12 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useAuthStore } from '@/stores/authStore';
-import { 
-  generateSimpleStockPDF,
-  generateSimpleTransactionPDF,
-  generateSimplePurchaseRequestPDF,
-  downloadPDF
-} from '@/utils/simplePdfGenerator';
-import { 
-  generateStockExcel, 
-  generateTransactionExcel, 
-  generatePurchaseRequestExcel,
-  type MaterialReportData,
-  type TransactionReportData,
-  type PurchaseRequestReportData
-} from '@/utils/excelGenerator';
 import ReportPreviewModal from '@/components/ReportPreviewModal';
+import type {
+  MaterialReportData,
+  TransactionReportData,
+  PurchaseRequestReportData
+} from '@/utils/excelGenerator';
 
 export default function ReportsPage() {
   const [loading, setLoading] = useState(false);
@@ -117,13 +108,16 @@ export default function ReportsPage() {
           break;
       }
 
-      const response = await fetch(apiUrl);
-      if (!response.ok) throw new Error('Failed to fetch data');
-      
-      const data = await response.json();
-
       if (preview) {
-        // Show preview modal
+        // Fetch data for preview
+        const response = await fetch(apiUrl);
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('API Error:', errorText);
+          throw new Error('Failed to fetch data for preview');
+        }
+        const data = await response.json();
+        
         setPreviewModal({
           isOpen: true,
           type,
@@ -133,61 +127,45 @@ export default function ReportsPage() {
         return;
       }
 
-      if (format === 'pdf') {
-        let pdf;
-        switch (type) {
-          case 'stock':
-            const materials = (data as MaterialReportData[]).map((item: MaterialReportData) => ({
-              id: item.id,
-              code: item.code,
-              name: item.name,
-              category: item.category,
-              currentStock: item.currentStock,
-              unit: item.unit,
-              minStock: item.minStock,
-              location: item.location || '-',
-              status: item.currentStock <= item.minStock ? 'Low Stock' : 'Normal'
-            }));
-            pdf = await generateSimpleStockPDF(materials);
-            break;
-          case 'transactions':
-            const transactions = (data as TransactionReportData[]).map((item: TransactionReportData) => ({
-              id: item.id,
-              type: item.type,
-              quantity: item.quantity,
-              date: item.date,
-              materialCode: item.materialCode,
-              materialName: item.materialName,
-              unit: item.unit,
-              userName: item.userName,
-              department: item.department
-            }));
-            pdf = await generateSimpleTransactionPDF(transactions, dateRange.startDate, dateRange.endDate);
-            break;
-          case 'purchase-requests':
-            pdf = await generateSimplePurchaseRequestPDF(data as PurchaseRequestReportData[]);
-            break;
+      // ใช้ HTMLDocs API สำหรับการสร้างรายงาน
+      const downloadUrl = format === 'pdf' 
+        ? `${apiUrl}/${format}${type === 'transactions' ? `?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}` : ''}`
+        : `${apiUrl}/${format}${type === 'transactions' ? `?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}` : ''}`;
+        
+      console.log('Downloading from:', downloadUrl);
+      
+      const response = await fetch(downloadUrl);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API Error:', errorText);
+        
+        let errorMessage = 'เกิดข้อผิดพลาดในการสร้างรายงาน';
+        try {
+          const errorJson = JSON.parse(errorText);
+          errorMessage = errorJson.error || errorMessage;
+        } catch {
+          errorMessage = errorText || errorMessage;
         }
-        downloadPDF(pdf!, `${filename}.pdf`);
-      } else {
-        switch (type) {
-          case 'stock':
-            generateStockExcel(data as MaterialReportData[], `${filename}.xlsx`);
-            break;
-          case 'transactions':
-            generateTransactionExcel(data as TransactionReportData[], `${filename}.xlsx`, { 
-              start: dateRange.startDate, 
-              end: dateRange.endDate 
-            });
-            break;
-          case 'purchase-requests':
-            generatePurchaseRequestExcel(data as PurchaseRequestReportData[], `${filename}.xlsx`);
-            break;
-        }
+        
+        throw new Error(errorMessage);
       }
+      
+      // ดาวน์โหลดไฟล์
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${filename}.${format === 'pdf' ? 'pdf' : 'xlsx'}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
     } catch (error) {
       console.error('Error generating report:', error);
-      alert('เกิดข้อผิดพลาดในการสร้างรายงาน');
+      const errorMessage = error instanceof Error ? error.message : 'เกิดข้อผิดพลาดในการสร้างรายงาน';
+      alert(`${errorMessage}\n\nกรุณาตรวจสอบ:\n- HTMLDocs API key ใน .env\n- การเชื่อมต่ออินเทอร์เน็ต\n- Credits ใน HTMLDocs account`);
     } finally {
       setLoading(false);
     }
@@ -197,87 +175,66 @@ export default function ReportsPage() {
     if (!previewModal.isOpen || !previewModal.data || previewModal.data.length === 0) return;
     
     setLoading(true);
-    console.log(`Starting ${format} export for ${previewModal.type}...`); // Debug log
     
     try {
-      const { type, data } = previewModal;
-      const now = new Date();
-      const timestamp = now.toLocaleDateString('th-TH').replace(/\//g, '-');
+      const { type } = previewModal;
+      const timestamp = new Date().toLocaleDateString('th-TH').replace(/\//g, '-');
       const filename = `${type === 'stock' ? 'รายงานสต็อก' : 
                           type === 'transactions' ? 'รายงานเบิกจ่าย' : 
                           'รายงานคำขอซื้อ'}_${timestamp}`;
 
-      if (format === 'pdf') {
-        console.log('Generating Thai PDF...'); // Debug log
-        let pdf;
-        switch (type) {
-          case 'stock':
-            const materials = (data as MaterialReportData[]).map((item: MaterialReportData) => ({
-              id: item.id,
-              code: item.code,
-              name: item.name,
-              category: item.category,
-              currentStock: item.currentStock,
-              unit: item.unit,
-              minStock: item.minStock,
-              location: item.location || '-',
-              status: item.currentStock <= item.minStock ? 'Low Stock' : 'Normal'
-            }));
-            console.log('Materials prepared:', materials.length); // Debug log
-            pdf = await generateSimpleStockPDF(materials);
-            break;
-          case 'transactions':
-            const transactions = (data as TransactionReportData[]).map((item: TransactionReportData) => ({
-              id: item.id,
-              type: item.type,
-              quantity: item.quantity,
-              date: item.date,
-              materialCode: item.materialCode,
-              materialName: item.materialName,
-              unit: item.unit,
-              userName: item.userName,
-              department: item.department
-            }));
-            const modalDateRange = previewModal.dateRange || dateRange;
-            console.log('Transactions prepared:', transactions.length); // Debug log
-            pdf = await generateSimpleTransactionPDF(transactions, modalDateRange.startDate, modalDateRange.endDate);
-            break;
-          case 'purchase-requests':
-            console.log('Purchase requests prepared:', data.length); // Debug log
-            pdf = await generateSimplePurchaseRequestPDF(data as PurchaseRequestReportData[]);
-            break;
+      // สร้าง API URL
+      let apiUrl = '';
+      switch (type) {
+        case 'stock':
+          apiUrl = `/api/reports/stock/${format}`;
+          break;
+        case 'transactions':
+          const modalDateRange = previewModal.dateRange || dateRange;
+          apiUrl = `/api/reports/transactions/${format}?startDate=${modalDateRange.startDate}&endDate=${modalDateRange.endDate}`;
+          break;
+        case 'purchase-requests':
+          apiUrl = `/api/reports/purchase-requests/${format}`;
+          break;
+      }
+      
+      console.log('Fetching report from:', apiUrl);
+      
+      // ดาวน์โหลดไฟล์จาก HTMLDocs API
+      const response = await fetch(apiUrl);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API Error:', errorText);
+        
+        let errorMessage = 'เกิดข้อผิดพลาดในการสร้างรายงาน';
+        try {
+          const errorJson = JSON.parse(errorText);
+          errorMessage = errorJson.error || errorMessage;
+        } catch {
+          errorMessage = errorText || errorMessage;
         }
         
-        if (pdf) {
-          console.log('Thai PDF generated successfully, downloading...'); // Debug log
-          downloadPDF(pdf, `${filename}.pdf`);
-        } else {
-          throw new Error('PDF generation failed');
-        }
-      } else {
-        switch (type) {
-          case 'stock':
-            generateStockExcel(data as MaterialReportData[], `${filename}.xlsx`);
-            break;
-          case 'transactions':
-            const modalDateRange = previewModal.dateRange || dateRange;
-            generateTransactionExcel(data as TransactionReportData[], `${filename}.xlsx`, { 
-              start: modalDateRange.startDate, 
-              end: modalDateRange.endDate 
-            });
-            break;
-          case 'purchase-requests':
-            generatePurchaseRequestExcel(data as PurchaseRequestReportData[], `${filename}.xlsx`);
-            break;
-        }
+        throw new Error(errorMessage);
       }
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${filename}.${format === 'pdf' ? 'pdf' : 'xlsx'}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
       
       // Close modal after successful export
       setPreviewModal(prev => ({ ...prev, isOpen: false }));
       
     } catch (error) {
       console.error('Error exporting report:', error);
-      alert('เกิดข้อผิดพลาดในการส่งออกรายงาน');
+      const errorMessage = error instanceof Error ? error.message : 'เกิดข้อผิดพลาดในการส่งออกรายงาน';
+      alert(`${errorMessage}\n\nกรุณาตรวจสอบ:\n- HTMLDocs API key ใน .env\n- การเชื่อมต่ออินเทอร์เน็ต\n- Credits ใน HTMLDocs account`);
     } finally {
       setLoading(false);
     }

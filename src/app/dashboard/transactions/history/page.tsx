@@ -37,6 +37,11 @@ export default function TransactionHistoryPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
   
+  // Multi-select states
+  const [selectedTransactions, setSelectedTransactions] = useState<Set<string>>(new Set());
+  const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
+  const [isDownloadingBatch, setIsDownloadingBatch] = useState(false);
+  
   const { user } = useAuthStore();
 
   const isAdmin = user?.role === 'ADMIN';
@@ -115,6 +120,76 @@ export default function TransactionHistoryPage() {
   useEffect(() => {
     setCurrentPage(1);
   }, [filter, sortBy]);
+
+  // Helper functions for multi-select
+  const toggleTransactionSelection = (txId: string) => {
+    const newSelection = new Set(selectedTransactions);
+    if (newSelection.has(txId)) {
+      newSelection.delete(txId);
+    } else {
+      newSelection.add(txId);
+    }
+    setSelectedTransactions(newSelection);
+  };
+
+  const toggleSelectAll = () => {
+    const outTransactions = currentTransactions.filter(tx => tx.type === 'OUT');
+    if (selectedTransactions.size === outTransactions.length && outTransactions.length > 0) {
+      setSelectedTransactions(new Set());
+    } else {
+      setSelectedTransactions(new Set(outTransactions.map(tx => tx.id)));
+    }
+  };
+
+  const clearSelection = () => {
+    setSelectedTransactions(new Set());
+    setIsMultiSelectMode(false);
+  };
+
+  const handleBatchDownload = async () => {
+    if (selectedTransactions.size === 0) {
+      alert('กรุณาเลือกรายการที่ต้องการดาวน์โหลด');
+      return;
+    }
+
+    setIsDownloadingBatch(true);
+    try {
+      const response = await fetch('/api/consumables/withdraw/batch', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          transactionIds: Array.from(selectedTransactions),
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'เกิดข้อผิดพลาด');
+      }
+
+      // ดาวน์โหลดไฟล์ PDF
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `withdraw-batch-${Date.now()}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      // Clear selection
+      clearSelection();
+      alert('ดาวน์โหลดใบเบิกสำเร็จ!');
+    } catch (error) {
+      console.error('Error downloading batch:', error);
+      alert(error instanceof Error ? error.message : 'เกิดข้อผิดพลาดในการดาวน์โหลด');
+    } finally {
+      setIsDownloadingBatch(false);
+    }
+  };
 
   // Pagination functions
   const handlePageChange = (page: number) => {
@@ -211,33 +286,81 @@ export default function TransactionHistoryPage() {
         </div>
       </div>
 
-      {/* Filters */}
+      {/* Filters and Multi-Select Controls */}
       <div className="bg-white rounded-lg shadow p-4">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center space-x-4">
-            <span className="text-gray-700 font-medium">กรองตาม:</span>
-            <select
-              value={filter}
-              onChange={(e) => setFilter(e.target.value as 'ALL' | 'IN' | 'OUT')}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="ALL">ทั้งหมด</option>
-              <option value="IN">📥 เพิ่มเข้า</option>
-              <option value="OUT">📤 เบิกออก</option>
-            </select>
+        <div className="flex flex-col gap-4">
+          {/* Top row - Filters */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center space-x-4">
+              <span className="text-gray-700 font-medium">กรองตาม:</span>
+              <select
+                value={filter}
+                onChange={(e) => setFilter(e.target.value as 'ALL' | 'IN' | 'OUT')}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="ALL">ทั้งหมด</option>
+                <option value="IN">📥 เพิ่มเข้า</option>
+                <option value="OUT">📤 เบิกออก</option>
+              </select>
+            </div>
+            
+            <div className="flex items-center space-x-4">
+              <span className="text-gray-700 font-medium">เรียงตาม:</span>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as 'date' | 'user' | 'material')}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="date">วันที่ (ล่าสุดก่อน)</option>
+                <option value="user">ผู้ใช้งาน</option>
+                <option value="material">วัสดุ</option>
+              </select>
+            </div>
           </div>
-          
-          <div className="flex items-center space-x-4">
-            <span className="text-gray-700 font-medium">เรียงตาม:</span>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as 'date' | 'user' | 'material')}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="date">วันที่ (ล่าสุดก่อน)</option>
-              <option value="user">ผู้ใช้งาน</option>
-              <option value="material">วัสดุ</option>
-            </select>
+
+          {/* Bottom row - Multi-select controls */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-3 border-t border-gray-200">
+            {!isMultiSelectMode ? (
+              <button
+                onClick={() => setIsMultiSelectMode(true)}
+                className="inline-flex items-center px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors text-sm font-medium"
+              >
+                ☑️ เลือกหลายรายการ (รวม PDF)
+              </button>
+            ) : (
+              <>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={toggleSelectAll}
+                    className="inline-flex items-center px-3 py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg transition-colors text-sm font-medium"
+                  >
+                    {selectedTransactions.size === currentTransactions.filter(tx => tx.type === 'OUT').length && currentTransactions.filter(tx => tx.type === 'OUT').length > 0
+                      ? '◻️ ยกเลิกทั้งหมด'
+                      : '☑️ เลือกทั้งหมด'
+                    }
+                  </button>
+                  <span className="text-sm text-gray-600">
+                    เลือกแล้ว: <strong className="text-purple-600">{selectedTransactions.size}</strong> รายการ
+                  </span>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleBatchDownload}
+                    disabled={selectedTransactions.size === 0 || isDownloadingBatch}
+                    className="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white rounded-lg transition-colors text-sm font-medium"
+                  >
+                    {isDownloadingBatch ? '⏳ กำลังสร้าง PDF...' : '📥 ดาวน์โหลด PDF รวม'}
+                  </button>
+                  <button
+                    onClick={clearSelection}
+                    className="inline-flex items-center px-3 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg transition-colors text-sm font-medium"
+                  >
+                    ✖️ ยกเลิก
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -249,18 +372,43 @@ export default function TransactionHistoryPage() {
           <table className="w-full table-auto">
             <thead>
               <tr className="bg-gray-50 text-left text-sm font-semibold text-gray-700">
+                {isMultiSelectMode && (
+                  <th className="p-4 border-b w-12">
+                    <input
+                      type="checkbox"
+                      checked={selectedTransactions.size === currentTransactions.filter(tx => tx.type === 'OUT').length && currentTransactions.filter(tx => tx.type === 'OUT').length > 0}
+                      onChange={toggleSelectAll}
+                      className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                    />
+                  </th>
+                )}
                 <th className="p-4 border-b">วันที่/เวลา</th>
                 <th className="p-4 border-b">ประเภท</th>
                 <th className="p-4 border-b">วัสดุ</th>
                 <th className="p-4 border-b">จำนวน</th>
                 <th className="p-4 border-b">ผู้ใช้งาน</th>
                 <th className="p-4 border-b">เหตุผล</th>
+                {!isMultiSelectMode && <th className="p-4 border-b">ดาวน์โหลด</th>}
               </tr>
             </thead>
             <tbody>
               {currentTransactions.length > 0 ? (
                 currentTransactions.map((tx) => (
                   <tr key={tx.id} className="border-b hover:bg-gray-50 transition-colors">
+                    {isMultiSelectMode && (
+                      <td className="p-4 text-sm">
+                        {tx.type === 'OUT' ? (
+                          <input
+                            type="checkbox"
+                            checked={selectedTransactions.has(tx.id)}
+                            onChange={() => toggleTransactionSelection(tx.id)}
+                            className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                          />
+                        ) : (
+                          <span className="text-gray-300">-</span>
+                        )}
+                      </td>
+                    )}
                     <td className="p-4 text-sm text-gray-900">
                       <div>
                         {format(new Date(tx.createdAt), 'dd MMM yyyy', { locale: th })}
@@ -314,11 +462,27 @@ export default function TransactionHistoryPage() {
                     <td className="p-4 text-sm text-gray-700">
                       {tx.reason || <span className="text-gray-400">-</span>}
                     </td>
+                    {!isMultiSelectMode && (
+                      <td className="p-4 text-sm">
+                        {tx.type === 'OUT' ? (
+                          <a
+                            href={`/api/consumables/withdraw/${tx.id}/form`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-colors"
+                          >
+                            📄 ดาวน์โหลด PDF
+                          </a>
+                        ) : (
+                          <span className="text-gray-400 text-xs">-</span>
+                        )}
+                      </td>
+                    )}
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={6} className="p-8 text-center text-gray-500">
+                  <td colSpan={isMultiSelectMode ? 7 : 8} className="p-8 text-center text-gray-500">
                     <div className="text-4xl mb-2">📋</div>
                     <div>
                       {isAdmin 
@@ -342,6 +506,23 @@ export default function TransactionHistoryPage() {
             <div className="space-y-4 p-4">
               {currentTransactions.map((tx) => (
                 <div key={tx.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                  {/* Checkbox for multi-select mode */}
+                  {isMultiSelectMode && tx.type === 'OUT' && (
+                    <div className="mb-3 pb-3 border-b border-gray-200">
+                      <label className="flex items-center space-x-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={selectedTransactions.has(tx.id)}
+                          onChange={() => toggleTransactionSelection(tx.id)}
+                          className="w-5 h-5 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                        />
+                        <span className="text-sm font-medium text-purple-600">
+                          {selectedTransactions.has(tx.id) ? '☑️ เลือกแล้ว' : '⬜ เลือกรายการนี้'}
+                        </span>
+                      </label>
+                    </div>
+                  )}
+
                   {/* Header with date and type */}
                   <div className="flex justify-between items-start mb-3">
                     <div className="text-sm text-gray-600">
@@ -397,9 +578,23 @@ export default function TransactionHistoryPage() {
 
                   {/* Reason */}
                   {tx.reason && (
-                    <div className="text-sm">
+                    <div className="text-sm mb-3">
                       <span className="text-gray-600">เหตุผล: </span>
                       <span className="text-gray-900">{tx.reason}</span>
+                    </div>
+                  )}
+
+                  {/* Download Button for OUT transactions */}
+                  {tx.type === 'OUT' && !isMultiSelectMode && (
+                    <div className="mt-3 pt-3 border-t border-gray-200">
+                      <a
+                        href={`/api/consumables/withdraw/${tx.id}/form`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center justify-center w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
+                      >
+                        📄 ดาวน์โหลดใบเบิก PDF
+                      </a>
                     </div>
                   )}
                 </div>

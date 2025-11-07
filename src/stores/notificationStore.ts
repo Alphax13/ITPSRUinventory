@@ -41,6 +41,11 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
   error: null,
 
   fetchNotifications: async (userId: string, unreadOnly = false) => {
+    // ถ้าไม่มี userId ให้ skip การดึงข้อมูล (ป้องกัน error เมื่อยังไม่ได้ login)
+    if (!userId) {
+      return;
+    }
+
     set({ isLoading: true, error: null });
     try {
       const params = new URLSearchParams({
@@ -61,7 +66,10 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
       });
 
     } catch (error) {
-      console.error('Error fetching notifications:', error);
+      // ไม่ต้อง log error ถ้าเป็นเพราะไม่มี userId (ซึ่งเป็นเรื่องปกติขณะโหลดหน้าเว็บ)
+      if (userId) {
+        console.error('Error fetching notifications:', error);
+      }
       set({ 
         error: error instanceof Error ? error.message : 'Failed to fetch notifications',
         isLoading: false 

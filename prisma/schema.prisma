@@ -83,6 +83,9 @@ model ConsumableMaterial {
   
   // ประวัติการเบิก-จ่าย
   transactions  ConsumableTransaction[]
+  
+  @@index([currentStock, minStock])  // เพิ่มความเร็วในการค้นหาสต็อกต่ำ
+  @@index([category])                 // เพิ่มความเร็วในการค้นหาตาม category
 }
 
 // Model สำหรับครุภัณฑ์ (ไม่มีรหัสสินค้า, มีเลขกำกับ)
@@ -107,6 +110,9 @@ model FixedAsset {
   borrowHistory   AssetBorrow[]
   // การซ่อมบำรุง
   maintenanceHistory AssetMaintenance[]
+  
+  @@index([condition])            // เพิ่มความเร็วในการค้นหาตามสภาพ
+  @@index([category])             // เพิ่มความเร็วในการค้นหาตาม category
 }
 
 // Model สำหรับการเบิก-จ่ายวัสดุสิ้นเปลือง
@@ -120,6 +126,10 @@ model ConsumableTransaction {
   type                  TransactionType      // IN (เข้า) หรือ OUT (จ่าย)
   note                  String?
   createdAt             DateTime             @default(now())
+  
+  @@index([createdAt(sort: Desc)])  // เพิ่มความเร็วในการ query รายการล่าสุด
+  @@index([type, createdAt])        // เพิ่มความเร็วในการ filter ตาม type
+  @@index([userId])                  // เพิ่มความเร็วในการค้นหาตาม user
 }
 
 // Model สำหรับการยืม-คืนครุภัณฑ์
@@ -137,6 +147,9 @@ model AssetBorrow {
   status          BorrowStatus  @default(BORROWED)
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
+  
+  @@index([status])              // เพิ่มความเร็วในการค้นหาตาม status
+  @@index([fixedAssetId])        // เพิ่มความเร็วในการค้นหาตามครุภัณฑ์
 }
 
 // Enum สำหรับสถานะการยืม
@@ -204,6 +217,9 @@ model Notification {
   metadata  Json?               // ข้อมูลเพิ่มเติมใน JSON format
   createdAt DateTime            @default(now())
   updatedAt DateTime            @updatedAt
+  
+  @@index([userId, createdAt(sort: Desc)])  // เพิ่มความเร็วในการดึง notifications ของ user
+  @@index([userId, isRead])                  // เพิ่มความเร็วในการนับ unread notifications
 }
 
 // Enum สำหรับประเภทการแจ้งเตือน
@@ -228,4 +244,7 @@ model PurchaseRequest {
   reason      String
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
+  
+  @@index([status])          // เพิ่มความเร็วในการค้นหาตาม status
+  @@index([requesterId])     // เพิ่มความเร็วในการค้นหาตาม requester
 }

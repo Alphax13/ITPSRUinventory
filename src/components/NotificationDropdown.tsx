@@ -33,11 +33,15 @@ export default function NotificationDropdown() {
 
   useEffect(() => {
     if (user?.id) {
+      // เรียก fetch ครั้งแรกทันที
       fetchNotifications(user.id);
       
       // Auto-refresh notifications every 30 seconds
       const interval = setInterval(() => {
-        fetchNotifications(user.id);
+        // ตรวจสอบว่ายังมี user อยู่ก่อน fetch
+        if (user?.id) {
+          fetchNotifications(user.id);
+        }
       }, 30000);
 
       return () => clearInterval(interval);
