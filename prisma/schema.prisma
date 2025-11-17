@@ -144,6 +144,8 @@ model AssetBorrow {
   actualReturnDate DateTime?     // วันที่คืนจริง
   purpose         String?       // วัตถุประสงค์การยืม
   note            String?
+  studentName     String?       // ชื่อนักศึกษา (ถ้ายืมในนามของนักศึกษา)
+  studentId       String?       // รหัสนักศึกษา
   status          BorrowStatus  @default(BORROWED)
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt

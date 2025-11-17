@@ -4,6 +4,9 @@ import { prisma } from '@/lib/prisma';
 import { generateBorrowFormHTML } from '@/utils/reportTemplates';
 import { generatePDFWithHeaderFooter } from '@/utils/puppeteerPdfGenerator';
 
+// เพิ่ม timeout สำหรับ PDF generation
+export const maxDuration = 60; // 60 seconds
+
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -40,6 +43,8 @@ export async function GET(
       expectedReturnDate: borrow.expectedReturnDate?.toISOString() || new Date().toISOString(),
       condition: borrow.fixedAsset.condition,
       note: borrow.note || undefined,
+      studentName: borrow.studentName || undefined,
+      studentId: borrow.studentId || undefined,
     };
 
     // สร้าง HTML จาก template

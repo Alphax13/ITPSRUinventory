@@ -93,7 +93,7 @@ export async function GET(request: Request) {
       </head>
       <body>
         <h1>รายงานการเบิก-จ่ายวัสดุสิ้นเปลือง</h1>
-        <p>สาขาวิชาเทคโนโลยีสารสนเทศ มหาวิทยาลัยราชภัฏสุราษฎร์ธานี</p>
+        <p>สาขาวิชาเทคโนโลยีสารสนเทศ มหาวิทยาลัยราชภัฏพิบูลสงคราม</p>
         <p>ระหว่างวันที่: ${new Date(startDate).toLocaleDateString('th-TH')} - ${new Date(endDate).toLocaleDateString('th-TH')}</p>
         <table>
           <thead>

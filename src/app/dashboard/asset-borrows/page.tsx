@@ -12,6 +12,8 @@ interface BorrowRecord {
   actualReturnDate?: string;
   purpose?: string;
   note?: string;
+  studentName?: string;
+  studentId?: string;
   status: 'BORROWED' | 'RETURNED' | 'OVERDUE' | 'LOST';
   fixedAsset: {
     id: string;
@@ -39,6 +41,10 @@ export default function AssetBorrowsPage() {
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [showDetails, setShowDetails] = useState<string | null>(null);
   const [showImageModal, setShowImageModal] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [downloadingBatch, setDownloadingBatch] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingBorrow, setEditingBorrow] = useState<BorrowRecord | null>(null);
   const { user } = useAuthStore();
 
   const isAdmin = user?.role === 'ADMIN';
@@ -114,9 +120,185 @@ export default function AssetBorrowsPage() {
 
       if (response.ok) {
         fetchBorrows();
+        alert('บันทึกการคืนครุภัณฑ์เรียบร้อยแล้ว');
+      } else {
+        const errorData = await response.json();
+        alert('เกิดข้อผิดพลาด: ' + (errorData.error || 'ไม่สามารถบันทึกการคืนได้'));
       }
     } catch (error) {
       console.error('Error returning asset:', error);
+      alert('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+    }
+  };
+
+  const handleUndoReturn = async (borrowId: string) => {
+    if (!confirm('ต้องการยกเลิกการคืนและเปลี่ยนสถานะกลับเป็น "กำลังยืม" ใช่หรือไม่?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/assets/borrow/${borrowId}/undo-return`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        fetchBorrows();
+        alert('ยกเลิกการคืนเรียบร้อยแล้ว สถานะเปลี่ยนเป็น "กำลังยืม"');
+      } else {
+        const errorData = await response.json();
+        alert('เกิดข้อผิดพลาด: ' + (errorData.error || 'ไม่สามารถยกเลิกได้'));
+      }
+    } catch (error) {
+      console.error('Error undoing return:', error);
+      alert('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+    }
+  };
+
+  const handleDelete = async (borrowId: string, assetName: string) => {
+    if (!confirm(`ต้องการลบรายการยืม "${assetName}" หรือไม่?\n\nการลบจะไม่สามารถกู้คืนได้`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/assets/borrow/${borrowId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        await fetchBorrows();
+        alert('ลบรายการยืมเรียบร้อยแล้ว');
+      } else {
+        const errorData = await response.json();
+        alert('เกิดข้อผิดพลาด: ' + (errorData.error || 'ไม่สามารถลบได้'));
+      }
+    } catch (error) {
+      console.error('Error deleting borrow:', error);
+      alert('เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + (error instanceof Error ? error.message : String(error)));
+    }
+  };
+
+  const handleEdit = (borrow: BorrowRecord) => {
+    setEditingBorrow(borrow);
+    setShowEditModal(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingBorrow) return;
+
+    console.log('[Frontend] Sending update for borrow:', editingBorrow.id);
+    console.log('[Frontend] Update data:', {
+      expectedReturnDate: editingBorrow.expectedReturnDate,
+      purpose: editingBorrow.purpose,
+      note: editingBorrow.note,
+      studentName: editingBorrow.studentName,
+      studentId: editingBorrow.studentId,
+    });
+
+    try {
+      const response = await fetch(`/api/assets/borrow/${editingBorrow.id}`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          expectedReturnDate: editingBorrow.expectedReturnDate || null,
+          purpose: editingBorrow.purpose || '',
+          note: editingBorrow.note || '',
+          studentName: editingBorrow.studentName || '',
+          studentId: editingBorrow.studentId || '',
+        }),
+      });
+
+      if (response.ok) {
+        await fetchBorrows();
+        setShowEditModal(false);
+        setEditingBorrow(null);
+        alert('แก้ไขรายการยืมเรียบร้อยแล้ว');
+      } else {
+        const errorData = await response.json();
+        alert('เกิดข้อผิดพลาด: ' + (errorData.error || 'ไม่สามารถแก้ไขได้'));
+      }
+    } catch (error) {
+      console.error('Error updating borrow:', error);
+      alert('เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + (error instanceof Error ? error.message : String(error)));
+    }
+  };
+
+  // ดาวน์โหลด PDF รวมหลายรายการ (batch)
+  const handleBatchDownloadPDF = async () => {
+    if (selectedIds.length === 0) {
+      alert('กรุณาเลือกรายการที่ต้องการดาวน์โหลด PDF');
+      return;
+    }
+
+    // ตรวจสอบว่าทุกรายการเป็นผู้ยืมคนเดียวกัน
+    const selectedBorrows = borrows.filter(b => selectedIds.includes(b.id));
+    const firstUserId = selectedBorrows[0]?.user.id;
+    const hasDifferentUsers = selectedBorrows.some(b => b.user.id !== firstUserId);
+    
+    if (hasDifferentUsers) {
+      alert('ไม่สามารถรวม PDF ได้: กรุณาเลือกรายการที่มีผู้ยืมคนเดียวกัน');
+      return;
+    }
+
+    try {
+      setDownloadingBatch(true);
+      const response = await fetch('/api/assets/borrow/batch/form', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          borrowIds: selectedIds
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'ไม่สามารถสร้าง PDF ได้');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `borrow-form-batch-${Date.now()}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      // ล้างการเลือก
+      setSelectedIds([]);
+    } catch (error) {
+      console.error('Error downloading batch PDF:', error);
+      alert(error instanceof Error ? error.message : 'เกิดข้อผิดพลาดในการดาวน์โหลด PDF');
+    } finally {
+      setDownloadingBatch(false);
+    }
+  };
+
+  // Toggle การเลือกรายการเดียว
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => 
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
+  };
+
+  // Toggle เลือกทั้งหมด
+  const toggleSelectAll = () => {
+    if (selectedIds.length === borrows.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(borrows.map(b => b.id));
     }
   };
 
@@ -203,6 +385,32 @@ export default function AssetBorrowsPage() {
         </div>
         
         <div className="flex items-center space-x-4">
+          {/* ปุ่มดาวน์โหลด PDF รวม */}
+          {selectedIds.length > 0 && (
+            <button
+              onClick={handleBatchDownloadPDF}
+              disabled={downloadingBatch}
+              className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {downloadingBatch ? (
+                <>
+                  <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <span>กำลังสร้าง PDF...</span>
+                </>
+              ) : (
+                <>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  <span>ดาวน์โหลด PDF รวม ({selectedIds.length})</span>
+                </>
+              )}
+            </button>
+          )}
+          
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
@@ -222,6 +430,14 @@ export default function AssetBorrowsPage() {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
+              <th className="px-4 py-3">
+                <input
+                  type="checkbox"
+                  checked={selectedIds.length === borrows.length && borrows.length > 0}
+                  onChange={toggleSelectAll}
+                  className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                />
+              </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 เลขครุภัณฑ์
               </th>
@@ -248,6 +464,14 @@ export default function AssetBorrowsPage() {
           <tbody className="bg-white divide-y divide-gray-200">
             {borrows.map((borrow) => (
               <tr key={borrow.id} className="hover:bg-gray-50">
+                <td className="px-4 py-4">
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.includes(borrow.id)}
+                    onChange={() => toggleSelect(borrow.id)}
+                    className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                  />
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                   {borrow.fixedAsset.assetNumber}
                 </td>
@@ -317,14 +541,63 @@ export default function AssetBorrowsPage() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                       </svg>
                     </button>
+                    
+                    <a
+                      href={`/api/assets/borrow/${borrow.id}/form`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center w-8 h-8 text-red-600 hover:text-white hover:bg-red-600 rounded-full transition-colors"
+                      title="ดาวน์โหลดแบบฟอร์มยืม-คืน PDF"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                    </a>
+                    
                     {isAdmin && borrow.status === 'BORROWED' && (
                       <button
                         onClick={() => handleReturn(borrow.id)}
                         className="inline-flex items-center justify-center w-8 h-8 text-green-600 hover:text-white hover:bg-green-600 rounded-full transition-colors"
-                        title="คืนครุภัณฑ์"
+                        title="บันทึกการคืนครุภัณฑ์"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 15v-1a4 4 0 00-4-4H8m0 0l3 3m-3-3l3-3m9 14V5a2 2 0 00-2-2H6a2 2 0 00-2 2v16l4-2 4 2 4-2 4 2z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </button>
+                    )}
+                    
+                    {isAdmin && borrow.status === 'RETURNED' && (
+                      <button
+                        onClick={() => handleUndoReturn(borrow.id)}
+                        className="inline-flex items-center justify-center w-8 h-8 text-orange-600 hover:text-white hover:bg-orange-600 rounded-full transition-colors"
+                        title="ยกเลิกการคืน (กดผิด)"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                        </svg>
+                      </button>
+                    )}
+
+                    {isAdmin && borrow.status !== 'RETURNED' && (
+                      <button
+                        onClick={() => handleEdit(borrow)}
+                        className="inline-flex items-center justify-center w-8 h-8 text-purple-600 hover:text-white hover:bg-purple-600 rounded-full transition-colors"
+                        title="แก้ไขรายการยืม"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </button>
+                    )}
+
+                    {isAdmin && borrow.status !== 'RETURNED' && (
+                      <button
+                        onClick={() => handleDelete(borrow.id, borrow.fixedAsset.name)}
+                        className="inline-flex items-center justify-center w-8 h-8 text-red-700 hover:text-white hover:bg-red-700 rounded-full transition-colors"
+                        title="ลบรายการยืม"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                         </svg>
                       </button>
                     )}
@@ -458,6 +731,25 @@ export default function AssetBorrowsPage() {
                       </div>
                     )}
 
+                    {(borrow.studentName || borrow.studentId) && (
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                        <div className="grid grid-cols-2 gap-4">
+                          {borrow.studentName && (
+                            <div>
+                              <label className="block text-sm font-medium text-blue-900">ชื่อนักศึกษา</label>
+                              <p className="text-sm text-blue-700 font-semibold">{borrow.studentName}</p>
+                            </div>
+                          )}
+                          {borrow.studentId && (
+                            <div>
+                              <label className="block text-sm font-medium text-blue-900">รหัสนักศึกษา</label>
+                              <p className="text-sm text-blue-700 font-semibold">{borrow.studentId}</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
                     {borrow.purpose && (
                       <div>
                         <label className="block text-sm font-medium text-gray-700">วัตถุประสงค์</label>
@@ -505,6 +797,156 @@ export default function AssetBorrowsPage() {
               height={600}
               className="rounded-lg max-w-full max-h-full object-contain"
             />
+          </div>
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      {showEditModal && editingBorrow && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-gray-900">แก้ไขรายการยืม</h2>
+              <button
+                onClick={() => {
+                  setShowEditModal(false);
+                  setEditingBorrow(null);
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {/* ข้อมูลครุภัณฑ์ (แสดงอย่างเดียว) */}
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-gray-900 mb-2">ข้อมูลครุภัณฑ์</h3>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <span className="text-gray-600">เลขครุภัณฑ์:</span>
+                    <span className="ml-2 font-semibold">{editingBorrow.fixedAsset.assetNumber}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">ชื่อ:</span>
+                    <span className="ml-2 font-semibold">{editingBorrow.fixedAsset.name}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">ผู้ยืม:</span>
+                    <span className="ml-2 font-semibold">{editingBorrow.user.name}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">วันที่ยืม:</span>
+                    <span className="ml-2 font-semibold">{new Date(editingBorrow.borrowDate).toLocaleDateString('th-TH')}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* ฟอร์มแก้ไข */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  กำหนดวันคืน
+                </label>
+                <input
+                  type="date"
+                  value={editingBorrow.expectedReturnDate ? new Date(editingBorrow.expectedReturnDate).toISOString().split('T')[0] : ''}
+                  onChange={(e) => setEditingBorrow({
+                    ...editingBorrow,
+                    expectedReturnDate: e.target.value ? e.target.value : undefined
+                  })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  วัตถุประสงค์
+                </label>
+                <textarea
+                  value={editingBorrow.purpose || ''}
+                  onChange={(e) => setEditingBorrow({
+                    ...editingBorrow,
+                    purpose: e.target.value
+                  })}
+                  rows={2}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="ระบุวัตถุประสงค์ในการยืม..."
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  หมายเหตุ
+                </label>
+                <textarea
+                  value={editingBorrow.note || ''}
+                  onChange={(e) => setEditingBorrow({
+                    ...editingBorrow,
+                    note: e.target.value
+                  })}
+                  rows={2}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="หมายเหตุเพิ่มเติม..."
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    ชื่อนักศึกษา (ถ้ามี)
+                  </label>
+                  <input
+                    type="text"
+                    value={editingBorrow.studentName || ''}
+                    onChange={(e) => setEditingBorrow({
+                      ...editingBorrow,
+                      studentName: e.target.value
+                    })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    placeholder="ชื่อ-นามสกุล"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    รหัสนักศึกษา
+                  </label>
+                  <input
+                    type="text"
+                    value={editingBorrow.studentId || ''}
+                    onChange={(e) => setEditingBorrow({
+                      ...editingBorrow,
+                      studentId: e.target.value
+                    })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    placeholder="เช่น 65123456789"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setShowEditModal(false);
+                  setEditingBorrow(null);
+                }}
+                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                ยกเลิก
+              </button>
+              <button
+                onClick={handleSaveEdit}
+                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                บันทึกการแก้ไข
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -69,6 +69,8 @@ export default function AssetsPage() {
     expectedReturnDate: '',
     purpose: '',
     note: '',
+    studentName: '',
+    studentId: '',
   });
   const [returnFormData, setReturnFormData] = useState({
     borrowId: '',
@@ -324,6 +326,8 @@ export default function AssetsPage() {
           expectedReturnDate: '',
           purpose: '',
           note: '',
+          studentName: '',
+          studentId: '',
         });
         setShowBorrowForm(false);
         setSelectedAsset(null);
@@ -678,6 +682,38 @@ export default function AssetsPage() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                   placeholder="เช่น สำหรับการสอน, งานวิจัย"
                 />
+              </div>
+
+              <div className="border-t border-gray-200 pt-4 space-y-3">
+                <label className="block text-sm font-medium text-blue-700">
+                  📚 ข้อมูลนักศึกษา (ถ้ายืมในนามของนักศึกษา)
+                </label>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    ชื่อนักศึกษา
+                  </label>
+                  <input
+                    type="text"
+                    value={borrowFormData.studentName}
+                    onChange={(e) => setBorrowFormData({ ...borrowFormData, studentName: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    placeholder="กรอกชื่อนักศึกษา (ถ้ามี)"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    รหัสนักศึกษา
+                  </label>
+                  <input
+                    type="text"
+                    value={borrowFormData.studentId}
+                    onChange={(e) => setBorrowFormData({ ...borrowFormData, studentId: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    placeholder="เช่น 661xxxxxxx"
+                  />
+                </div>
               </div>
 
               <div>

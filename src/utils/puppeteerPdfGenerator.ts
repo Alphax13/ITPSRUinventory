@@ -29,14 +29,27 @@ export async function generatePDFFromHTML(
     // เปิด browser (headless)
     browser = await puppeteer.launch({
       headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage', // แก้ปัญหา memory ใน container
+        '--disable-gpu',
+        '--disable-web-security', // อนุญาตให้โหลด fonts จาก CDN
+      ],
+      timeout: 10000, // ลด timeout การเปิด browser
     });
 
     const page = await browser.newPage();
     
     // โหลด HTML
     await page.setContent(html, {
-      waitUntil: 'networkidle0', // รอให้โหลด fonts และรูปภาพเสร็จ
+      waitUntil: 'domcontentloaded', // รอให้ DOM โหลดเสร็จ (เร็วกว่า networkidle0)
+      timeout: 10000, // ลด timeout เหลือ 10 วินาที
+    });
+    
+    // รอให้ fonts โหลดเสร็จ (ถ้ามี)
+    await page.evaluateHandle('document.fonts.ready').catch(() => {
+      // ถ้า fonts ไม่โหลดก็ไม่เป็นไร ใช้ fallback font
     });
 
     // สร้าง PDF
@@ -81,7 +94,7 @@ export async function generatePDFWithHeaderFooter(
   // Header และ Footer templates (ต้องเป็น HTML พิเศษของ Puppeteer)
   const headerTemplate = options.headerHtml || `
     <div style="font-size: 10px; text-align: center; width: 100%; margin: 0 1cm;">
-      <span style="color: #64748b;">สาขาวิชาเทคโนโลยีสารสนเทศ มหาวิทยาลัยราชภัฏสุราษฎร์ธานี</span>
+      <span style="color: #64748b;">สาขาวิชาเทคโนโลยีสารสนเทศ มหาวิทยาลัยราชภัฏพิบูลสงคราม</span>
     </div>
   `;
 

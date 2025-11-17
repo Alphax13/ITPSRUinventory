@@ -43,13 +43,19 @@ export async function PUT(
 ) {
   try {
     const { id } = await params;
+    console.log('[PUT] Updating borrow:', id);
+    
     const body = await request.json();
+    console.log('[PUT] Request body:', body);
+    
     const { 
       status, 
       actualReturnDate, 
       expectedReturnDate, 
       purpose, 
-      note 
+      note,
+      studentName,
+      studentId
     } = body;
 
     const borrow = await prisma.assetBorrow.findUnique({
@@ -57,6 +63,7 @@ export async function PUT(
     });
 
     if (!borrow) {
+      console.log('[PUT] Borrow not found:', id);
       return NextResponse.json({ error: 'Borrow record not found' }, { status: 404 });
     }
 
@@ -67,6 +74,10 @@ export async function PUT(
     if (expectedReturnDate !== undefined) updateData.expectedReturnDate = expectedReturnDate ? new Date(expectedReturnDate) : null;
     if (purpose !== undefined) updateData.purpose = purpose;
     if (note !== undefined) updateData.note = note;
+    if (studentName !== undefined) updateData.studentName = studentName || null;
+    if (studentId !== undefined) updateData.studentId = studentId || null;
+    
+    console.log('[PUT] Update data:', updateData);
 
     // ถ้าสถานะเป็น RETURNED และยังไม่มีวันที่คืนจริง ให้ตั้งเป็นปัจจุบัน
     if (status === 'RETURNED' && !actualReturnDate && !borrow.actualReturnDate) {
@@ -93,9 +104,10 @@ export async function PUT(
       }
     });
 
+    console.log('[PUT] Successfully updated borrow:', id);
     return NextResponse.json(updatedBorrow, { status: 200 });
   } catch (error) {
-    console.error('Error updating borrow:', error);
+    console.error('[PUT] Error updating borrow:', error);
     return NextResponse.json({ 
       error: 'Failed to update borrow record: ' + (error as Error).message 
     }, { status: 500 });
@@ -109,16 +121,19 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
+    console.log('[DELETE] Deleting borrow:', id);
     
     const borrow = await prisma.assetBorrow.findUnique({
       where: { id }
     });
 
     if (!borrow) {
+      console.log('[DELETE] Borrow not found:', id);
       return NextResponse.json({ error: 'Borrow record not found' }, { status: 404 });
     }
 
     if (borrow.status === 'RETURNED') {
+      console.log('[DELETE] Cannot delete returned borrow:', id);
       return NextResponse.json({ 
         error: 'Cannot delete returned borrow record' 
       }, { status: 400 });
@@ -128,9 +143,10 @@ export async function DELETE(
       where: { id }
     });
 
+    console.log('[DELETE] Successfully deleted borrow:', id);
     return NextResponse.json({ message: 'Borrow record deleted successfully' }, { status: 200 });
   } catch (error) {
-    console.error('Error deleting borrow:', error);
+    console.error('[DELETE] Error deleting borrow:', error);
     return NextResponse.json({ 
       error: 'Failed to delete borrow record: ' + (error as Error).message 
     }, { status: 500 });

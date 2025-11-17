@@ -57,7 +57,9 @@ export async function POST(request: NextRequest) {
       userId, 
       expectedReturnDate, 
       purpose, 
-      note 
+      note,
+      studentName,
+      studentId
     } = body;
 
     if (!fixedAssetId || !userId) {
@@ -105,6 +107,8 @@ export async function POST(request: NextRequest) {
         expectedReturnDate: expectedReturnDate ? new Date(expectedReturnDate) : null,
         purpose: purpose || null,
         note: note || null,
+        studentName: studentName || null,
+        studentId: studentId || null,
         status: 'BORROWED'
       },
       include: {

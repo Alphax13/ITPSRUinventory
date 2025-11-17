@@ -164,13 +164,12 @@ export function generateStockReportHTML(data: any[]): string {
 <head>
 <meta charset="UTF-8" />
 <title>รายงานสต็อกวัสดุ</title>
-<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet" />
 <style>
   @page { size: A4; margin: 18mm; }
   * { box-sizing: border-box; }
   body {
-    font-family: 'TH Sarabun New','Sarabun',system-ui,-apple-system,'Segoe UI',sans-serif;
-    font-size: 14.5px; color:#111827; line-height:1.55;
+    font-family: 'TH Sarabun New','Sarabun','Angsana New','Cordia New',system-ui,-apple-system,'Segoe UI',sans-serif;
+    font-size: 16px; color:#111827; line-height:1.6;
   }
   .summary {
     border:1px solid #E5E7EB; background:#F9FAFB; padding:10px 12px; margin:14px 0; display:flex; justify-content:space-between;
@@ -286,12 +285,11 @@ export function generateTransactionReportHTML(
 <head>
 <meta charset="UTF-8" />
 <title>รายงานการเบิก-จ่ายวัสดุ</title>
-<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet" />
 <style>
   @page { size: A4; margin: 18mm; }
   body {
-    font-family: 'TH Sarabun New','Sarabun',system-ui,-apple-system,'Segoe UI',sans-serif;
-    font-size: 14.5px; color:#111827; line-height:1.55;
+    font-family: 'TH Sarabun New','Sarabun','Angsana New','Cordia New',system-ui,-apple-system,'Segoe UI',sans-serif;
+    font-size: 16px; color:#111827; line-height:1.6;
   }
   .summary { border:1px solid #E5E7EB; background:#F9FAFB; padding:10px 12px; margin:14px 0; display:flex; justify-content:space-between; }
   .summary .value { font-weight:700; }
@@ -408,12 +406,11 @@ export function generatePurchaseRequestReportHTML(data: any[]): string {
 <head>
 <meta charset="UTF-8" />
 <title>รายงานคำขอซื้อวัสดุ</title>
-<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet" />
 <style>
   @page { size: A4; margin: 18mm; }
   body {
-    font-family: 'TH Sarabun New','Sarabun',system-ui,-apple-system,'Segoe UI',sans-serif;
-    font-size: 14.5px; color:#111827; line-height:1.55;
+    font-family: 'TH Sarabun New','Sarabun','Angsana New','Cordia New',system-ui,-apple-system,'Segoe UI',sans-serif;
+    font-size: 16px; color:#111827; line-height:1.6;
   }
   .summary { border:1px solid #E5E7EB; background:#F9FAFB; padding:10px 12px; margin:14px 0; display:flex; justify-content:space-between; }
   .summary .value { font-weight:700; }
@@ -483,7 +480,7 @@ export function generatePurchaseRequestReportHTML(data: any[]): string {
   `;
 }
 
-/* ====================== 4) แบบฟอร์มยืม-คืนครุภัณฑ์ ====================== */
+/* ====================== 4) แบบฟอร์มยืม-คืนครุภัณฑ์ (เวอร์ชันทางการ) ====================== */
 
 export function generateBorrowFormHTML(data: {
   borrowId: string;
@@ -496,6 +493,8 @@ export function generateBorrowFormHTML(data: {
   expectedReturnDate: string;
   condition: string; // 'GOOD' | 'BROKEN' ฯลฯ
   note?: string;
+  studentName?: string; // ชื่อนักศึกษา (ถ้ามี)
+  studentId?: string; // รหัสนักศึกษา (ถ้ามี)
 }): string {
   return `
 <!DOCTYPE html>
@@ -503,23 +502,97 @@ export function generateBorrowFormHTML(data: {
 <head>
 <meta charset="UTF-8" />
 <title>แบบฟอร์มยืม-คืนครุภัณฑ์</title>
-<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet" />
 <style>
-  @page { size: A4; margin: 18mm; }
+  @page { size: A4; margin: 16mm; }
   body {
-    font-family: 'TH Sarabun New','Sarabun',system-ui,-apple-system,'Segoe UI',sans-serif;
-    font-size: 15px; color:#111827; line-height:1.6;
+    font-family: 'TH Sarabun New','Sarabun','Angsana New','Cordia New',system-ui,-apple-system,'Segoe UI',sans-serif;
+    font-size: 16px;
+    color:#111827;
+    line-height:1.4;
   }
-  .section { border:1px solid #E5E7EB; background:#FFFFFF; padding:12px 14px; border-radius:4px; margin-top:12px; }
-  .sec-title { font-weight:700; margin-bottom:8px; }
-  .row { display:flex; gap:12px; margin-bottom:6px; }
-  .label { min-width:160px; color:#374151; }
-  .value { flex:1; border-bottom:1px dotted #CBD5E1; padding-bottom:2px; }
-  .return-card { margin-top:16px; border:1px dashed #9CA3AF; padding:12px; border-radius:4px; page-break-inside: avoid; }
-  .signatures { margin-top:18mm; display:flex; gap:14mm; }
-  .sig-box { flex:1; text-align:center; }
-  .sig-line { margin:26mm 6mm 4mm; border-top:1px solid #111827; }
-  .sig-label { color:#374151; }
+
+  .sec-title {
+    font-weight:700;
+    margin: 8px 0 6px 0;
+    color:#111827;
+    font-size:16px;
+  }
+
+  .field-row {
+    display:flex;
+    gap:10px;
+    margin-bottom:4px;
+    align-items:baseline;
+  }
+
+  .field-label {
+    min-width:160px;
+    color:#374151;
+    font-weight:500;
+  }
+
+  .field-value {
+    flex:1;
+    border-bottom:1px dotted #9CA3AF;
+    min-height:18px;
+  }
+
+  .field-inline {
+    display:inline-flex;
+    gap:8px;
+    align-items:baseline;
+    margin-right:20px;
+  }
+
+  .signatures {
+    margin-top:12mm;
+    page-break-inside: avoid;
+  }
+
+  .sig-title-center {
+    text-align:center;
+    font-weight:600;
+    margin-bottom:8mm;
+    font-size:15px;
+  }
+
+  .sig-row {
+    display:flex;
+    gap:12mm;
+    margin-bottom:8mm;
+  }
+
+  .sig-box {
+    flex:1;
+    text-align:center;
+  }
+
+  .sig-line {
+    margin:16mm 6mm 3mm;
+    border-top:1px solid #111827;
+  }
+
+  .sig-label {
+    color:#374151;
+    font-size:13px;
+    line-height:1.3;
+  }
+
+  .divider {
+    border-top:1px solid #D1D5DB;
+    margin:10px 0;
+  }
+
+  .checkbox {
+    width:14px;
+    height:14px;
+    border:1.5px solid #6B7280;
+    border-radius:2px;
+    display:inline-block;
+    vertical-align:middle;
+    margin-right:4px;
+  }
+
 </style>
 </head>
 <body>
@@ -531,53 +604,160 @@ export function generateBorrowFormHTML(data: {
     monochrome: true
   })}
 
-  <div class="section">
-    <div class="sec-title">ข้อมูลการยืม</div>
-    <div class="row"><div class="label">เลขที่ใบยืม:</div><div class="value">${data.borrowId}</div></div>
-    <div class="row"><div class="label">วันที่ยืม:</div><div class="value">${formatThaiDate(data.borrowDate)}</div></div>
-    <div class="row"><div class="label">กำหนดคืน:</div><div class="value">${formatThaiDate(data.expectedReturnDate)}</div></div>
+  <!-- 1. ข้อมูลการยืม -->
+  <div class="sec-title">1. ข้อมูลการยืม</div>
+  <div class="field-row">
+    <span class="field-label">เลขที่ใบยืม:</span>
+    <span class="field-value"><strong>${data.borrowId}</strong></span>
+    <span class="field-inline">
+      <span style="min-width:80px;">วันที่ยืม:</span>
+      <span class="field-value" style="min-width:120px;">${formatThaiDate(data.borrowDate)}</span>
+    </span>
+    <span class="field-inline">
+      <span style="min-width:90px;">กำหนดวันคืน:</span>
+      <span class="field-value" style="min-width:120px;"></span>
+    </span>
   </div>
 
-  <div class="section">
-    <div class="sec-title">ข้อมูลผู้ยืม</div>
-    <div class="row"><div class="label">ชื่อผู้ยืม:</div><div class="value">${data.borrower}</div></div>
-    <div class="row"><div class="label">หน่วยงาน/ภาควิชา:</div><div class="value">${data.department}</div></div>
-    <div class="row"><div class="label">วัตถุประสงค์:</div><div class="value">${data.purpose}</div></div>
+  <div class="divider"></div>
+
+  <!-- 2. ข้อมูลผู้ยืม -->
+  <div class="sec-title">2. ข้อมูลผู้ยืม</div>
+  <div class="field-row">
+    <span class="field-label">ชื่อผู้ยืม (อาจารย์/เจ้าหน้าที่):</span>
+    <span class="field-value">${data.borrower}</span>
+    <span class="field-inline">
+      <span style="min-width:80px;">หน่วยงาน:</span>
+      <span class="field-value" style="min-width:150px;">${data.department}</span>
+    </span>
+  </div>
+  <div class="field-row">
+    <span class="field-label">ชื่อนักศึกษา (ถ้ามี):</span>
+    <span class="field-value">${data.studentName || ''}</span>
+    <span class="field-inline">
+      <span style="min-width:100px;">รหัสนักศึกษา:</span>
+      <span class="field-value" style="min-width:130px;">${data.studentId || ''}</span>
+    </span>
+  </div>
+  <div class="field-row">
+    <span class="field-label">วัตถุประสงค์ในการยืม:</span>
+    <span class="field-value">${data.purpose}</span>
   </div>
 
-  <div class="section">
-    <div class="sec-title">ข้อมูลครุภัณฑ์</div>
-    <div class="row"><div class="label">หมายเลขครุภัณฑ์:</div><div class="value"><strong>${data.assetNumber}</strong></div></div>
-    <div class="row"><div class="label">ชื่อครุภัณฑ์:</div><div class="value">${data.assetName}</div></div>
-    <div class="row"><div class="label">สภาพขณะยืม:</div><div class="value">${data.condition === 'GOOD' ? 'ปกติ' : 'ชำรุด'}</div></div>
-    ${data.note ? `<div class="row"><div class="label">หมายเหตุ:</div><div class="value">${data.note}</div></div>` : ''}
+  <div class="divider"></div>
+
+  <!-- 3. ข้อมูลครุภัณฑ์ที่ยืม -->
+  <div class="sec-title">3. ข้อมูลครุภัณฑ์ที่ยืม</div>
+  <div class="field-row">
+    <span class="field-label">หมายเลขครุภัณฑ์:</span>
+    <span class="field-value"><strong>${data.assetNumber}</strong></span>
+    <span class="field-inline">
+      <span style="min-width:100px;">ชื่อครุภัณฑ์:</span>
+      <span class="field-value" style="min-width:250px;">${data.assetName}</span>
+    </span>
+  </div>
+  <div class="field-row">
+    <span class="field-label">สภาพขณะยืม:</span>
+    <span class="field-value">
+      ${data.condition === 'GOOD' ? '✓ ปกติ ครบถ้วน' : '⚠ ชำรุด/บกพร่อง'}
+    </span>
+  </div>
+  <div class="field-row">
+    <span class="field-label">หมายเหตุ:</span>
+    <span class="field-value">${data.note || ''}</span>
   </div>
 
-  <div class="section return-card">
-    <div class="sec-title">บันทึกการคืนครุภัณฑ์</div>
-    <div class="row"><div class="label">วันที่คืนจริง:</div><div class="value">&nbsp;</div></div>
-    <div class="row"><div class="label">สภาพขณะคืน:</div><div class="value">&nbsp;</div></div>
-    <div class="row"><div class="label">หมายเหตุ:</div><div class="value">&nbsp;</div></div>
-    <div class="row" style="margin-top:10mm; justify-content:flex-end;"><div class="label">ผู้รับคืน:</div><div class="value" style="max-width:220px;">&nbsp;</div></div>
-    <div class="row" style="justify-content:flex-end;"><div class="label">วันที่:</div><div class="value" style="max-width:220px;">&nbsp;</div></div>
-  </div>
-
+  <!-- ลายเซ็น ขาออก -->
   <div class="signatures">
-    <div class="sig-box">
-      <div class="sig-line"></div>
-      <div class="sig-label">ผู้ยืม (ลงชื่อ) (${data.borrower})</div>
-      <div class="sig-label">วันที่ ________/________/________</div>
-    </div>
-    <div class="sig-box">
-      <div class="sig-line"></div>
-      <div class="sig-label">เจ้าหน้าที่ผู้อนุมัติ</div>
-      <div class="sig-label">วันที่ ________/________/________</div>
+    <div class="sig-title-center">ลายมือชื่อผู้เกี่ยวข้อง (สำหรับการยืมครุภัณฑ์)</div>
+
+    <div class="sig-row">
+      <div class="sig-box">
+        <div class="sig-line"></div>
+        <div class="sig-label">
+          <strong>ผู้ยืม</strong><br/>
+          (${data.borrower})<br/>
+          วันที่ ......./......./.............
+        </div>
+      </div>
+
+      <div class="sig-box">
+        <div class="sig-line"></div>
+        <div class="sig-label">
+          <strong>ผู้อนุมัติ</strong><br/>
+          (ประธานหลักสูตร/หัวหน้าภาควิชา)<br/>
+          วันที่ ......./......./.............
+        </div>
+      </div>
+
+      <div class="sig-box">
+        <div class="sig-line"></div>
+        <div class="sig-label">
+          <strong>เจ้าหน้าที่พัสดุผู้ส่งมอบ</strong><br/>
+          (...............................................)<br/>
+          วันที่ ......./......./.............
+        </div>
+      </div>
     </div>
   </div>
+
+  <div class="divider" style="margin-top:12mm;"></div>
+
+  <!-- 4. บันทึกการคืนครุภัณฑ์ -->
+  <div class="sec-title">4. บันทึกการคืนครุภัณฑ์ (สำหรับเจ้าหน้าที่กรอก)</div>
+  <div class="field-row">
+    <span class="field-label">วันที่คืนจริง:</span>
+    <span class="field-value"></span>
+  </div>
+  <div class="field-row">
+    <span class="field-label">สภาพครุภัณฑ์ขณะคืน:</span>
+    <span>
+      <span class="checkbox"></span> ปกติ ครบถ้วน
+      &nbsp;&nbsp;&nbsp;
+      <span class="checkbox"></span> ชำรุด/เสียหาย
+    </span>
+  </div>
+  <div class="field-row">
+    <span class="field-label">รายละเอียดความเสียหาย:</span>
+    <span class="field-value"></span>
+  </div>
+  <div class="field-row">
+    <span class="field-label">หมายเหตุเพิ่มเติม:</span>
+    <span class="field-value"></span>
+  </div>
+
+  <div class="sig-row" style="margin-top:10mm;">
+    <div class="sig-box">
+      <div class="sig-line"></div>
+      <div class="sig-label">
+        <strong>ผู้คืนครุภัณฑ์</strong><br/>
+        (...............................................)<br/>
+        วันที่ ......./......./.............
+      </div>
+    </div>
+
+    <div class="sig-box">
+      <div class="sig-line"></div>
+      <div class="sig-label">
+        <strong>เจ้าหน้าที่พัสดุผู้ตรวจรับ</strong><br/>
+        (...............................................)<br/>
+        วันที่ ......./......./.............
+      </div>
+    </div>
+
+    <div class="sig-box" style="display:flex; align-items:center; justify-content:center;">
+      <div style="text-align:center; color:#6B7280; font-size:13px;">
+        <div style="font-weight:600; margin-bottom:2px;">เอกสารเลขที่</div>
+        <div style="font-size:14px; font-weight:700; color:#111827;">${data.borrowId}</div>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>
   `;
 }
+
 
 /* ====================== 5) ใบเบิกวัสดุสิ้นเปลือง ====================== */
 
@@ -614,12 +794,11 @@ export function generateWithdrawFormHTML(data: {
 <head>
 <meta charset="UTF-8" />
 <title>ใบเบิกวัสดุสิ้นเปลือง</title>
-<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet" />
 <style>
   @page { size: A4; margin: 18mm; }
   body {
-    font-family: 'TH Sarabun New','Sarabun',system-ui,-apple-system,'Segoe UI',sans-serif;
-    font-size: 15px; color:#111827; line-height:1.6;
+    font-family: 'TH Sarabun New','Sarabun','Angsana New','Cordia New',system-ui,-apple-system,'Segoe UI',sans-serif;
+    font-size: 16px; color:#111827; line-height:1.6;
   }
   .section { border:1px solid #E5E7EB; background:#FFFFFF; padding:12px 14px; border-radius:4px; margin-top:12px; }
   .row { display:flex; gap:12px; margin-bottom:6px; }
@@ -687,6 +866,232 @@ export function generateWithdrawFormHTML(data: {
       <div class="sig-label">วันที่ ________/________/________</div>
     </div>
   </div>
+</body>
+</html>
+  `;
+}
+
+/* ====================== 6) แบบฟอร์มยืม-คืนครุภัณฑ์หลายรายการ (แบบตาราง) ====================== */
+
+export function generateMultiBorrowFormHTML(data: {
+  borrowId: string; // ใช้ ID เดียวกันหรือรวมกัน
+  borrower: string;
+  department: string;
+  purpose: string;
+  borrowDate: string;
+  expectedReturnDate: string;
+  studentName?: string;
+  studentId?: string;
+  note?: string;
+  assets: Array<{
+    assetNumber: string;
+    assetName: string;
+    condition: string;
+    note?: string;
+  }>;
+}): string {
+  const assetRows = data.assets
+    .map(
+      (asset, index) => `
+    <tr>
+      <td class="t-center">${index + 1}</td>
+      <td class="t-center"><strong>${asset.assetNumber}</strong></td>
+      <td>${asset.assetName}</td>
+      <td class="t-center">${
+        asset.condition === 'GOOD' ? '✓ ปกติ' : '⚠ ชำรุด'
+      }</td>
+      <td>${asset.note || '-'}</td>
+      <td class="checkbox-cell">
+        <div class="checkbox"></div>
+      </td>
+    </tr>
+  `
+    )
+    .join('');
+
+  return `
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8" />
+<title>แบบฟอร์มยืม-คืนครุภัณฑ์ (หลายรายการ)</title>
+<style>
+  @page { size: A4; margin: 15mm; }
+  body {
+    font-family: 'TH Sarabun New','Sarabun','Angsana New','Cordia New',system-ui,-apple-system,'Segoe UI',sans-serif;
+    font-size: 16px; color:#111827; line-height:1.4;
+  }
+  .sec-title { font-weight:700; margin:6px 0 4px 0; color:#111827; font-size:15px; }
+  .field-row { display:flex; gap:8px; margin-bottom:3px; align-items:baseline; }
+  .field-label { min-width:150px; color:#374151; font-weight:500; }
+  .field-value { flex:1; border-bottom:1px dotted #9CA3AF; min-height:16px; }
+  .field-inline { display:inline-flex; gap:6px; align-items:baseline; margin-right:16px; }
+  .divider { border-top:1px solid #D1D5DB; margin:8px 0; }
+  
+  table { width:100%; border-collapse:collapse; margin-top:8px; }
+  thead th { border:1px solid #D1D5DB; background:#F3F4F6; padding:5px; text-align:center; font-weight:700; font-size:13px; }
+  tbody td { border:1px solid #E5E7EB; padding:4px 6px; vertical-align:top; font-size:13px; }
+  .t-center { text-align:center; }
+  .checkbox { width:14px; height:14px; border:1.5px solid #9CA3AF; border-radius:2px; display:inline-block; vertical-align:middle; }
+  
+  .signatures { margin-top:8mm; page-break-inside: avoid; }
+  .sig-title-center { text-align:center; font-weight:600; margin-bottom:6mm; font-size:14px; }
+  .sig-row { display:flex; gap:10mm; margin-bottom:6mm; }
+  .sig-box { flex:1; text-align:center; }
+  .sig-line { margin:12mm 4mm 2mm; border-top:1px solid #111827; }
+  .sig-label { color:#374151; font-size:12px; line-height:1.3; }
+</style>
+</head>
+<body>
+
+  ${buildOfficialHeaderHTML({
+    title: 'แบบฟอร์มยืม-คืนครุภัณฑ์ (หลายรายการ)',
+    orgLines: ['สาขาวิชาเทคโนโลยีสารสนเทศ', 'มหาวิทยาลัยราชภัฏพิบูลสงคราม'],
+    emblemUrl: EMBLEM_URL,
+    monochrome: true
+  })}
+
+  <!-- 1. ข้อมูลการยืม -->
+  <div class="sec-title">1. ข้อมูลการยืม</div>
+  <div class="field-row">
+    <span class="field-label">เลขที่เอกสาร:</span>
+    <span class="field-value"><strong>${data.borrowId}</strong></span>
+    <span class="field-inline">
+      <span style="min-width:70px;">วันที่ยืม:</span>
+      <span class="field-value" style="min-width:110px;">${formatThaiDate(data.borrowDate)}</span>
+    </span>
+    <span class="field-inline">
+      <span style="min-width:85px;">กำหนดวันคืน:</span>
+      <span class="field-value" style="min-width:110px;"></span>
+    </span>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- 2. ข้อมูลผู้ยืม -->
+  <div class="sec-title">2. ข้อมูลผู้ยืม</div>
+  <div class="field-row">
+    <span class="field-label">ชื่อผู้ยืม:</span>
+    <span class="field-value">${data.borrower}</span>
+    <span class="field-inline">
+      <span style="min-width:70px;">หน่วยงาน:</span>
+      <span class="field-value" style="min-width:140px;">${data.department}</span>
+    </span>
+  </div>
+  <div class="field-row">
+    <span class="field-label">ชื่อนักศึกษา (ถ้ามี):</span>
+    <span class="field-value">${data.studentName || ''}</span>
+    <span class="field-inline">
+      <span style="min-width:95px;">รหัสนักศึกษา:</span>
+      <span class="field-value" style="min-width:120px;">${data.studentId || ''}</span>
+    </span>
+  </div>
+  <div class="field-row">
+    <span class="field-label">วัตถุประสงค์:</span>
+    <span class="field-value">${data.purpose}</span>
+  </div>
+  ${data.note ? `<div class="field-row"><span class="field-label">หมายเหตุ:</span><span class="field-value">${data.note}</span></div>` : ''}
+
+  <div class="divider"></div>
+
+  <!-- 3. รายการครุภัณฑ์ที่ยืม -->
+  <div class="sec-title">3. รายการครุภัณฑ์ที่ยืม (จำนวน ${data.assets.length} รายการ)</div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:40px;">ลำดับ</th>
+        <th style="width:110px;">เลขครุภัณฑ์</th>
+        <th>ชื่อครุภัณฑ์</th>
+        <th style="width:80px;">สภาพ</th>
+        <th style="width:150px;">หมายเหตุ</th>
+        <th style="width:60px;">ตรวจคืน</th>
+      </tr>
+    </thead>
+    <tbody>${assetRows}</tbody>
+  </table>
+
+  <!-- ลายเซ็น -->
+  <div class="signatures">
+    <div class="sig-title-center">ลายมือชื่อผู้เกี่ยวข้อง (สำหรับการยืมครุภัณฑ์)</div>
+    <div class="sig-row">
+      <div class="sig-box">
+        <div class="sig-line"></div>
+        <div class="sig-label">
+          <strong>ผู้ยืม</strong><br/>
+          (${data.borrower})<br/>
+          วันที่ ......./......./.............
+        </div>
+      </div>
+      <div class="sig-box">
+        <div class="sig-line"></div>
+        <div class="sig-label">
+          <strong>ผู้อนุมัติ</strong><br/>
+          (ประธานหลักสูตร/หัวหน้าภาควิชา)<br/>
+          วันที่ ......./......./.............
+        </div>
+      </div>
+      <div class="sig-box">
+        <div class="sig-line"></div>
+        <div class="sig-label">
+          <strong>เจ้าหน้าที่พัสดุผู้ส่งมอบ</strong><br/>
+          (...............................................)<br/>
+          วันที่ ......./......./.............
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider" style="margin-top:10mm;"></div>
+
+  <!-- 4. บันทึกการคืน -->
+  <div class="sec-title">4. บันทึกการคืนครุภัณฑ์ (สำหรับเจ้าหน้าที่กรอก)</div>
+  <div class="field-row">
+    <span class="field-label">วันที่คืนจริง:</span>
+    <span class="field-value"></span>
+  </div>
+  <div class="field-row">
+    <span class="field-label">สภาพครุภัณฑ์:</span>
+    <span>
+      <span class="checkbox"></span> ทุกรายการปกติ ครบถ้วน
+      &nbsp;&nbsp;
+      <span class="checkbox"></span> มีรายการชำรุด/เสียหาย
+    </span>
+  </div>
+  <div class="field-row">
+    <span class="field-label">รายการที่ชำรุด:</span>
+    <span class="field-value"></span>
+  </div>
+  <div class="field-row">
+    <span class="field-label">หมายเหตุ:</span>
+    <span class="field-value"></span>
+  </div>
+
+  <div class="sig-row" style="margin-top:8mm;">
+    <div class="sig-box">
+      <div class="sig-line"></div>
+      <div class="sig-label">
+        <strong>ผู้คืนครุภัณฑ์</strong><br/>
+        (${data.borrower})<br/>
+        วันที่ ......./......./.............
+      </div>
+    </div>
+    <div class="sig-box">
+      <div class="sig-line"></div>
+      <div class="sig-label">
+        <strong>เจ้าหน้าที่พัสดุผู้ตรวจรับ</strong><br/>
+        (...............................................)<br/>
+        วันที่ ......./......./.............
+      </div>
+    </div>
+    <div class="sig-box" style="display:flex; align-items:center; justify-content:center;">
+      <div style="text-align:center; color:#6B7280; font-size:12px;">
+        <div style="font-weight:600;">เอกสารเลขที่</div>
+        <div style="font-size:14px; font-weight:700; color:#111827;">${data.borrowId}</div>
+        <div style="font-size:11px; margin-top:2px;">${data.assets.length} รายการ</div>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>
   `;
