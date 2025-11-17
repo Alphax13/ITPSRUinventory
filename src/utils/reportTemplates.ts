@@ -3,9 +3,8 @@
 
 /* ====================== ค่าคงที่ / Utilities ====================== */
 
-/** URL ตราสถาบัน (PNG หรือ SVG) */
-export const EMBLEM_URL =
-  'https://sdd.psru.ac.th/wp-content/uploads/2025/06/image-1.png';
+/** URL ตราสถาบัน (PNG หรือ SVG) - ใช้ไฟล์ local เพื่อป้องกันรูปหาย */
+export const EMBLEM_URL = '/logo.png';
 
 /** วันที่ไทยแบบราชการ (พ.ศ.) */
 export function formatThaiDate(input?: string | number | Date): string {

@@ -46,8 +46,13 @@ export async function GET(
     // สร้าง HTML จาก template พร้อมปุ่มพิมพ์อัตโนมัติ
     const html = generateBorrowFormHTML(formData);
     
+    // แปลง relative path เป็น absolute URL สำหรับ logo
+    const url = new URL(request.url);
+    const baseUrl = `${url.protocol}//${url.host}`;
+    const htmlWithAbsoluteUrls = html.replace(/src="\/logo\.png"/g, `src="${baseUrl}/logo.png"`);
+    
     // เพิ่มสคริปต์สำหรับพิมพ์อัตโนมัติ
-    const htmlWithPrintScript = html.replace(
+    const htmlWithPrintScript = htmlWithAbsoluteUrls.replace(
       '</body>',
       `
       <script>
