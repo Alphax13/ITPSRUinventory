@@ -622,22 +622,33 @@ export function generateBorrowFormHTML(data: {
 
   <!-- 2. ข้อมูลผู้ยืม -->
   <div class="sec-title">2. ข้อมูลผู้ยืม</div>
+  ${data.studentName ? `
   <div class="field-row">
-    <span class="field-label">ชื่อผู้ยืม (อาจารย์/เจ้าหน้าที่):</span>
+    <span class="field-label">ชื่อผู้ยืม (นักศึกษา):</span>
+    <span class="field-value"><strong>${data.studentName}</strong></span>
+    <span class="field-inline">
+      <span style="min-width:100px;">รหัสนักศึกษา:</span>
+      <span class="field-value" style="min-width:130px;"><strong>${data.studentId || ''}</strong></span>
+    </span>
+  </div>
+  <div class="field-row">
+    <span class="field-label">อาจารย์/เจ้าหน้าที่ผู้รับรอง:</span>
     <span class="field-value">${data.borrower}</span>
     <span class="field-inline">
       <span style="min-width:80px;">หน่วยงาน:</span>
       <span class="field-value" style="min-width:150px;">${data.department}</span>
     </span>
   </div>
+  ` : `
   <div class="field-row">
-    <span class="field-label">ชื่อนักศึกษา (ถ้ามี):</span>
-    <span class="field-value">${data.studentName || ''}</span>
+    <span class="field-label">ชื่อผู้ยืม (อาจารย์/เจ้าหน้าที่):</span>
+    <span class="field-value"><strong>${data.borrower}</strong></span>
     <span class="field-inline">
-      <span style="min-width:100px;">รหัสนักศึกษา:</span>
-      <span class="field-value" style="min-width:130px;">${data.studentId || ''}</span>
+      <span style="min-width:80px;">หน่วยงาน:</span>
+      <span class="field-value" style="min-width:150px;">${data.department}</span>
     </span>
   </div>
+  `}
   <div class="field-row">
     <span class="field-label">วัตถุประสงค์ในการยืม:</span>
     <span class="field-value">${data.purpose}</span>
@@ -675,7 +686,7 @@ export function generateBorrowFormHTML(data: {
         <div class="sig-line"></div>
         <div class="sig-label">
           <strong>ผู้ยืม</strong><br/>
-          (${data.borrower})<br/>
+          (${data.studentName || data.borrower})<br/>
           วันที่ ......./......./.............
         </div>
       </div>
@@ -683,8 +694,8 @@ export function generateBorrowFormHTML(data: {
       <div class="sig-box">
         <div class="sig-line"></div>
         <div class="sig-label">
-          <strong>ผู้อนุมัติ</strong><br/>
-          (ประธานหลักสูตร/หัวหน้าภาควิชา)<br/>
+          <strong>${data.studentName ? 'อาจารย์/เจ้าหน้าที่ผู้รับรอง' : 'ผู้อนุมัติ'}</strong><br/>
+          ${data.studentName ? `(${data.borrower})` : '(ประธานหลักสูตร/หัวหน้าภาควิชา)'}<br/>
           วันที่ ......./......./.............
         </div>
       </div>
@@ -730,7 +741,7 @@ export function generateBorrowFormHTML(data: {
       <div class="sig-line"></div>
       <div class="sig-label">
         <strong>ผู้คืนครุภัณฑ์</strong><br/>
-        (...............................................)<br/>
+        (${data.studentName || data.borrower})<br/>
         วันที่ ......./......./.............
       </div>
     </div>
@@ -969,22 +980,33 @@ export function generateMultiBorrowFormHTML(data: {
 
   <!-- 2. ข้อมูลผู้ยืม -->
   <div class="sec-title">2. ข้อมูลผู้ยืม</div>
+  ${data.studentName ? `
   <div class="field-row">
-    <span class="field-label">ชื่อผู้ยืม:</span>
+    <span class="field-label">ชื่อผู้ยืม (นักศึกษา):</span>
+    <span class="field-value"><strong>${data.studentName}</strong></span>
+    <span class="field-inline">
+      <span style="min-width:95px;">รหัสนักศึกษา:</span>
+      <span class="field-value" style="min-width:120px;"><strong>${data.studentId || ''}</strong></span>
+    </span>
+  </div>
+  <div class="field-row">
+    <span class="field-label">อาจารย์/เจ้าหน้าที่ผู้รับรอง:</span>
     <span class="field-value">${data.borrower}</span>
     <span class="field-inline">
       <span style="min-width:70px;">หน่วยงาน:</span>
       <span class="field-value" style="min-width:140px;">${data.department}</span>
     </span>
   </div>
+  ` : `
   <div class="field-row">
-    <span class="field-label">ชื่อนักศึกษา (ถ้ามี):</span>
-    <span class="field-value">${data.studentName || ''}</span>
+    <span class="field-label">ชื่อผู้ยืม:</span>
+    <span class="field-value"><strong>${data.borrower}</strong></span>
     <span class="field-inline">
-      <span style="min-width:95px;">รหัสนักศึกษา:</span>
-      <span class="field-value" style="min-width:120px;">${data.studentId || ''}</span>
+      <span style="min-width:70px;">หน่วยงาน:</span>
+      <span class="field-value" style="min-width:140px;">${data.department}</span>
     </span>
   </div>
+  `}
   <div class="field-row">
     <span class="field-label">วัตถุประสงค์:</span>
     <span class="field-value">${data.purpose}</span>
@@ -1017,15 +1039,15 @@ export function generateMultiBorrowFormHTML(data: {
         <div class="sig-line"></div>
         <div class="sig-label">
           <strong>ผู้ยืม</strong><br/>
-          (${data.borrower})<br/>
+          (${data.studentName || data.borrower})<br/>
           วันที่ ......./......./.............
         </div>
       </div>
       <div class="sig-box">
         <div class="sig-line"></div>
         <div class="sig-label">
-          <strong>ผู้อนุมัติ</strong><br/>
-          (ประธานหลักสูตร/หัวหน้าภาควิชา)<br/>
+          <strong>${data.studentName ? 'อาจารย์/เจ้าหน้าที่ผู้รับรอง' : 'ผู้อนุมัติ'}</strong><br/>
+          ${data.studentName ? `(${data.borrower})` : '(ประธานหลักสูตร/หัวหน้าภาควิชา)'}<br/>
           วันที่ ......./......./.............
         </div>
       </div>
@@ -1070,7 +1092,7 @@ export function generateMultiBorrowFormHTML(data: {
       <div class="sig-line"></div>
       <div class="sig-label">
         <strong>ผู้คืนครุภัณฑ์</strong><br/>
-        (${data.borrower})<br/>
+        (${data.studentName || data.borrower})<br/>
         วันที่ ......./......./.............
       </div>
     </div>
