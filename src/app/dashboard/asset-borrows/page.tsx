@@ -232,10 +232,10 @@ export default function AssetBorrowsPage() {
     }
   };
 
-  // ดาวน์โหลด PDF รวมหลายรายการ (batch)
+  // แสดงแบบฟอร์ม PDF รวมหลายรายการ (batch)
   const handleBatchDownloadPDF = async () => {
     if (selectedIds.length === 0) {
-      alert('กรุณาเลือกรายการที่ต้องการดาวน์โหลด PDF');
+      alert('กรุณาเลือกรายการที่ต้องการแสดงแบบฟอร์ม');
       return;
     }
 
@@ -245,42 +245,34 @@ export default function AssetBorrowsPage() {
     const hasDifferentUsers = selectedBorrows.some(b => b.user.id !== firstUserId);
     
     if (hasDifferentUsers) {
-      alert('ไม่สามารถรวม PDF ได้: กรุณาเลือกรายการที่มีผู้ยืมคนเดียวกัน');
+      alert('ไม่สามารถรวมแบบฟอร์มได้: กรุณาเลือกรายการที่มีผู้ยืมคนเดียวกัน');
       return;
     }
 
     try {
       setDownloadingBatch(true);
-      const response = await fetch('/api/assets/borrow/batch/form', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          borrowIds: selectedIds
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'ไม่สามารถสร้าง PDF ได้');
-      }
-
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `borrow-form-batch-${Date.now()}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      
+      // สร้าง form และส่งแบบ POST ไปหน้าต่างใหม่
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = '/api/assets/borrow/batch/form';
+      form.target = '_blank';
+      
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = 'borrowIds';
+      input.value = JSON.stringify(selectedIds);
+      
+      form.appendChild(input);
+      document.body.appendChild(form);
+      form.submit();
+      document.body.removeChild(form);
       
       // ล้างการเลือก
-      setSelectedIds([]);
+      setTimeout(() => setSelectedIds([]), 500);
     } catch (error) {
-      console.error('Error downloading batch PDF:', error);
-      alert(error instanceof Error ? error.message : 'เกิดข้อผิดพลาดในการดาวน์โหลด PDF');
+      console.error('Error opening batch form:', error);
+      alert(error instanceof Error ? error.message : 'เกิดข้อผิดพลาดในการแสดงแบบฟอร์ม');
     } finally {
       setDownloadingBatch(false);
     }
@@ -398,14 +390,14 @@ export default function AssetBorrowsPage() {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
-                  <span>กำลังสร้าง PDF...</span>
+                  <span>กำลังเปิดแบบฟอร์ม...</span>
                 </>
               ) : (
                 <>
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                   </svg>
-                  <span>ดาวน์โหลด PDF รวม ({selectedIds.length})</span>
+                  <span>พิมพ์แบบฟอร์มรวม ({selectedIds.length})</span>
                 </>
               )}
             </button>
@@ -547,10 +539,10 @@ export default function AssetBorrowsPage() {
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center justify-center w-8 h-8 text-red-600 hover:text-white hover:bg-red-600 rounded-full transition-colors"
-                      title="ดาวน์โหลดแบบฟอร์มยืม-คืน PDF"
+                      title="พิมพ์แบบฟอร์มยืม-คืน (Print to PDF)"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                       </svg>
                     </a>
                     

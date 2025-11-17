@@ -1,21 +1,27 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { generatePDFFromHTML } from '@/utils/puppeteerPdfGenerator';
 import { generateMultiBorrowFormHTML } from '@/utils/reportTemplates';
-
-// เพิ่ม timeout สำหรับการสร้าง PDF
-export const maxDuration = 60;
 
 /**
  * POST /api/assets/borrow/batch/form
- * Body: { borrowIds: string[] }
+ * Body: { borrowIds: string[] } หรือ form data
  * 
- * รวมหลายรายการยืมครุภัณฑ์ที่มีผู้ยืมคนเดียวกันเป็น PDF เดียว (แบบตาราง)
+ * รวมหลายรายการยืมครุภัณฑ์ที่มีผู้ยืมคนเดียวกันเป็น HTML พร้อมพิมพ์
  */
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const { borrowIds } = body;
+    let borrowIds: string[] = [];
+    
+    // รองรับทั้ง JSON และ form data
+    const contentType = request.headers.get('content-type');
+    if (contentType?.includes('application/json')) {
+      const body = await request.json();
+      borrowIds = body.borrowIds;
+    } else {
+      const formData = await request.formData();
+      const borrowIdsStr = formData.get('borrowIds') as string;
+      borrowIds = JSON.parse(borrowIdsStr);
+    }
 
     if (!Array.isArray(borrowIds) || borrowIds.length === 0) {
       return NextResponse.json(
@@ -68,13 +74,13 @@ export async function POST(request: Request) {
       const asset = b.fixedAsset;
       return {
         assetNumber: asset.assetNumber,
-        assetName: asset.name, // map name -> assetName
+        assetName: asset.name,
         condition: asset.condition,
         note: b.note || undefined
       };
     });
 
-    // สร้าง borrowId รวม (เช่น "BRW-001,BRW-002,BRW-003" หรือใช้ของแรก + จำนวน)
+    // สร้าง borrowId รวม
     const combinedId = borrows.length > 1 
       ? `${firstBorrow.id.slice(0, 8)} (+${borrows.length - 1})`
       : firstBorrow.id;
@@ -95,22 +101,30 @@ export async function POST(request: Request) {
       assets
     });
 
-    // สร้าง PDF
-    const pdfBuffer = await generatePDFFromHTML(html);
+    // เพิ่มสคริปต์สำหรับพิมพ์อัตโนมัติ
+    const htmlWithPrintScript = html.replace(
+      '</body>',
+      `
+      <script>
+        window.onload = function() {
+          window.print();
+        };
+      </script>
+      </body>
+      `
+    );
 
-    // ส่ง PDF กลับไป
-    return new NextResponse(pdfBuffer.buffer as ArrayBuffer, {
-      status: 200,
+    // ส่งคืน HTML ที่พร้อมพิมพ์
+    return new NextResponse(htmlWithPrintScript, {
       headers: {
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="borrow-form-batch-${Date.now()}.pdf"`
-      }
+        'Content-Type': 'text/html; charset=utf-8',
+      },
     });
   } catch (error) {
-    console.error('Error generating batch borrow PDF:', error);
+    console.error('Error generating batch borrow form:', error);
     return NextResponse.json(
       { 
-        error: 'ไม่สามารถสร้าง PDF ได้',
+        error: 'ไม่สามารถสร้างแบบฟอร์มได้',
         details: error instanceof Error ? error.message : String(error)
       },
       { status: 500 }

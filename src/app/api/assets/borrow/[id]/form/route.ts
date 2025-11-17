@@ -2,10 +2,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { generateBorrowFormHTML } from '@/utils/reportTemplates';
-import { generatePDFWithHeaderFooter } from '@/utils/puppeteerPdfGenerator';
-
-// เพิ่ม timeout สำหรับ PDF generation
-export const maxDuration = 60; // 60 seconds
 
 export async function GET(
   request: Request,
@@ -47,20 +43,27 @@ export async function GET(
       studentId: borrow.studentId || undefined,
     };
 
-    // สร้าง HTML จาก template
+    // สร้าง HTML จาก template พร้อมปุ่มพิมพ์อัตโนมัติ
     const html = generateBorrowFormHTML(formData);
+    
+    // เพิ่มสคริปต์สำหรับพิมพ์อัตโนมัติ
+    const htmlWithPrintScript = html.replace(
+      '</body>',
+      `
+      <script>
+        // Auto-open print dialog when page loads
+        window.onload = function() {
+          window.print();
+        };
+      </script>
+      </body>
+      `
+    );
 
-    // แปลงเป็น PDF ด้วย Puppeteer
-    const pdfBuffer = await generatePDFWithHeaderFooter(html, {
-      format: 'A4',
-      landscape: false,
-    });
-
-    // ส่งคืน PDF
-    return new NextResponse(Buffer.from(pdfBuffer), {
+    // ส่งคืน HTML ที่พร้อมพิมพ์
+    return new NextResponse(htmlWithPrintScript, {
       headers: {
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="borrow-form-${borrowId}.pdf"`,
+        'Content-Type': 'text/html; charset=utf-8',
       },
     });
 
