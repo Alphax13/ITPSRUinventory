@@ -69,6 +69,12 @@ export async function POST(request: Request) {
     // ใช้ข้อมูลจากรายการแรก (ผู้ยืม, หน่วยงาน, วันที่)
     const firstBorrow = borrows[0];
     
+    // ดึงข้อมูล admin
+    const admin = await prisma.user.findFirst({
+      where: { role: 'ADMIN' },
+      select: { name: true }
+    });
+    
     // สร้างรายการครุภัณฑ์สำหรับตาราง
     const assets = borrows.map((b) => {
       const asset = b.fixedAsset;
@@ -98,6 +104,7 @@ export async function POST(request: Request) {
       studentName: firstBorrow.studentName || undefined,
       studentId: firstBorrow.studentId || undefined,
       note: firstBorrow.note || undefined,
+      adminName: admin?.name || 'เจ้าหน้าที่',
       assets
     });
 

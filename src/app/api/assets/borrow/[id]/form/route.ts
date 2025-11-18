@@ -11,13 +11,19 @@ export async function GET(
     const { id } = await params;
     const borrowId = id;
 
-    // ดึงข้อมูลการยืม
+    // ดึงข้อมูลการยืม และข้อมูล admin ที่ล็อกอิน
     const borrow = await prisma.assetBorrow.findUnique({
       where: { id: borrowId },
       include: {
         fixedAsset: true,
         user: true,
       },
+    });
+
+    // ดึงข้อมูล admin ที่ login อยู่ (ดึง admin คนแรก หรือ admin ที่สร้างรายการ)
+    const admin = await prisma.user.findFirst({
+      where: { role: 'ADMIN' },
+      select: { name: true }
     });
 
     if (!borrow) {
@@ -41,6 +47,7 @@ export async function GET(
       note: borrow.note || undefined,
       studentName: borrow.studentName || undefined,
       studentId: borrow.studentId || undefined,
+      adminName: admin?.name || 'เจ้าหน้าที่',
     };
 
     // สร้าง HTML จาก template พร้อมปุ่มพิมพ์อัตโนมัติ

@@ -494,6 +494,7 @@ export function generateBorrowFormHTML(data: {
   note?: string;
   studentName?: string; // ชื่อนักศึกษา (ถ้ามี)
   studentId?: string; // รหัสนักศึกษา (ถ้ามี)
+  adminName?: string; // ชื่อ admin สำหรับผู้ส่งมอบ
 }): string {
   return `
 <!DOCTYPE html>
@@ -617,7 +618,7 @@ export function generateBorrowFormHTML(data: {
       <span class="field-value" style="min-width:120px;"></span>
     </span>
   </div>
-
+เจ้าหน้าที่พัสดุผู้ส่งมอบ
   <div class="divider"></div>
 
   <!-- 2. ข้อมูลผู้ยืม -->
@@ -695,7 +696,7 @@ export function generateBorrowFormHTML(data: {
         <div class="sig-line"></div>
         <div class="sig-label">
           <strong>${data.studentName ? 'อาจารย์/เจ้าหน้าที่ผู้รับรอง' : 'ผู้อนุมัติ'}</strong><br/>
-          ${data.studentName ? `(${data.borrower})` : '(ประธานหลักสูตร/หัวหน้าภาควิชา)'}<br/>
+          ${data.studentName ? '(...............................................)' : '(ประธานหลักสูตร/หัวหน้าภาควิชา)'}<br/>
           วันที่ ......./......./.............
         </div>
       </div>
@@ -703,8 +704,8 @@ export function generateBorrowFormHTML(data: {
       <div class="sig-box">
         <div class="sig-line"></div>
         <div class="sig-label">
-          <strong>เจ้าหน้าที่พัสดุผู้ส่งมอบ</strong><br/>
-          (...............................................)<br/>
+          <strong>เจ้าหน้าที่ผู้ส่งมอบ</strong><br/>
+          (${data.adminName || 'เจ้าหน้าที่'})<br/>
           วันที่ ......./......./.............
         </div>
       </div>
@@ -893,6 +894,7 @@ export function generateMultiBorrowFormHTML(data: {
   studentName?: string;
   studentId?: string;
   note?: string;
+  adminName?: string; // ชื่อ admin สำหรับผู้ส่งมอบ
   assets: Array<{
     assetNumber: string;
     assetName: string;
@@ -1047,7 +1049,7 @@ export function generateMultiBorrowFormHTML(data: {
         <div class="sig-line"></div>
         <div class="sig-label">
           <strong>${data.studentName ? 'อาจารย์/เจ้าหน้าที่ผู้รับรอง' : 'ผู้อนุมัติ'}</strong><br/>
-          ${data.studentName ? `(${data.borrower})` : '(ประธานหลักสูตร/หัวหน้าภาควิชา)'}<br/>
+          ${data.studentName ? '(...............................................)' : '(ประธานหลักสูตร/หัวหน้าภาควิชา)'}<br/>
           วันที่ ......./......./.............
         </div>
       </div>
@@ -1055,7 +1057,7 @@ export function generateMultiBorrowFormHTML(data: {
         <div class="sig-line"></div>
         <div class="sig-label">
           <strong>เจ้าหน้าที่พัสดุผู้ส่งมอบ</strong><br/>
-          (...............................................)<br/>
+          (${data.adminName || 'เจ้าหน้าที่'})<br/>
           วันที่ ......./......./.............
         </div>
       </div>
