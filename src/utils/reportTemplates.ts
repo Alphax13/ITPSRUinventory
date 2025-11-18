@@ -672,10 +672,10 @@ export function generateBorrowFormHTML(data: {
     <span class="field-value">
       ${data.condition === 'GOOD' ? '✓ ปกติ ครบถ้วน' : '⚠ ชำรุด/บกพร่อง'}
     </span>
-  </div>
-  <div class="field-row">
-    <span class="field-label">หมายเหตุ:</span>
-    <span class="field-value">${data.note || ''}</span>
+    <span class="field-inline">
+      <span style="min-width:80px;">หมายเหตุ:</span>
+      <span class="field-value" style="min-width:300px;">${data.note || ''}</span>
+    </span>
   </div>
 
   <!-- ลายเซ็น ขาออก -->
@@ -1106,15 +1106,7 @@ export function generateMultiBorrowFormHTML(data: {
         วันที่ ......./......./.............
       </div>
     </div>
-    <div class="sig-box" style="display:flex; align-items:center; justify-content:center;">
-      <div style="text-align:center; color:#6B7280; font-size:12px;">
-        <div style="font-weight:600;">เอกสารเลขที่</div>
-        <div style="font-size:14px; font-weight:700; color:#111827;">${data.borrowId}</div>
-        <div style="font-size:11px; margin-top:2px;">${data.assets.length} รายการ</div>
-      </div>
-    </div>
   </div>
-
 </body>
 </html>
   `;
