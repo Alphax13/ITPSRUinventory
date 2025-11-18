@@ -696,7 +696,7 @@ export function generateBorrowFormHTML(data: {
         <div class="sig-line"></div>
         <div class="sig-label">
           <strong>${data.studentName ? 'อาจารย์/เจ้าหน้าที่ผู้รับรอง' : 'ผู้อนุมัติ'}</strong><br/>
-          ${data.studentName ? '(...............................................)' : '(ประธานหลักสูตร/หัวหน้าภาควิชา)'}<br/>
+          ${data.studentName ? '(...............................................)' : '(ประธานหลักสูตร/อาจารย์ผู้รับผิดชอบ)'}<br/>
           วันที่ ......./......./.............
         </div>
       </div>
@@ -1049,7 +1049,7 @@ export function generateMultiBorrowFormHTML(data: {
         <div class="sig-line"></div>
         <div class="sig-label">
           <strong>${data.studentName ? 'อาจารย์/เจ้าหน้าที่ผู้รับรอง' : 'ผู้อนุมัติ'}</strong><br/>
-          ${data.studentName ? '(...............................................)' : '(ประธานหลักสูตร/หัวหน้าภาควิชา)'}<br/>
+          ${data.studentName ? '(...............................................)' : '(ประธานหลักสูตร/อาจารย์ผู้รับผิดชอบ)'}<br/>
           วันที่ ......./......./.............
         </div>
       </div>
