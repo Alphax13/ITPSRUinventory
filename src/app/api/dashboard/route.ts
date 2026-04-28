@@ -35,12 +35,10 @@ export async function GET() {
         },
       }),
       
-      // นับครุภัณฑ์ที่ต้องซ่อม
+      // นับครุภัณฑ์ที่ต้องซ่อม (เฉพาะ NEEDS_REPAIR)
       prisma.fixedAsset.count({
         where: {
-          condition: {
-            in: ['DAMAGED', 'NEEDS_REPAIR']
-          }
+          condition: 'NEEDS_REPAIR'
         },
       }),
       

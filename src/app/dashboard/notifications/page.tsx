@@ -98,35 +98,35 @@ export default function NotificationsPage() {
   };
 
   const getNotificationIcon = (type: Notification['type']) => {
-    const className = "h-6 w-6";
+    const cls = 'h-5 w-5';
     switch (type) {
       case 'SUCCESS':
-        return <CheckCircleIcon className={`${className} text-green-500`} />;
+        return <CheckCircleIcon className={`${cls} text-emerald-500`} />;
       case 'WARNING':
       case 'LOW_STOCK':
       case 'OVERDUE':
-        return <ExclamationTriangleIcon className={`${className} text-yellow-500`} />;
+        return <ExclamationTriangleIcon className={`${cls} text-amber-500`} />;
       case 'ERROR':
-        return <XCircleIcon className={`${className} text-red-500`} />;
+        return <XCircleIcon className={`${cls} text-red-500`} />;
       case 'MAINTENANCE':
-        return <ExclamationTriangleIcon className={`${className} text-blue-500`} />;
+        return <ExclamationTriangleIcon className={`${cls} text-blue-500`} />;
       case 'REQUEST':
-        return <InformationCircleIcon className={`${className} text-purple-500`} />;
+        return <InformationCircleIcon className={`${cls} text-violet-500`} />;
       default:
-        return <InformationCircleIcon className={`${className} text-gray-500`} />;
+        return <InformationCircleIcon className={`${cls} text-slate-400`} />;
     }
   };
 
-  const getTypeColor = (type: Notification['type']) => {
+  const getBorderColor = (type: Notification['type']) => {
     switch (type) {
-      case 'SUCCESS': return 'border-l-green-400 bg-green-50';
+      case 'SUCCESS': return 'border-l-emerald-400';
       case 'WARNING':
       case 'LOW_STOCK':
-      case 'OVERDUE': return 'border-l-yellow-400 bg-yellow-50';
-      case 'ERROR': return 'border-l-red-400 bg-red-50';
-      case 'MAINTENANCE': return 'border-l-blue-400 bg-blue-50';
-      case 'REQUEST': return 'border-l-purple-400 bg-purple-50';
-      default: return 'border-l-gray-400 bg-gray-50';
+      case 'OVERDUE': return 'border-l-amber-400';
+      case 'ERROR': return 'border-l-red-400';
+      case 'MAINTENANCE': return 'border-l-blue-400';
+      case 'REQUEST': return 'border-l-violet-400';
+      default: return 'border-l-slate-300';
     }
   };
 
@@ -143,37 +143,40 @@ export default function NotificationsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">การแจ้งเตือน</h1>
-          <p className="mt-1 text-sm text-gray-600">
-            จัดการการแจ้งเตือนของคุณ {unreadCount > 0 && `(${unreadCount} ยังไม่อ่าน)`}
-          </p>
-        </div>
-
-        <div className="mt-4 sm:mt-0 flex space-x-3">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="border-l-4 border-orange-600 px-6 py-5 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+          <div>
+            <h1 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+              การแจ้งเตือน
+              {unreadCount > 0 && (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-orange-100 text-orange-700 border border-orange-200">
+                  {unreadCount} ยังไม่อ่าน
+                </span>
+              )}
+            </h1>
+            <p className="text-sm text-slate-500 mt-0.5">จัดการการแจ้งเตือนของคุณ</p>
+          </div>
           {unreadCount > 0 && (
             <button
               onClick={() => user?.id && markAllAsRead(user.id)}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-sm font-semibold transition-colors"
             >
-              <CheckIcon className="h-4 w-4 mr-2" />
+              <CheckIcon className="h-4 w-4" />
               อ่านทั้งหมด
             </button>
           )}
         </div>
       </div>
 
-      {/* Filters and Actions */}
-      <div className="bg-white rounded-lg shadow border border-orange-200 p-4">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
-          {/* Filter */}
-          <div className="flex items-center space-x-4">
-            <FunnelIcon className="h-5 w-5 text-gray-500" />
+      {/* Filters & Bulk Actions */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <FunnelIcon className="h-4 w-4 text-slate-400 shrink-0" />
             <select
               value={filter}
-              onChange={(e) => setFilter(e.target.value as any)}
-              className="rounded-lg border-gray-300 text-sm focus:ring-orange-500 focus:border-orange-500"
+              onChange={(e) => setFilter(e.target.value as 'ALL' | 'UNREAD' | Notification['type'])}
+              className="px-3 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
             >
               <option value="ALL">ทั้งหมด ({notifications.length})</option>
               <option value="UNREAD">ยังไม่อ่าน ({unreadCount})</option>
@@ -188,24 +191,23 @@ export default function NotificationsPage() {
             </select>
           </div>
 
-          {/* Bulk Actions */}
           {selectedNotifications.length > 0 && (
-            <div className="flex items-center space-x-3">
-              <span className="text-sm text-gray-600">
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-slate-500">
                 เลือก {selectedNotifications.length} รายการ
               </span>
               <button
                 onClick={handleMarkSelectedAsRead}
-                className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded text-orange-700 bg-orange-100 hover:bg-orange-200"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-orange-50 hover:text-orange-700 text-slate-700 rounded-xl text-sm font-medium transition-colors"
               >
-                <CheckIcon className="h-4 w-4 mr-1" />
+                <CheckIcon className="h-4 w-4" />
                 อ่านแล้ว
               </button>
               <button
                 onClick={handleDeleteSelected}
-                className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded text-red-700 bg-red-100 hover:bg-red-200"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-red-50 hover:text-red-700 text-slate-700 rounded-xl text-sm font-medium transition-colors"
               >
-                <TrashIcon className="h-4 w-4 mr-1" />
+                <TrashIcon className="h-4 w-4" />
                 ลบ
               </button>
             </div>
@@ -214,91 +216,100 @@ export default function NotificationsPage() {
       </div>
 
       {/* Notifications List */}
-      <div className="bg-white rounded-lg shadow border border-orange-200">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         {isLoading ? (
-          <div className="p-8 text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto"></div>
-            <p className="text-sm text-gray-500 mt-2">กำลังโหลด...</p>
+          <div className="flex flex-col items-center justify-center py-16 gap-3">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
+            <p className="text-sm text-slate-500">กำลังโหลด...</p>
           </div>
         ) : error ? (
-          <div className="p-8 text-center">
-            <XCircleIcon className="h-12 w-12 text-red-500 mx-auto" />
-            <p className="text-sm text-red-600 mt-2">{error}</p>
+          <div className="flex flex-col items-center justify-center py-16 gap-3">
+            <XCircleIcon className="h-10 w-10 text-red-400" />
+            <p className="text-sm text-red-600">{error}</p>
           </div>
         ) : filteredNotifications.length === 0 ? (
-          <div className="p-8 text-center">
-            <BellIcon className="h-12 w-12 text-gray-300 mx-auto" />
-            <p className="text-sm text-gray-500 mt-2">
-              {filter === 'ALL' ? 'ไม่มีการแจ้งเตือน' : `ไม่มีการแจ้งเตือน${NOTIFICATION_TYPES.find(t => t.value === filter)?.label || ''}`}
+          <div className="flex flex-col items-center justify-center py-16 gap-3">
+            <BellIcon className="h-10 w-10 text-slate-300" />
+            <p className="text-sm text-slate-500">
+              {filter === 'ALL'
+                ? 'ไม่มีการแจ้งเตือน'
+                : `ไม่มีการแจ้งเตือน${NOTIFICATION_TYPES.find(t => t.value === filter)?.label || ''}`}
             </p>
           </div>
         ) : (
           <>
-            {/* Select All */}
-            <div className="px-6 py-3 border-b border-gray-200">
-              <label className="flex items-center">
+            {/* Select All row */}
+            <div className="px-5 py-3 border-b border-slate-200 bg-slate-50">
+              <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
-                  checked={selectedNotifications.length === filteredNotifications.length}
+                  checked={selectedNotifications.length === filteredNotifications.length && filteredNotifications.length > 0}
                   onChange={handleSelectAll}
-                  className="rounded border-gray-300 text-orange-600 focus:ring-orange-500"
+                  className="rounded border-slate-300 text-orange-600 focus:ring-orange-500"
                 />
-                <span className="ml-2 text-sm text-gray-600">เลือกทั้งหมด</span>
+                <span className="text-sm text-slate-600">เลือกทั้งหมด ({filteredNotifications.length} รายการ)</span>
               </label>
             </div>
 
-            {/* Notifications */}
-            <div className="divide-y divide-gray-200">
+            {/* Notification items */}
+            <div className="divide-y divide-slate-100">
               {filteredNotifications.map((notification) => (
                 <div
                   key={notification.id}
-                  className={`border-l-4 ${getTypeColor(notification.type)} ${
-                    !notification.isRead ? 'bg-opacity-100' : 'bg-opacity-30'
+                  className={`border-l-4 ${getBorderColor(notification.type)} ${
+                    !notification.isRead ? 'bg-white' : 'bg-slate-50/50'
                   }`}
                 >
-                  <div className="px-6 py-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start space-x-4">
+                  <div className="px-5 py-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-start gap-3 flex-1 min-w-0">
                         <input
                           type="checkbox"
                           checked={selectedNotifications.includes(notification.id)}
                           onChange={() => handleSelectNotification(notification.id)}
-                          className="mt-1 rounded border-gray-300 text-orange-600 focus:ring-orange-500"
+                          className="mt-0.5 rounded border-slate-300 text-orange-600 focus:ring-orange-500 shrink-0"
                         />
-                        <div className="mt-1">
+                        <div className="mt-0.5 shrink-0">
                           {getNotificationIcon(notification.type)}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between">
-                            <h3 className={`text-sm font-medium text-gray-900 ${
-                              !notification.isRead ? 'font-semibold' : ''
-                            }`}>
+                          <div className="flex items-center gap-2">
+                            <h3 className={`text-sm text-slate-800 truncate ${!notification.isRead ? 'font-semibold' : 'font-medium'}`}>
                               {notification.title}
                             </h3>
                             {!notification.isRead && (
-                              <div className="ml-2 w-2 h-2 bg-orange-500 rounded-full"></div>
+                              <span className="shrink-0 w-2 h-2 bg-orange-500 rounded-full"></span>
                             )}
                           </div>
-                          <p className="mt-1 text-sm text-gray-600">
+                          <p className="mt-0.5 text-sm text-slate-500 line-clamp-2">
                             {notification.message}
                           </p>
-                          <p className="mt-2 text-xs text-gray-400">
+                          <p className="mt-1.5 text-xs text-slate-400">
                             {formatDateTime(notification.createdAt)}
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-2 ml-4">
+                      <div className="flex items-center gap-1.5 shrink-0">
                         {notification.actionUrl && (
                           <button
                             onClick={() => handleNotificationClick(notification)}
-                            className="text-xs text-orange-600 hover:text-orange-700 font-medium"
+                            className="text-xs font-medium text-orange-600 hover:text-orange-700 whitespace-nowrap"
                           >
                             ดูรายละเอียด
                           </button>
                         )}
+                        {!notification.isRead && (
+                          <button
+                            onClick={() => markAsRead([notification.id])}
+                            className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-emerald-50 hover:text-emerald-600 text-slate-500 flex items-center justify-center transition-colors"
+                            title="ทำเครื่องหมายว่าอ่านแล้ว"
+                          >
+                            <CheckIcon className="h-4 w-4" />
+                          </button>
+                        )}
                         <button
                           onClick={() => deleteNotification(notification.id)}
-                          className="p-1 text-gray-400 hover:text-gray-600 rounded"
+                          className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-red-50 hover:text-red-600 text-slate-500 flex items-center justify-center transition-colors"
                           title="ลบการแจ้งเตือน"
                         >
                           <TrashIcon className="h-4 w-4" />

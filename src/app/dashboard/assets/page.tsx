@@ -5,6 +5,19 @@ import { useEffect, useState } from 'react';
 import { useAuthStore } from '@/stores/authStore';
 import SafeImage from '@/components/SafeImage';
 import AssetFormModal from './AssetFormModal';
+import {
+  MagnifyingGlassIcon,
+  PlusIcon,
+  ArrowUturnLeftIcon,
+  PencilSquareIcon,
+  TrashIcon,
+  ArrowRightOnRectangleIcon,
+  XMarkIcon,
+  ComputerDesktopIcon,
+  ChevronUpIcon,
+  ChevronDownIcon,
+  ChevronUpDownIcon,
+} from '@heroicons/react/24/outline';
 
 export interface Asset {
   id: string;
@@ -231,27 +244,9 @@ export default function AssetsPage() {
 
   // Get sort icon
   const getSortIcon = (field: string) => {
-    if (sortBy !== field) {
-      return (
-        <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-        </svg>
-      );
-    }
-    
-    if (sortOrder === 'asc') {
-      return (
-        <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-        </svg>
-      );
-    } else {
-      return (
-        <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
-      );
-    }
+    if (sortBy !== field) return <ChevronUpDownIcon className="w-3.5 h-3.5 text-slate-400" />;
+    if (sortOrder === 'asc') return <ChevronUpIcon className="w-3.5 h-3.5 text-orange-500" />;
+    return <ChevronDownIcon className="w-3.5 h-3.5 text-orange-500" />;
   };
 
   // Pagination functions
@@ -390,11 +385,11 @@ export default function AssetsPage() {
 
   const getConditionColor = (condition: string) => {
     switch (condition) {
-      case 'GOOD': return 'bg-green-100 text-green-800';
-      case 'DAMAGED': return 'bg-yellow-100 text-yellow-800';
-      case 'NEEDS_REPAIR': return 'bg-red-100 text-red-800';
-      case 'DISPOSED': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'GOOD': return 'bg-emerald-50 text-emerald-700 border border-emerald-200';
+      case 'DAMAGED': return 'bg-amber-50 text-amber-700 border border-amber-200';
+      case 'NEEDS_REPAIR': return 'bg-red-50 text-red-700 border border-red-200';
+      case 'DISPOSED': return 'bg-slate-100 text-slate-500 border border-slate-200';
+      default: return 'bg-slate-100 text-slate-500 border border-slate-200';
     }
   };
 
@@ -411,207 +406,161 @@ export default function AssetsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
       </div>
     );
   }
 
+  const allAvailable = assets.filter(a => !a.borrowHistory?.find(b => b.status === 'BORROWED')).length;
+  const allBorrowed = assets.filter(a => !!a.borrowHistory?.find(b => b.status === 'BORROWED')).length;
+
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">จัดการครุภัณฑ์</h1>
-          <p className="text-gray-600 mt-1">ติดตามและจัดการครุภัณฑ์ทั้งหมด</p>
-        </div>
-        {isAdmin && (
-          <div className="flex space-x-2">
-            <button
-              onClick={() => setShowForm(true)}
-              className="inline-flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              <span>เพิ่มครุภัณฑ์</span>
-            </button>
-            <button
-              onClick={() => setShowReturnForm(true)}
-              className="inline-flex items-center space-x-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 15v-1a4 4 0 00-4-4H8m0 0l3 3m-3-3l3-3m9 14V5a2 2 0 00-2-2H6a2 2 0 00-2 2v16l4-2 4 2 4-2 4 2z" />
-              </svg>
-              <span>คืนครุภัณฑ์</span>
-            </button>
+      {/* Header */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="border-l-4 border-orange-600 px-6 py-5 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+          <div>
+            <h1 className="text-xl font-bold text-slate-800">จัดการครุภัณฑ์</h1>
+            <p className="text-sm text-slate-500 mt-0.5">ติดตามและจัดการครุภัณฑ์ทั้งหมด</p>
           </div>
-        )}
+          {isAdmin && (
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowForm(true)}
+                className="inline-flex items-center gap-2 px-4 py-2.5 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-sm font-semibold transition-colors"
+              >
+                <PlusIcon className="w-4 h-4" />
+                เพิ่มครุภัณฑ์
+              </button>
+              <button
+                onClick={() => setShowReturnForm(true)}
+                className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-semibold transition-colors"
+              >
+                <ArrowUturnLeftIcon className="w-4 h-4" />
+                คืนครุภัณฑ์
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+          <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">ครุภัณฑ์ทั้งหมด</p>
+          <p className="text-3xl font-bold text-slate-800 mt-2">{assets.length}</p>
+        </div>
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+          <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">ว่าง</p>
+          <p className="text-3xl font-bold text-emerald-600 mt-2">{allAvailable}</p>
+        </div>
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+          <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">ถูกยืม</p>
+          <p className="text-3xl font-bold text-orange-600 mt-2">{allBorrowed}</p>
+        </div>
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+          <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">จำหน่ายแล้ว</p>
+          <p className="text-3xl font-bold text-slate-400 mt-2">{assets.filter(a => a.condition === 'DISPOSED').length}</p>
+        </div>
       </div>
 
       {/* Search and Filter Section */}
-      <div className="bg-white rounded-lg shadow p-6 space-y-4">
-        <div className="flex flex-col lg:flex-row gap-4">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">
+        <div className="flex flex-col lg:flex-row gap-3">
           {/* Search Input */}
-          <div className="flex-1">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              ค้นหาครุภัณฑ์
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </div>
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                placeholder="ค้นหาด้วย ชื่อ, เลขครุภัณฑ์, หมวดหมู่, ยี่ห้อ, รุ่น, เลขซีเรียล หรือสถานที่..."
-              />
-            </div>
+          <div className="flex-1 relative">
+            <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-9 pr-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              placeholder="ค้นหา ชื่อ, เลขครุภัณฑ์, หมวดหมู่, ยี่ห้อ, รุ่น..."
+            />
           </div>
 
           {/* Category Filter */}
-          <div className="lg:w-48">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              หมวดหมู่
-            </label>
-            <select
-              value={filterCategory}
-              onChange={(e) => setFilterCategory(e.target.value)}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="">ทั้งหมด</option>
-              {getUniqueCategories().map((category) => (
-                <option key={category} value={category}>
-                  {category}
-                </option>
-              ))}
-            </select>
-          </div>
+          <select
+            value={filterCategory}
+            onChange={(e) => setFilterCategory(e.target.value)}
+            className="lg:w-44 px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+          >
+            <option value="">ทุกหมวดหมู่</option>
+            {getUniqueCategories().map((category) => (
+              <option key={category} value={category}>{category}</option>
+            ))}
+          </select>
 
           {/* Condition Filter */}
-          <div className="lg:w-48">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              สภาพ
-            </label>
-            <select
-              value={filterCondition}
-              onChange={(e) => setFilterCondition(e.target.value)}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="">ทั้งหมด</option>
-              <option value="GOOD">ดี</option>
-              <option value="DAMAGED">เสียหาย</option>
-              <option value="NEEDS_REPAIR">ต้องซ่อม</option>
-              <option value="DISPOSED">จำหน่ายแล้ว</option>
-            </select>
-          </div>
+          <select
+            value={filterCondition}
+            onChange={(e) => setFilterCondition(e.target.value)}
+            className="lg:w-36 px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+          >
+            <option value="">ทุกสภาพ</option>
+            <option value="GOOD">ดี</option>
+            <option value="DAMAGED">เสียหาย</option>
+            <option value="NEEDS_REPAIR">ต้องซ่อม</option>
+            <option value="DISPOSED">จำหน่ายแล้ว</option>
+          </select>
 
           {/* Status Filter */}
-          <div className="lg:w-48">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              สถานะการใช้งาน
-            </label>
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="">ทั้งหมด</option>
-              <option value="AVAILABLE">ว่าง</option>
-              <option value="BORROWED">ถูกยืม</option>
-            </select>
-          </div>
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            className="lg:w-36 px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+          >
+            <option value="">ทุกสถานะ</option>
+            <option value="AVAILABLE">ว่าง</option>
+            <option value="BORROWED">ถูกยืม</option>
+          </select>
 
           {/* Clear Filters Button */}
-          <div className="lg:w-auto flex items-end">
+          {(searchTerm || filterCategory || filterCondition || filterStatus) && (
             <button
               onClick={clearFilters}
-              className="px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors flex items-center space-x-2"
-              title="ล้างตัวกรอง"
+              className="inline-flex items-center gap-1.5 px-3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-sm font-medium transition-colors"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-              <span>ล้าง</span>
+              <XMarkIcon className="w-4 h-4" />
+              ล้าง
             </button>
-          </div>
+          )}
         </div>
 
         {/* Results Summary */}
-        <div className="flex items-center justify-between text-sm text-gray-600">
-          <div className="flex items-center space-x-4">
-            <span>
-              แสดง {filteredAssets.length} จาก {assets.length} รายการ
-              {(searchTerm || filterCategory || filterCondition || filterStatus) && (
-                <span className="ml-2 text-blue-600">
-                  (กำลังกรองข้อมูล)
-                </span>
-              )}
-            </span>
-            
-            {/* Sort Info */}
-            <span className="text-gray-400">
-              เรียงตาม: {
-                sortBy === 'assetNumber' ? 'เลขครุภัณฑ์' :
-                sortBy === 'name' ? 'ชื่อ' :
-                sortBy === 'category' ? 'หมวดหมู่' :
-                sortBy === 'location' ? 'สถานที่' :
-                sortBy === 'condition' ? 'สภาพ' : sortBy
-              } ({sortOrder === 'asc' ? 'น้อยไปมาก' : 'มากไปน้อย'})
-            </span>
+        <div className="flex items-center justify-between text-xs text-slate-500">
+          <span>
+            แสดง {filteredAssets.length} จาก {assets.length} รายการ
+            {(searchTerm || filterCategory || filterCondition || filterStatus) && (
+              <span className="ml-2 text-orange-600 font-medium">(กำลังกรอง)</span>
+            )}
+          </span>
+          <div className="flex flex-wrap gap-1.5">
+            {searchTerm && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-medium bg-blue-50 text-blue-700 border border-blue-200">
+                ค้นหา: {searchTerm}
+                <button onClick={() => setSearchTerm('')}><XMarkIcon className="w-3 h-3" /></button>
+              </span>
+            )}
+            {filterCategory && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+                {filterCategory}
+                <button onClick={() => setFilterCategory('')}><XMarkIcon className="w-3 h-3" /></button>
+              </span>
+            )}
+            {filterCondition && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-medium bg-amber-50 text-amber-700 border border-amber-200">
+                {getConditionText(filterCondition)}
+                <button onClick={() => setFilterCondition('')}><XMarkIcon className="w-3 h-3" /></button>
+              </span>
+            )}
+            {filterStatus && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-medium bg-purple-50 text-purple-700 border border-purple-200">
+                {filterStatus === 'AVAILABLE' ? 'ว่าง' : 'ถูกยืม'}
+                <button onClick={() => setFilterStatus('')}><XMarkIcon className="w-3 h-3" /></button>
+              </span>
+            )}
           </div>
-          
-          {/* Active Filters */}
-          {(searchTerm || filterCategory || filterCondition || filterStatus) && (
-            <div className="flex flex-wrap gap-2">
-              {searchTerm && (
-                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                  ค้นหา: {searchTerm}
-                  <button
-                    onClick={() => setSearchTerm('')}
-                    className="ml-1 hover:text-blue-600"
-                  >
-                    ×
-                  </button>
-                </span>
-              )}
-              {filterCategory && (
-                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                  หมวดหมู่: {filterCategory}
-                  <button
-                    onClick={() => setFilterCategory('')}
-                    className="ml-1 hover:text-green-600"
-                  >
-                    ×
-                  </button>
-                </span>
-              )}
-              {filterCondition && (
-                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                  สภาพ: {getConditionText(filterCondition)}
-                  <button
-                    onClick={() => setFilterCondition('')}
-                    className="ml-1 hover:text-yellow-600"
-                  >
-                    ×
-                  </button>
-                </span>
-              )}
-              {filterStatus && (
-                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                  สถานะ: {filterStatus === 'AVAILABLE' ? 'ว่าง' : 'ถูกยืม'}
-                  <button
-                    onClick={() => setFilterStatus('')}
-                    className="ml-1 hover:text-purple-600"
-                  >
-                    ×
-                  </button>
-                </span>
-              )}
-            </div>
-          )}
         </div>
       </div>
 
@@ -633,124 +582,99 @@ export default function AssetsPage() {
 
       {/* Borrow Asset Form Modal */}
       {showBorrowForm && selectedAsset && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-lg font-semibold mb-4">
-              ยืมครุภัณฑ์: {selectedAsset.assetNumber}
-            </h2>
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto shadow-2xl">
+            <div className="flex justify-between items-center mb-5">
+              <h2 className="text-base font-bold text-slate-800">ยืมครุภัณฑ์: {selectedAsset.assetNumber}</h2>
+              <button
+                onClick={() => { setShowBorrowForm(false); setSelectedAsset(null); }}
+                className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 transition-colors"
+              >
+                <XMarkIcon className="h-5 w-5" />
+              </button>
+            </div>
             <form onSubmit={handleBorrowSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  ผู้ยืม *
-                </label>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">ผู้ยืม *</label>
                 <select
                   value={borrowFormData.userId}
                   onChange={(e) => setBorrowFormData({ ...borrowFormData, userId: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   required
                 >
                   <option value="">เลือกผู้ยืม</option>
-                  {users.map((user) => (
-                    <option key={user.id} value={user.id}>
-                      {user.name} ({user.email})
-                    </option>
+                  {users.map((u) => (
+                    <option key={u.id} value={u.id}>{u.name} ({u.email})</option>
                   ))}
                 </select>
               </div>
-
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  วันที่คาดว่าจะคืน
-                </label>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">วันที่คาดว่าจะคืน</label>
                 <input
                   type="date"
                   value={borrowFormData.expectedReturnDate}
                   onChange={(e) => setBorrowFormData({ ...borrowFormData, expectedReturnDate: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   min={new Date().toISOString().split('T')[0]}
                 />
               </div>
-
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  วัตถุประสงค์การยืม
-                </label>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">วัตถุประสงค์การยืม</label>
                 <input
                   type="text"
                   value={borrowFormData.purpose}
                   onChange={(e) => setBorrowFormData({ ...borrowFormData, purpose: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   placeholder="เช่น สำหรับการสอน, งานวิจัย"
                 />
               </div>
-
-              <div className="border-t border-gray-200 pt-4 space-y-3">
-                <label className="block text-sm font-medium text-blue-700">
-                  📚 ข้อมูลนักศึกษา (ถ้ายืมในนามของนักศึกษา)
-                </label>
-                
+              <div className="border-t border-slate-100 pt-4 space-y-3">
+                <p className="text-xs font-semibold text-slate-500 uppercase">ข้อมูลนักศึกษา (ถ้ามี)</p>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    ชื่อนักศึกษา
-                  </label>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">ชื่อนักศึกษา</label>
                   <input
                     type="text"
                     value={borrowFormData.studentName}
                     onChange={(e) => setBorrowFormData({ ...borrowFormData, studentName: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                     placeholder="กรอกชื่อนักศึกษา (ถ้ามี)"
                   />
                 </div>
-
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    รหัสนักศึกษา
-                  </label>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">รหัสนักศึกษา</label>
                   <input
                     type="text"
                     value={borrowFormData.studentId}
                     onChange={(e) => setBorrowFormData({ ...borrowFormData, studentId: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                     placeholder="เช่น 661xxxxxxx"
                   />
                 </div>
               </div>
-
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  หมายเหตุ
-                </label>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">หมายเหตุ</label>
                 <textarea
                   value={borrowFormData.note}
                   onChange={(e) => setBorrowFormData({ ...borrowFormData, note: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                  rows={3}
+                  className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  rows={2}
                   placeholder="หมายเหตุเพิ่มเติม"
                 />
               </div>
-
-              <div className="flex space-x-3">
+              <div className="flex gap-3 pt-2">
                 <button
                   type="button"
-                  onClick={() => {
-                    setShowBorrowForm(false);
-                    setSelectedAsset(null);
-                  }}
-                  className="flex-1 inline-flex items-center justify-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                  onClick={() => { setShowBorrowForm(false); setSelectedAsset(null); }}
+                  className="flex-1 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-medium transition-colors"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                  <span>ยกเลิก</span>
+                  ยกเลิก
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 inline-flex items-center justify-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+                  className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-sm font-semibold transition-colors"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                  </svg>
-                  <span>ยืม</span>
+                  <ArrowRightOnRectangleIcon className="w-4 h-4" />
+                  ยืม
                 </button>
               </div>
             </form>
@@ -760,79 +684,73 @@ export default function AssetsPage() {
 
       {/* Return Asset Form Modal */}
       {showReturnForm && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-lg font-semibold mb-4">คืนครุภัณฑ์</h2>
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl">
+            <div className="flex justify-between items-center mb-5">
+              <h2 className="text-base font-bold text-slate-800">คืนครุภัณฑ์</h2>
+              <button
+                onClick={() => setShowReturnForm(false)}
+                className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 transition-colors"
+              >
+                <XMarkIcon className="h-5 w-5" />
+              </button>
+            </div>
             <form onSubmit={handleReturnSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  เลือกรายการยืม *
-                </label>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">เลือกรายการยืม *</label>
                 <select
                   value={returnFormData.borrowId}
                   onChange={(e) => setReturnFormData({ ...returnFormData, borrowId: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   required
                 >
                   <option value="">เลือกรายการยืม</option>
                   {borrows
                     .filter(borrow => borrow.status === 'BORROWED' || borrow.status === 'OVERDUE')
                     .map((borrow) => (
-                    <option key={borrow.id} value={borrow.id}>
-                      {/* @ts-expect-error - API response includes fixedAsset */}
-                      {borrow.fixedAsset?.assetNumber} - {borrow.user.name}
-                    </option>
-                  ))}
+                      <option key={borrow.id} value={borrow.id}>
+                        {/* @ts-expect-error - API response includes fixedAsset */}
+                        {borrow.fixedAsset?.assetNumber} - {borrow.user.name}
+                      </option>
+                    ))}
                 </select>
               </div>
-
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  สภาพครุภัณฑ์เมื่อคืน
-                </label>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">สภาพครุภัณฑ์เมื่อคืน</label>
                 <select
                   value={returnFormData.condition}
                   onChange={(e) => setReturnFormData({ ...returnFormData, condition: e.target.value as Asset['condition'] })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 >
                   <option value="GOOD">ดี</option>
                   <option value="DAMAGED">เสียหาย</option>
                   <option value="NEEDS_REPAIR">ต้องซ่อม</option>
                 </select>
               </div>
-
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  หมายเหตุการคืน
-                </label>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">หมายเหตุการคืน</label>
                 <textarea
                   value={returnFormData.note}
                   onChange={(e) => setReturnFormData({ ...returnFormData, note: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                  rows={3}
+                  className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  rows={2}
                   placeholder="สภาพการคืน, ปัญหาที่พบ"
                 />
               </div>
-
-              <div className="flex space-x-3">
+              <div className="flex gap-3 pt-2">
                 <button
                   type="button"
                   onClick={() => setShowReturnForm(false)}
-                  className="flex-1 inline-flex items-center justify-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="flex-1 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-medium transition-colors"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                  <span>ยกเลิก</span>
+                  ยกเลิก
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 inline-flex items-center justify-center space-x-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors"
+                  className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-sm font-semibold transition-colors"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 15v-1a4 4 0 00-4-4H8m0 0l3 3m-3-3l3-3m9 14V5a2 2 0 00-2-2H6a2 2 0 00-2 2v16l4-2 4 2 4-2 4 2z" />
-                  </svg>
-                  <span>คืน</span>
+                  <ArrowUturnLeftIcon className="w-4 h-4" />
+                  คืน
                 </button>
               </div>
             </form>
@@ -841,20 +759,18 @@ export default function AssetsPage() {
       )}
 
       {/* Assets Table */}
-      <div className="bg-white rounded-lg shadow">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         {/* Table Info and Controls */}
-        <div className="px-6 py-4 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center space-x-4">
-            <p className="text-sm text-gray-700">
-              แสดง {((currentPage - 1) * itemsPerPage) + 1} ถึง {Math.min(currentPage * itemsPerPage, totalItems)} จาก {totalItems} รายการ
-            </p>
-          </div>
-          <div className="flex items-center space-x-2">
-            <label className="text-sm text-gray-700">แสดงต่อหน้า:</label>
+        <div className="px-6 py-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <p className="text-sm text-slate-600">
+            แสดง {paginatedAssets.length > 0 ? ((currentPage - 1) * itemsPerPage) + 1 : 0}–{Math.min(currentPage * itemsPerPage, totalItems)} จาก {totalItems} รายการ
+          </p>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-slate-500">แสดงต่อหน้า:</span>
             <select
               value={itemsPerPage}
               onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
-              className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500"
+              className="px-2.5 py-1.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
             >
               <option value={5}>5</option>
               <option value={10}>10</option>
@@ -866,302 +782,204 @@ export default function AssetsPage() {
 
         {/* Desktop Table */}
         <div className="hidden lg:block overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full">
+            <thead className="bg-slate-50 border-b border-slate-200">
               <tr>
-                <th 
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
-                  onClick={() => handleSort('assetNumber')}
-                >
-                  <div className="flex items-center space-x-1">
-                    <span>เลขครุภัณฑ์</span>
-                    {getSortIcon('assetNumber')}
-                  </div>
+                <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:text-slate-700 select-none" onClick={() => handleSort('assetNumber')}>
+                  <div className="flex items-center gap-1">เลขครุภัณฑ์ {getSortIcon('assetNumber')}</div>
                 </th>
-                <th 
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
-                  onClick={() => handleSort('name')}
-                >
-                  <div className="flex items-center space-x-1">
-                    <span>รายการ</span>
-                    {getSortIcon('name')}
-                  </div>
+                <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:text-slate-700 select-none" onClick={() => handleSort('name')}>
+                  <div className="flex items-center gap-1">รายการ {getSortIcon('name')}</div>
                 </th>
-                <th 
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
-                  onClick={() => handleSort('category')}
-                >
-                  <div className="flex items-center space-x-1">
-                    <span>หมวดหมู่</span>
-                    {getSortIcon('category')}
-                  </div>
+                <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:text-slate-700 select-none" onClick={() => handleSort('category')}>
+                  <div className="flex items-center gap-1">หมวดหมู่ {getSortIcon('category')}</div>
                 </th>
-                <th 
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
-                  onClick={() => handleSort('location')}
-                >
-                  <div className="flex items-center space-x-1">
-                    <span>สถานที่</span>
-                    {getSortIcon('location')}
-                  </div>
+                <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:text-slate-700 select-none" onClick={() => handleSort('location')}>
+                  <div className="flex items-center gap-1">สถานที่ {getSortIcon('location')}</div>
                 </th>
-                <th 
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
-                  onClick={() => handleSort('condition')}
-                >
-                  <div className="flex items-center space-x-1">
-                    <span>สภาพ</span>
-                    {getSortIcon('condition')}
-                  </div>
+                <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:text-slate-700 select-none" onClick={() => handleSort('condition')}>
+                  <div className="flex items-center gap-1">สภาพ {getSortIcon('condition')}</div>
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  สถานะ
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  การดำเนินการ
-                </th>
+                <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">สถานะ</th>
+                <th className="px-5 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">การดำเนินการ</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="divide-y divide-slate-100">
               {paginatedAssets.map((asset) => {
-              const currentBorrow = asset.borrowHistory?.find(b => b.status === 'BORROWED');
-              return (
-                <tr key={asset.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {asset.assetNumber}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center space-x-3">
-                      {asset.imageUrl && (
-                        <div className="flex-shrink-0">
+                const currentBorrow = asset.borrowHistory?.find(b => b.status === 'BORROWED');
+                return (
+                  <tr key={asset.id} className="hover:bg-slate-50 transition-colors">
+                    <td className="px-5 py-4 whitespace-nowrap text-sm font-semibold text-slate-700">
+                      {asset.assetNumber}
+                    </td>
+                    <td className="px-5 py-4">
+                      <div className="flex items-center gap-3">
+                        {asset.imageUrl ? (
                           <SafeImage
                             src={asset.imageUrl}
                             alt={asset.name}
-                            width={48}
-                            height={48}
-                            className="rounded-lg border border-gray-200 object-cover cursor-pointer hover:opacity-80"
+                            width={44}
+                            height={44}
+                            className="rounded-xl border border-slate-200 object-cover cursor-pointer hover:opacity-80 flex-shrink-0"
                             onClick={() => setShowImageModal(asset.imageUrl || null)}
                           />
-                        </div>
-                      )}
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">
-                          {asset.name}
-                        </div>
-                        {asset.brand && (
-                          <div className="text-sm text-gray-500">
-                            {asset.brand} {asset.model && `- ${asset.model}`}
+                        ) : (
+                          <div className="w-11 h-11 rounded-xl bg-slate-100 flex items-center justify-center flex-shrink-0">
+                            <ComputerDesktopIcon className="w-5 h-5 text-slate-400" />
                           </div>
                         )}
-                         <div className="text-xs text-red-700">
-                          {asset.description}
+                        <div>
+                          <p className="text-sm font-medium text-slate-800">{asset.name}</p>
+                          {asset.brand && (
+                            <p className="text-xs text-slate-500">{asset.brand}{asset.model ? ` — ${asset.model}` : ''}</p>
+                          )}
+                          {asset.description && (
+                            <p className="text-xs text-slate-400 truncate max-w-xs">{asset.description}</p>
+                          )}
                         </div>
                       </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {asset.category}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {asset.location}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getConditionColor(asset.condition)}`}>
-                      {getConditionText(asset.condition)}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {currentBorrow ? (
-                      <div>
-                        <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                          ถูกยืม
-                        </span>
-                        <div className="text-xs text-gray-500 mt-1">
-                          โดย: {currentBorrow.user.name}
-                        </div>
-                      </div>
-                    ) : (
-                      <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                        ว่าง
+                    </td>
+                    <td className="px-5 py-4 whitespace-nowrap text-sm text-slate-600">{asset.category}</td>
+                    <td className="px-5 py-4 whitespace-nowrap text-sm text-slate-600">{asset.location}</td>
+                    <td className="px-5 py-4 whitespace-nowrap">
+                      <span className={`inline-flex px-2 py-0.5 text-xs font-semibold rounded-full ${getConditionColor(asset.condition)}`}>
+                        {getConditionText(asset.condition)}
                       </span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex items-center space-x-2">
-                      {!currentBorrow && asset.condition !== 'DISPOSED' && asset.condition !== 'DAMAGED' && (
-                        <button
-                          onClick={() => {
-                            setSelectedAsset(asset);
-                            setShowBorrowForm(true);
-                          }}
-                          className="inline-flex items-center justify-center w-8 h-8 text-blue-600 hover:text-white hover:bg-blue-600 rounded-full transition-colors"
-                          title="ยืมครุภัณฑ์"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                          </svg>
-                        </button>
+                    </td>
+                    <td className="px-5 py-4 whitespace-nowrap">
+                      {currentBorrow ? (
+                        <div>
+                          <span className="inline-flex px-2 py-0.5 text-xs font-semibold rounded-full bg-orange-50 text-orange-700 border border-orange-200">ถูกยืม</span>
+                          <p className="text-xs text-slate-500 mt-0.5">โดย: {currentBorrow.user.name}</p>
+                        </div>
+                      ) : (
+                        <span className="inline-flex px-2 py-0.5 text-xs font-semibold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">ว่าง</span>
                       )}
-                      {isAdmin && (
-                        <>
-                          <button
-                            onClick={() => {
-                              setEditingAsset(asset);
-                              setShowForm(true);
-                            }}
-                            className="inline-flex items-center justify-center w-8 h-8 text-green-600 hover:text-white hover:bg-green-600 rounded-full transition-colors"
-                            title="แก้ไขครุภัณฑ์"
-                          >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                            </svg>
-                          </button>
-                          <button
-                            onClick={() => handleDelete(asset)}
-                            className="inline-flex items-center justify-center w-8 h-8 text-red-600 hover:text-white hover:bg-red-600 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            title="ลบครุภัณฑ์"
-                            disabled={!!currentBorrow}
-                          >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-        </div>
-
-        {/* Mobile Cards */}
-        <div className="lg:hidden">
-          {paginatedAssets.map((asset) => {
-            const currentBorrow = borrows.find(
-              borrow => borrow.id && 
-              typeof borrow === 'object' && 
-              'fixedAsset' in borrow && 
-              borrow.fixedAsset && 
-              typeof borrow.fixedAsset === 'object' && 
-              'id' in borrow.fixedAsset && 
-              borrow.fixedAsset.id === asset.id && 
-              (borrow.status === 'BORROWED' || borrow.status === 'OVERDUE')
-            );
-
-            return (
-              <div key={asset.id} className="border-b border-gray-200 p-4 hover:bg-gray-50">
-                <div className="flex items-start space-x-4">
-                  {asset.imageUrl && (
-                    <div className="flex-shrink-0">
-                      <SafeImage
-                        src={asset.imageUrl}
-                        alt={asset.name}
-                        width={64}
-                        height={64}
-                        className="rounded-lg border border-gray-200 object-cover cursor-pointer hover:opacity-80"
-                        onClick={() => setShowImageModal(asset.imageUrl || null)}
-                      />
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h3 className="text-sm font-medium text-gray-900 truncate">
-                          {asset.name}
-                        </h3>
-                        <p className="text-sm text-gray-600">#{asset.assetNumber}</p>
-                        {asset.brand && (
-                          <p className="text-xs text-gray-500">
-                            {asset.brand} {asset.model && `- ${asset.model}`}
-                          </p>
-                        )}
-                      </div>
-                      <div className="flex items-center space-x-1">
+                    </td>
+                    <td className="px-5 py-4 whitespace-nowrap">
+                      <div className="flex items-center justify-end gap-1">
                         {!currentBorrow && asset.condition !== 'DISPOSED' && asset.condition !== 'DAMAGED' && (
                           <button
-                            onClick={() => {
-                              setSelectedAsset(asset);
-                              setShowBorrowForm(true);
-                            }}
-                            className="inline-flex items-center justify-center w-8 h-8 text-blue-600 hover:text-white hover:bg-blue-600 rounded-full transition-colors"
+                            onClick={() => { setSelectedAsset(asset); setShowBorrowForm(true); }}
+                            className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-center text-slate-500 transition-colors"
                             title="ยืมครุภัณฑ์"
                           >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                            </svg>
+                            <ArrowRightOnRectangleIcon className="w-4 h-4" />
                           </button>
                         )}
                         {isAdmin && (
                           <>
                             <button
-                              onClick={() => {
-                                setEditingAsset(asset);
-                                setShowForm(true);
-                              }}
-                              className="inline-flex items-center justify-center w-8 h-8 text-green-600 hover:text-white hover:bg-green-600 rounded-full transition-colors"
+                              onClick={() => { setEditingAsset(asset); setShowForm(true); }}
+                              className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-orange-50 hover:text-orange-600 flex items-center justify-center text-slate-500 transition-colors"
                               title="แก้ไขครุภัณฑ์"
                             >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                              </svg>
+                              <PencilSquareIcon className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => handleDelete(asset)}
-                              className="inline-flex items-center justify-center w-8 h-8 text-red-600 hover:text-white hover:bg-red-600 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-red-50 hover:text-red-600 flex items-center justify-center text-slate-500 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                               title="ลบครุภัณฑ์"
                               disabled={!!currentBorrow}
                             >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                              </svg>
+                              <TrashIcon className="w-4 h-4" />
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Mobile Cards */}
+        <div className="lg:hidden divide-y divide-slate-100">
+          {paginatedAssets.map((asset) => {
+            const currentBorrow = borrows.find(
+              borrow => borrow.id &&
+              typeof borrow === 'object' &&
+              'fixedAsset' in borrow &&
+              borrow.fixedAsset &&
+              typeof borrow.fixedAsset === 'object' &&
+              'id' in borrow.fixedAsset &&
+              borrow.fixedAsset.id === asset.id &&
+              (borrow.status === 'BORROWED' || borrow.status === 'OVERDUE')
+            );
+            return (
+              <div key={asset.id} className="p-4 hover:bg-slate-50 transition-colors">
+                <div className="flex items-start gap-3">
+                  {asset.imageUrl ? (
+                    <SafeImage
+                      src={asset.imageUrl}
+                      alt={asset.name}
+                      width={56}
+                      height={56}
+                      className="rounded-xl border border-slate-200 object-cover cursor-pointer hover:opacity-80 flex-shrink-0"
+                      onClick={() => setShowImageModal(asset.imageUrl || null)}
+                    />
+                  ) : (
+                    <div className="w-14 h-14 rounded-xl bg-slate-100 flex items-center justify-center flex-shrink-0">
+                      <ComputerDesktopIcon className="w-6 h-6 text-slate-400" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <p className="text-sm font-semibold text-slate-800">{asset.name}</p>
+                        <p className="text-xs text-slate-500">#{asset.assetNumber}</p>
+                        {asset.brand && (
+                          <p className="text-xs text-slate-400">{asset.brand}{asset.model ? ` — ${asset.model}` : ''}</p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        {!currentBorrow && asset.condition !== 'DISPOSED' && asset.condition !== 'DAMAGED' && (
+                          <button
+                            onClick={() => { setSelectedAsset(asset); setShowBorrowForm(true); }}
+                            className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-center text-slate-500 transition-colors"
+                            title="ยืมครุภัณฑ์"
+                          >
+                            <ArrowRightOnRectangleIcon className="w-4 h-4" />
+                          </button>
+                        )}
+                        {isAdmin && (
+                          <>
+                            <button
+                              onClick={() => { setEditingAsset(asset); setShowForm(true); }}
+                              className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-orange-50 hover:text-orange-600 flex items-center justify-center text-slate-500 transition-colors"
+                              title="แก้ไขครุภัณฑ์"
+                            >
+                              <PencilSquareIcon className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(asset)}
+                              className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-red-50 hover:text-red-600 flex items-center justify-center text-slate-500 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                              title="ลบครุภัณฑ์"
+                              disabled={!!currentBorrow}
+                            >
+                              <TrashIcon className="w-4 h-4" />
                             </button>
                           </>
                         )}
                       </div>
                     </div>
-                    
-                    <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
-                      <div>
-                        <span className="text-gray-500">หมวดหมู่:</span>
-                        <span className="ml-1 text-gray-900">{asset.category}</span>
-                      </div>
-                      <div>
-                        <span className="text-gray-500">สถานที่:</span>
-                        <span className="ml-1 text-gray-900">{asset.location}</span>
-                      </div>
-                      <div>
-                        <span className="text-gray-500">สภาพ:</span>
-                        <span className={`ml-1 px-2 py-0.5 text-xs font-semibold rounded-full ${getConditionColor(asset.condition)}`}>
-                          {getConditionText(asset.condition)}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-gray-500">สถานะ:</span>
-                        {currentBorrow ? (
-                          <div className="ml-1">
-                            <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                              ถูกยืม
-                            </span>
-                            <div className="text-xs text-gray-500 mt-1">
-                              โดย: {currentBorrow.user.name}
-                            </div>
-                          </div>
-                        ) : (
-                          <span className="ml-1 px-2 py-0.5 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                            ว่าง
-                          </span>
-                        )}
-                      </div>
+                    <div className="mt-2 flex flex-wrap gap-1.5 text-xs">
+                      <span className="text-slate-500">{asset.category}</span>
+                      <span className="text-slate-300">•</span>
+                      <span className="text-slate-500">{asset.location}</span>
+                      <span className={`px-2 py-0.5 rounded-full font-semibold ${getConditionColor(asset.condition)}`}>
+                        {getConditionText(asset.condition)}
+                      </span>
+                      {currentBorrow ? (
+                        <span className="px-2 py-0.5 rounded-full font-semibold bg-orange-50 text-orange-700 border border-orange-200">ถูกยืม</span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded-full font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">ว่าง</span>
+                      )}
                     </div>
-                    
-                    {asset.description && (
-                      <div className="mt-2">
-                        <span className="text-xs text-gray-500">รายละเอียด:</span>
-                        <p className="text-xs text-gray-700 mt-1">{asset.description}</p>
-                      </div>
+                    {currentBorrow && (
+                      <p className="text-xs text-slate-400 mt-1">ยืมโดย: {currentBorrow.user.name}</p>
                     )}
                   </div>
                 </div>
@@ -1170,37 +988,48 @@ export default function AssetsPage() {
           })}
         </div>
 
+        {/* No Data */}
+        {paginatedAssets.length === 0 && !loading && (
+          <div className="text-center py-16">
+            <ComputerDesktopIcon className="mx-auto h-12 w-12 text-slate-300" />
+            {assets.length === 0 ? (
+              <p className="mt-3 text-sm text-slate-500">ยังไม่มีครุภัณฑ์ในระบบ</p>
+            ) : (
+              <div>
+                <p className="mt-3 text-sm text-slate-500">ไม่พบครุภัณฑ์ที่ตรงกับเงื่อนไขการค้นหา</p>
+                <button onClick={clearFilters} className="mt-2 text-sm text-orange-600 hover:text-orange-700 font-medium">
+                  ล้างตัวกรองทั้งหมด
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="px-6 py-4 border-t border-gray-200">
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div className="text-sm text-gray-700">
-                หน้า {currentPage} จาก {totalPages}
-              </div>
-              
-              <div className="flex items-center space-x-1">
-                {/* Previous Button */}
+          <div className="px-6 py-4 border-t border-slate-200">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+              <p className="text-sm text-slate-500">หน้า {currentPage} จาก {totalPages}</p>
+              <div className="flex items-center gap-1">
                 <button
                   onClick={() => handlePageChange(currentPage - 1)}
                   disabled={currentPage === 1}
-                  className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-3 py-1.5 text-sm font-medium text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                 >
                   ก่อนหน้า
                 </button>
-                
-                {/* Page Numbers */}
-                <div className="hidden sm:flex space-x-1">
+                <div className="hidden sm:flex gap-1">
                   {getPaginationRange().map((page, index) => (
                     <div key={index}>
                       {page === '...' ? (
-                        <span className="px-3 py-2 text-sm font-medium text-gray-500">...</span>
+                        <span className="px-3 py-1.5 text-sm text-slate-400">…</span>
                       ) : (
                         <button
                           onClick={() => handlePageChange(page as number)}
-                          className={`px-3 py-2 text-sm font-medium rounded-md ${
+                          className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
                             currentPage === page
-                              ? 'bg-blue-600 text-white'
-                              : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+                              ? 'bg-orange-600 text-white'
+                              : 'text-slate-600 bg-white border border-slate-300 hover:bg-slate-50'
                           }`}
                         >
                           {page}
@@ -1209,41 +1038,18 @@ export default function AssetsPage() {
                     </div>
                   ))}
                 </div>
-                
-                {/* Mobile Page Info */}
-                <div className="sm:hidden px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md">
+                <div className="sm:hidden px-3 py-1.5 text-sm font-medium text-slate-600 bg-slate-100 rounded-lg">
                   {currentPage} / {totalPages}
                 </div>
-                
-                {/* Next Button */}
                 <button
                   onClick={() => handlePageChange(currentPage + 1)}
                   disabled={currentPage === totalPages}
-                  className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-3 py-1.5 text-sm font-medium text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                 >
                   ถัดไป
                 </button>
               </div>
             </div>
-          </div>
-        )}
-
-        {/* No Data Message */}
-        {paginatedAssets.length === 0 && !loading && (
-          <div className="text-center py-12">
-            {assets.length === 0 ? (
-              <p className="text-gray-500">ยังไม่มีครุภัณฑ์ในระบบ</p>
-            ) : (
-              <div>
-                <p className="text-gray-500">ไม่พบครุภัณฑ์ที่ตรงกับเงื่อนไขการค้นหา</p>
-                <button
-                  onClick={clearFilters}
-                  className="mt-2 text-blue-600 hover:text-blue-800 underline"
-                >
-                  ล้างตัวกรองทั้งหมด
-                </button>
-              </div>
-            )}
           </div>
         )}
       </div>
@@ -1254,16 +1060,16 @@ export default function AssetsPage() {
           <div className="relative max-w-4xl max-h-[90vh] p-4">
             <button
               onClick={() => setShowImageModal(null)}
-              className="absolute top-2 right-2 bg-white/20 hover:bg-white/30 text-white rounded-full w-10 h-10 flex items-center justify-center text-xl z-10"
+              className="absolute top-2 right-2 bg-white/20 hover:bg-white/30 text-white rounded-full w-9 h-9 flex items-center justify-center z-10"
             >
-              ×
+              <XMarkIcon className="h-5 w-5" />
             </button>
             <SafeImage
               src={showImageModal}
               alt="Asset image"
               width={800}
               height={600}
-              className="rounded-lg max-w-full max-h-full object-contain"
+              className="rounded-xl max-w-full max-h-full object-contain"
             />
           </div>
         </div>

@@ -47,15 +47,28 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
     }
 
     set({ isLoading: true, error: null });
-    try {
+
+    const doFetch = async (): Promise<Response> => {
       const params = new URLSearchParams({
         userId,
         ...(unreadOnly && { unreadOnly: 'true' }),
       });
+      return fetch(`/api/notifications?${params}`, { credentials: 'include' });
+    };
 
-      const response = await fetch(`/api/notifications?${params}`);
+    try {
+      let response = await doFetch();
+
+      // retry ครั้งเดียวถ้า server ยัง cold start อยู่ (5xx)
+      if (!response.ok && response.status >= 500) {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        response = await doFetch();
+      }
+
       if (!response.ok) {
-        throw new Error('Failed to fetch notifications');
+        // notifications ไม่ใช่ฟีเจอร์วิกฤต — ไม่โยน error ให้รบกวน console
+        set({ isLoading: false });
+        return;
       }
 
       const data = await response.json();
@@ -66,12 +79,9 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
       });
 
     } catch (error) {
-      // ไม่ต้อง log error ถ้าเป็นเพราะไม่มี userId (ซึ่งเป็นเรื่องปกติขณะโหลดหน้าเว็บ)
-      if (userId) {
-        console.error('Error fetching notifications:', error);
-      }
+      // network error หรือ JSON parse error — log ระดับ warn เท่านั้น
+      console.warn('[notifications] fetch failed (non-critical):', error instanceof Error ? error.message : error);
       set({ 
-        error: error instanceof Error ? error.message : 'Failed to fetch notifications',
         isLoading: false 
       });
     }

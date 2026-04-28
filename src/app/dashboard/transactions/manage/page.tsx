@@ -3,6 +3,14 @@
 
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/stores/authStore';
+import {
+  MagnifyingGlassIcon,
+  PencilSquareIcon,
+  TrashIcon,
+  XMarkIcon,
+  LockClosedIcon,
+  ClipboardDocumentListIcon,
+} from '@heroicons/react/24/outline';
 
 interface Transaction {
   id: string;
@@ -130,18 +138,18 @@ export default function TransactionManagePage() {
 
   const getTypeColor = (type: string) => {
     switch (type) {
-      case 'IN': return 'bg-green-100 text-green-800';
-      case 'OUT': return 'bg-red-100 text-red-800';
-      case 'TRANSFER': return 'bg-blue-100 text-blue-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'IN': return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+      case 'OUT': return 'bg-red-50 text-red-700 border-red-200';
+      case 'TRANSFER': return 'bg-blue-50 text-blue-700 border-blue-200';
+      default: return 'bg-slate-50 text-slate-700 border-slate-200';
     }
   };
 
   const getTypeText = (type: string) => {
     switch (type) {
-      case 'IN': return '📥 เข้า';
-      case 'OUT': return '📤 ออก';
-      case 'TRANSFER': return '🔄 โอน';
+      case 'IN': return 'เข้า';
+      case 'OUT': return 'ออก';
+      case 'TRANSFER': return 'โอน';
       default: return type;
     }
   };
@@ -159,10 +167,12 @@ export default function TransactionManagePage() {
 
   if (!isAdmin) {
     return (
-      <div className="text-center py-16">
-        <div className="text-6xl mb-4 opacity-30">🔒</div>
-        <h3 className="text-xl font-semibold text-gray-900 mb-2">ไม่มีสิทธิ์เข้าถึง</h3>
-        <p className="text-gray-600">หน้านี้สำหรับผู้ดูแลระบบเท่านั้น</p>
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-16 text-center">
+        <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-4">
+          <LockClosedIcon className="h-7 w-7 text-slate-400" />
+        </div>
+        <h3 className="text-base font-semibold text-slate-800 mb-1">ไม่มีสิทธิ์เข้าถึง</h3>
+        <p className="text-sm text-slate-500">หน้านี้สำหรับผู้ดูแลระบบเท่านั้น</p>
       </div>
     );
   }
@@ -178,133 +188,116 @@ export default function TransactionManagePage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-orange-400 to-orange-500 rounded-2xl p-6 text-white">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold mb-2">🗂️ จัดการประวัติรายการ</h1>
-            <p className="text-orange-100">แก้ไขและลบประวัติการเบิก-จ่ายวัสดุ (Admin เท่านั้น)</p>
-          </div>
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="border-l-4 border-orange-600 px-6 py-5">
+          <h1 className="text-xl font-bold text-slate-800">จัดการประวัติรายการ</h1>
+          <p className="text-sm text-slate-500 mt-0.5">แก้ไขและลบประวัติการเบิก-จ่ายวัสดุ (Admin เท่านั้น)</p>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-2xl p-6 shadow-sm border border-orange-100">
-        <div className="flex flex-col lg:flex-row gap-4">
-          <div className="flex-1">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <MagnifyingGlassIcon className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
-              placeholder="🔍 ค้นหาชื่อผู้ใช้, วัสดุ, หรือหมายเหตุ..."
+              placeholder="ค้นหาชื่อผู้ใช้, วัสดุ, หรือหมายเหตุ..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-4 py-3 border border-orange-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition-all duration-200"
+              className="w-full pl-9 pr-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
             />
           </div>
           <select
             value={selectedType}
             onChange={(e) => setSelectedType(e.target.value)}
-            className="px-4 py-3 border border-orange-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition-all duration-200"
+            className="px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
           >
-            <option value="">🏷️ ประเภททั้งหมด</option>
-            <option value="IN">📥 เข้า</option>
-            <option value="OUT">📤 ออก</option>
-            <option value="TRANSFER">🔄 โอน</option>
+            <option value="">ประเภททั้งหมด</option>
+            <option value="IN">เข้า</option>
+            <option value="OUT">ออก</option>
+            <option value="TRANSFER">โอน</option>
           </select>
         </div>
-
-        <div className="flex justify-between items-center mt-4 pt-4 border-t border-orange-100">
-          <p className="text-sm text-gray-600">
-            แสดงผล {filteredTransactions.length} รายการจากทั้งหมด {transactions.length} รายการ
-          </p>
-          <div className="flex gap-4 text-sm">
-            <span className="text-green-600">📥 เข้า: {transactions.filter(t => t.type === 'IN').length}</span>
-            <span className="text-red-600">📤 ออก: {transactions.filter(t => t.type === 'OUT').length}</span>
-            <span className="text-blue-600">🔄 โอน: {transactions.filter(t => t.type === 'TRANSFER').length}</span>
+        <div className="flex justify-between items-center mt-3 pt-3 border-t border-slate-100 text-xs text-slate-500">
+          <span>แสดง {filteredTransactions.length} / {transactions.length} รายการ</span>
+          <div className="flex gap-3">
+            <span className="text-emerald-600">เข้า: {transactions.filter(t => t.type === 'IN').length}</span>
+            <span className="text-red-500">ออก: {transactions.filter(t => t.type === 'OUT').length}</span>
+            <span className="text-blue-600">โอน: {transactions.filter(t => t.type === 'TRANSFER').length}</span>
           </div>
         </div>
       </div>
 
       {/* Transactions Table */}
-      <div className="bg-white rounded-2xl shadow-sm border border-orange-100 overflow-hidden">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  วันที่
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  ผู้ใช้
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  วัสดุ
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  ประเภท
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  จำนวน
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  หมายเหตุ
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  การจัดการ
-                </th>
+          <table className="min-w-full">
+            <thead>
+              <tr className="bg-slate-50 border-b border-slate-200">
+                <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">วันที่</th>
+                <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">ผู้ใช้</th>
+                <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">วัสดุ</th>
+                <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">ประเภท</th>
+                <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">จำนวน</th>
+                <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">หมายเหตุ</th>
+                <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">การจัดการ</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="divide-y divide-slate-100">
               {filteredTransactions.map((transaction) => (
-                <tr key={transaction.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                <tr key={transaction.id} className="hover:bg-slate-50 transition-colors">
+                  <td className="px-5 py-3.5 text-sm text-slate-700 whitespace-nowrap">
                     {new Date(transaction.createdAt).toLocaleString('th-TH')}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{transaction.user.name}</div>
-                    <div className="text-sm text-gray-500">{transaction.user.department}</div>
+                  <td className="px-5 py-3.5 whitespace-nowrap">
+                    <div className="text-sm font-medium text-slate-800">{transaction.user.name}</div>
+                    <div className="text-xs text-slate-400">{transaction.user.department}</div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-5 py-3.5 whitespace-nowrap">
                     {transaction.material ? (
                       <div>
-                        <div className="text-sm font-medium text-gray-900">{transaction.material.name}</div>
-                        <div className="text-sm text-gray-500">
-                          {transaction.material.code} • {transaction.material.unit}
-                        </div>
+                        <div className="text-sm font-medium text-slate-800">{transaction.material.name}</div>
+                        <div className="text-xs text-slate-400">{transaction.material.code} · {transaction.material.unit}</div>
                       </div>
                     ) : (
-                      <div className="text-sm text-gray-400 italic">วัสดุถูกลบแล้ว</div>
+                      <span className="text-sm text-slate-400 italic">วัสดุถูกลบแล้ว</span>
                     )}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getTypeColor(transaction.type)}`}>
+                  <td className="px-5 py-3.5 whitespace-nowrap">
+                    <span className={`inline-flex px-2.5 py-0.5 text-xs font-semibold rounded-full border ${getTypeColor(transaction.type)}`}>
                       {getTypeText(transaction.type)}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-5 py-3.5 text-sm font-medium text-slate-700 whitespace-nowrap">
                     {transaction.quantity}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 max-w-xs truncate">
-                    {transaction.reason || '-'}
+                  <td className="px-5 py-3.5 text-sm text-slate-500 max-w-[200px] truncate">
+                    {transaction.reason || <span className="text-slate-300">—</span>}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex gap-2">
+                  <td className="px-5 py-3.5 whitespace-nowrap">
+                    <div className="flex items-center gap-1.5">
                       <button
                         onClick={() => handleEdit(transaction)}
                         disabled={processingId === transaction.id || transaction.source !== 'legacy'}
-                        className={`px-3 py-1 rounded-lg text-xs transition-colors ${
+                        className={`inline-flex items-center justify-center w-7 h-7 rounded-lg transition-colors ${
                           transaction.source !== 'legacy'
-                            ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                            : 'bg-blue-500 hover:bg-blue-600 text-white'
+                            ? 'bg-slate-50 text-slate-300 cursor-not-allowed'
+                            : 'bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-500'
                         }`}
                         title={transaction.source !== 'legacy' ? 'แก้ไขได้เฉพาะประวัติแบบเก่า' : 'แก้ไข'}
                       >
-                        ✏️
+                        <PencilSquareIcon className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleDelete(transaction.id)}
                         disabled={processingId === transaction.id}
-                        className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg text-xs transition-colors disabled:opacity-50"
+                        className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-slate-100 hover:bg-red-50 hover:text-red-600 text-slate-500 transition-colors disabled:opacity-40"
+                        title="ลบ"
                       >
-                        {processingId === transaction.id ? '⏳' : '🗑️'}
+                        {processingId === transaction.id
+                          ? <div className="animate-spin h-3.5 w-3.5 border-2 border-slate-400 border-t-transparent rounded-full" />
+                          : <TrashIcon className="w-4 h-4" />}
                       </button>
                     </div>
                   </td>
@@ -315,10 +308,9 @@ export default function TransactionManagePage() {
         </div>
 
         {filteredTransactions.length === 0 && (
-          <div className="text-center py-16">
-            <div className="text-6xl mb-4 opacity-30">📋</div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">ไม่พบประวัติรายการ</h3>
-            <p className="text-gray-600">
+          <div className="py-16 flex flex-col items-center gap-3">
+            <ClipboardDocumentListIcon className="h-10 w-10 text-slate-300" />
+            <p className="text-sm text-slate-400">
               {searchTerm || selectedType ? 'ลองเปลี่ยนเงื่อนไขการค้นหา' : 'ยังไม่มีประวัติรายการในระบบ'}
             </p>
           </div>
@@ -362,67 +354,65 @@ function EditTransactionModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/80 overflow-y-auto h-full w-full flex justify-center items-center z-50">
-      <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">✏️ แก้ไขประวัติรายการ</h2>
-          <button 
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-200">
+          <h2 className="text-base font-bold text-slate-800">แก้ไขประวัติรายการ</h2>
+          <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 text-3xl font-bold"
+            className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 transition-colors"
           >
-            ×
+            <XMarkIcon className="h-5 w-5" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit}>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">จำนวน</label>
-              <input
-                type="number"
-                value={formData.quantity}
-                onChange={(e) => setFormData(prev => ({ ...prev, quantity: parseInt(e.target.value) || 0 }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-300"
-                min="1"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">ประเภท</label>
-              <select
-                value={formData.type}
-                onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value as 'IN' | 'OUT' | 'TRANSFER' }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-300"
-              >
-                <option value="IN">📥 เข้า</option>
-                <option value="OUT">📤 ออก</option>
-                <option value="TRANSFER">🔄 โอน</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">หมายเหตุ</label>
-              <textarea
-                value={formData.reason}
-                onChange={(e) => setFormData(prev => ({ ...prev, reason: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-300"
-                rows={3}
-              />
-            </div>
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">จำนวน</label>
+            <input
+              type="number"
+              value={formData.quantity}
+              onChange={(e) => setFormData(prev => ({ ...prev, quantity: parseInt(e.target.value) || 0 }))}
+              className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              min="1"
+              required
+            />
           </div>
 
-          <div className="flex justify-end gap-3 mt-6">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">ประเภท</label>
+            <select
+              value={formData.type}
+              onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value as 'IN' | 'OUT' | 'TRANSFER' }))}
+              className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            >
+              <option value="IN">เข้า</option>
+              <option value="OUT">ออก</option>
+              <option value="TRANSFER">โอน</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">หมายเหตุ</label>
+            <textarea
+              value={formData.reason}
+              onChange={(e) => setFormData(prev => ({ ...prev, reason: e.target.value }))}
+              className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              rows={3}
+            />
+          </div>
+
+          <div className="flex justify-end gap-3 pt-2">
             <button
               type="button"
               onClick={onClose}
-              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-medium transition-colors"
             >
               ยกเลิก
             </button>
             <button
               type="submit"
-              className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-6 py-2 rounded-lg transition-all duration-200 font-medium"
+              className="px-5 py-2.5 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-sm font-semibold transition-colors"
             >
               บันทึก
             </button>

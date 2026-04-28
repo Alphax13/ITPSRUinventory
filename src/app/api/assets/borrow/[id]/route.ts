@@ -55,7 +55,8 @@ export async function PUT(
       purpose, 
       note,
       studentName,
-      studentId
+      studentId,
+      userId
     } = body;
 
     const borrow = await prisma.assetBorrow.findUnique({
@@ -76,6 +77,7 @@ export async function PUT(
     if (note !== undefined) updateData.note = note;
     if (studentName !== undefined) updateData.studentName = studentName || null;
     if (studentId !== undefined) updateData.studentId = studentId || null;
+    if (userId) updateData.userId = userId;
     
     console.log('[PUT] Update data:', updateData);
 

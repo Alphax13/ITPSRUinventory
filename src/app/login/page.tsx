@@ -44,91 +44,90 @@ function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-orange-100 to-orange-200 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md border border-orange-200">
-        <div className="text-center mb-8">
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
           {/* Logo */}
-          <div className="w-20 h-20 bg-gradient-to-br from-orange-400 to-orange-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-            <span className="text-white font-bold text-3xl">📚</span>
-          </div>
-          
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            ระบบจัดการวัสดุและครุภัณฑ์
-          </h1>
-          <p className="text-orange-600 font-medium">ITPSRU Inventory System</p>
-        </div>
-
-        <form onSubmit={handleLogin} className="space-y-6">
-          <div>
-            <label htmlFor="username" className="block text-sm font-semibold text-gray-700 mb-2">
-              👤 Username
-            </label>
-            <input
-              type="text"
-              id="username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="w-full px-4 py-3 border border-orange-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition-all duration-200"
-              placeholder="กรอก username ของคุณ"
-              required
-              autoComplete="username"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2">
-              🔒 Password
-            </label>
-            <input
-              type="password"
-              id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 border border-orange-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition-all duration-200"
-              placeholder="กรอกรหัสผ่านของคุณ"
-              required
-              autoComplete="current-password"
-            />
-          </div>
-
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-600 text-sm text-center py-3 px-4 rounded-xl">
-              ❌ {error}
+          <div className="text-center mb-8">
+            <div className="w-14 h-14 bg-orange-600 rounded-2xl flex items-center justify-center mx-auto mb-5 shadow-sm">
+              <span className="text-white font-extrabold text-lg tracking-tight">IT</span>
             </div>
-          )}
+            <h1 className="text-xl font-bold text-slate-800">
+              ระบบจัดการวัสดุและครุภัณฑ์
+            </h1>
+            <p className="text-sm text-slate-500 mt-1">ITPSRU Inventory System</p>
+          </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-gradient-to-r from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 disabled:from-orange-300 disabled:to-orange-400 text-white font-bold py-4 px-4 rounded-xl transition-all duration-300 shadow-sm hover:shadow-md disabled:cursor-not-allowed"
-          >
-            {loading ? (
-              <div className="flex items-center justify-center gap-2">
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                กำลังเข้าสู่ระบบ...
-              </div>
-            ) : (
-              <div className="flex items-center justify-center gap-2">
-                <span>🔐</span>
-                เข้าสู่ระบบ
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <label htmlFor="username" className="block text-sm font-medium text-slate-700 mb-1.5">
+                ชื่อผู้ใช้ (Username)
+              </label>
+              <input
+                type="text"
+                id="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                placeholder="กรอก username ของคุณ"
+                required
+                autoComplete="username"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-1.5">
+                รหัสผ่าน (Password)
+              </label>
+              <input
+                type="password"
+                id="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                placeholder="กรอกรหัสผ่านของคุณ"
+                required
+                autoComplete="current-password"
+              />
+            </div>
+
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 text-sm text-center py-3 px-4 rounded-xl">
+                {error}
               </div>
             )}
-          </button>
-        </form>
 
-        <div className="mt-6 text-center">
-          <p className="text-gray-600 text-sm mb-4">ยังไม่มีบัญชี?</p>
-          <button
-            type="button"
-            onClick={() => router.push('/register')}
-            className="w-full bg-gradient-to-r from-blue-400 to-blue-500 hover:from-blue-500 hover:to-blue-600 text-white font-bold py-3 px-4 rounded-xl transition-all duration-300 shadow-sm hover:shadow-md"
-          >
-            <div className="flex items-center justify-center gap-2">
-              <span>📝</span>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-orange-600 hover:bg-orange-700 disabled:bg-orange-300 text-white font-semibold py-2.5 px-4 rounded-xl transition-colors flex items-center justify-center gap-2 mt-2"
+            >
+              {loading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                  กำลังเข้าสู่ระบบ...
+                </>
+              ) : (
+                'เข้าสู่ระบบ'
+              )}
+            </button>
+          </form>
+
+          <div className="mt-5 text-center">
+            <p className="text-slate-500 text-sm mb-3">ยังไม่มีบัญชี?</p>
+            <button
+              type="button"
+              onClick={() => router.push('/register')}
+              className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2.5 px-4 rounded-xl transition-colors text-sm"
+            >
               สมัครสมาชิก
-            </div>
-          </button>
+            </button>
+          </div>
         </div>
+
+        <p className="text-center text-xs text-slate-400 mt-4">
+          สาขาวิชาเทคโนโลยีสารสนเทศ มหาวิทยาลัยราชภัฏศรีนครินทรวิโรฒ
+        </p>
       </div>
     </div>
   );
@@ -137,8 +136,8 @@ function LoginForm() {
 export default function LoginPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-orange-100 to-orange-200 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-orange-600 border-t-transparent"></div>
       </div>
     }>
       <LoginForm />

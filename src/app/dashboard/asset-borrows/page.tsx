@@ -4,6 +4,20 @@
 import { useEffect, useState } from 'react';
 import { useAuthStore } from '@/stores/authStore';
 import SafeImage from '@/components/SafeImage';
+import {
+  ClipboardDocumentListIcon,
+  EyeIcon,
+  PrinterIcon,
+  CheckCircleIcon,
+  ArrowUturnLeftIcon,
+  PencilSquareIcon,
+  TrashIcon,
+  XMarkIcon,
+  ExclamationCircleIcon,
+  ArrowPathIcon,
+  PlusIcon,
+  MagnifyingGlassIcon,
+} from '@heroicons/react/24/outline';
 
 interface BorrowRecord {
   id: string;
@@ -45,9 +59,104 @@ export default function AssetBorrowsPage() {
   const [downloadingBatch, setDownloadingBatch] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingBorrow, setEditingBorrow] = useState<BorrowRecord | null>(null);
+  const [allUsers, setAllUsers] = useState<{ id: string; name: string; department: string }[]>([]);
+  const [selectedUserId, setSelectedUserId] = useState<string>('');
+
+  // Multi-borrow modal state
+  const [showBorrowModal, setShowBorrowModal] = useState(false);
+  const [availableAssets, setAvailableAssets] = useState<{
+    id: string; assetNumber: string; name: string; category: string;
+    brand?: string; model?: string; location: string; condition: string;
+  }[]>([]);
+  const [assetSearch, setAssetSearch] = useState('');
+  const [borrowCart, setBorrowCart] = useState<string[]>([]); // selected asset IDs
+  const [borrowForm, setBorrowForm] = useState({
+    userId: '',
+    expectedReturnDate: '',
+    purpose: '',
+    note: '',
+    studentName: '',
+    studentId: '',
+  });
+  const [submittingBorrow, setSubmittingBorrow] = useState(false);
+
   const { user } = useAuthStore();
 
   const isAdmin = user?.role === 'ADMIN';
+
+  const openBorrowModal = async () => {
+    // โหลด available assets
+    try {
+      const [assetsRes, usersRes] = await Promise.all([
+        fetch('/api/assets', { credentials: 'include' }),
+        fetch('/api/users', { credentials: 'include' }),
+      ]);
+      if (assetsRes.ok) {
+        const data = await assetsRes.json();
+        // กรองเฉพาะที่พร้อมให้ยืม (ไม่ได้ถูกยืมอยู่, สภาพดี)
+        const available = data.filter((a: { condition: string; borrowHistory: { status: string }[] }) =>
+          a.condition !== 'DISPOSED' &&
+          a.condition !== 'DAMAGED' &&
+          !a.borrowHistory?.some((b: { status: string }) => b.status === 'BORROWED')
+        );
+        setAvailableAssets(available);
+      }
+      if (usersRes.ok) {
+        const data = await usersRes.json();
+        setAllUsers(data);
+      }
+    } catch {}
+    setBorrowCart([]);
+    setBorrowForm({ userId: user?.id || '', expectedReturnDate: '', purpose: '', note: '', studentName: '', studentId: '' });
+    setAssetSearch('');
+    setShowBorrowModal(true);
+  };
+
+  const toggleCartItem = (assetId: string) => {
+    setBorrowCart(prev =>
+      prev.includes(assetId) ? prev.filter(id => id !== assetId) : [...prev, assetId]
+    );
+  };
+
+  const handleSubmitBorrow = async () => {
+    if (borrowCart.length === 0) {
+      alert('กรุณาเลือกครุภัณฑ์อย่างน้อย 1 รายการ');
+      return;
+    }
+    if (!borrowForm.userId) {
+      alert('กรุณาเลือกผู้ยืม');
+      return;
+    }
+    setSubmittingBorrow(true);
+    try {
+      const res = await fetch('/api/assets/borrow', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fixedAssetIds: borrowCart,
+          userId: borrowForm.userId,
+          expectedReturnDate: borrowForm.expectedReturnDate || null,
+          purpose: borrowForm.purpose || null,
+          note: borrowForm.note || null,
+          studentName: borrowForm.studentName || null,
+          studentId: borrowForm.studentId || null,
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        alert('เกิดข้อผิดพลาด: ' + (err.error || 'ไม่สามารถบันทึกการยืมได้'));
+        return;
+      }
+      setShowBorrowModal(false);
+      await fetchBorrows();
+      alert(`บันทึกการยืมครุภัณฑ์ ${borrowCart.length} รายการเรียบร้อยแล้ว`);
+    } catch {
+      alert('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+    } finally {
+      setSubmittingBorrow(false);
+    }
+  };
 
   useEffect(() => {
     const loadBorrows = async () => {
@@ -186,7 +295,15 @@ export default function AssetBorrowsPage() {
 
   const handleEdit = (borrow: BorrowRecord) => {
     setEditingBorrow(borrow);
+    setSelectedUserId(borrow.user.id);
     setShowEditModal(true);
+    // โหลดรายชื่อผู้ใช้ (ครั้งแรก)
+    if (allUsers.length === 0) {
+      fetch('/api/users', { credentials: 'include' })
+        .then(r => r.ok ? r.json() : [])
+        .then(data => setAllUsers(data))
+        .catch(() => {});
+    }
   };
 
   const handleSaveEdit = async () => {
@@ -214,6 +331,7 @@ export default function AssetBorrowsPage() {
           note: editingBorrow.note || '',
           studentName: editingBorrow.studentName || '',
           studentId: editingBorrow.studentId || '',
+          userId: selectedUserId || editingBorrow.user.id,
         }),
       });
 
@@ -322,17 +440,15 @@ export default function AssetBorrowsPage() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">การยืมคืนครุภัณฑ์</h1>
-            <p className="text-gray-600 mt-1">ติดตามและจัดการการยืมคืนครุภัณฑ์</p>
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="border-l-4 border-orange-600 px-6 py-5">
+            <h1 className="text-xl font-bold text-slate-800">การยืมคืนครุภัณฑ์</h1>
+            <p className="text-sm text-slate-500 mt-0.5">ติดตามและจัดการการยืมคืนครุภัณฑ์</p>
           </div>
         </div>
-        <div className="bg-white rounded-lg shadow p-8">
-          <div className="flex flex-col items-center justify-center space-y-4">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-            <p className="text-gray-600">กำลังโหลดข้อมูล...</p>
-          </div>
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-12 flex flex-col items-center gap-3">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-orange-500"></div>
+          <p className="text-sm text-slate-500">กำลังโหลดข้อมูล...</p>
         </div>
       </div>
     );
@@ -341,28 +457,22 @@ export default function AssetBorrowsPage() {
   if (error) {
     return (
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">การยืมคืนครุภัณฑ์</h1>
-            <p className="text-gray-600 mt-1">ติดตามและจัดการการยืมคืนครุภัณฑ์</p>
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="border-l-4 border-orange-600 px-6 py-5">
+            <h1 className="text-xl font-bold text-slate-800">การยืมคืนครุภัณฑ์</h1>
           </div>
         </div>
-        <div className="bg-white rounded-lg shadow p-8">
-          <div className="text-center">
-            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
-              <svg className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">เกิดข้อผิดพลาด</h3>
-            <p className="text-gray-600 mb-4">{error}</p>
-            <button
-              onClick={() => window.location.reload()}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
-            >
-              โหลดใหม่
-            </button>
-          </div>
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-12 text-center">
+          <ExclamationCircleIcon className="h-12 w-12 mx-auto text-red-400 mb-3" />
+          <h3 className="text-base font-semibold text-slate-800 mb-1">เกิดข้อผิดพลาด</h3>
+          <p className="text-sm text-slate-500 mb-4">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="inline-flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors"
+          >
+            <ArrowPathIcon className="h-4 w-4" />
+            โหลดใหม่
+          </button>
         </div>
       </div>
     );
@@ -370,227 +480,178 @@ export default function AssetBorrowsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">การยืมคืนครุภัณฑ์</h1>
-          <p className="text-gray-600 mt-1">ติดตามและจัดการการยืมคืนครุภัณฑ์</p>
-        </div>
-        
-        <div className="flex items-center space-x-4">
-          {/* ปุ่มดาวน์โหลด PDF รวม */}
-          {selectedIds.length > 0 && (
+      {/* Header */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="border-l-4 border-orange-600 px-6 py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-xl font-bold text-slate-800">การยืมคืนครุภัณฑ์</h1>
+            <p className="text-sm text-slate-500 mt-0.5">ติดตามและจัดการการยืมคืนครุภัณฑ์</p>
+          </div>
+          <div className="flex items-center gap-3">
             <button
-              onClick={handleBatchDownloadPDF}
-              disabled={downloadingBatch}
-              className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              onClick={openBorrowModal}
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-sm font-medium transition-colors"
             >
-              {downloadingBatch ? (
-                <>
-                  <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  <span>กำลังเปิดแบบฟอร์ม...</span>
-                </>
-              ) : (
-                <>
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                  </svg>
-                  <span>พิมพ์แบบฟอร์มรวม ({selectedIds.length})</span>
-                </>
-              )}
+              <PlusIcon className="h-4 w-4" />
+              ยืมครุภัณฑ์
             </button>
-          )}
-          
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg"
-          >
-            <option value="ALL">ทั้งหมด</option>
-            <option value="BORROWED">กำลังยืม</option>
-            <option value="RETURNED">คืนแล้ว</option>
-            <option value="OVERDUE">เกินกำหนด</option>
-            <option value="LOST">สูญหาย</option>
-          </select>
+            {selectedIds.length > 0 && (
+              <button
+                onClick={handleBatchDownloadPDF}
+                disabled={downloadingBatch}
+                className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-700 hover:bg-slate-800 text-white rounded-xl text-sm font-medium transition-colors disabled:opacity-50"
+              >
+                {downloadingBatch ? (
+                  <><div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>กำลังเปิด...</>
+                ) : (
+                  <><PrinterIcon className="h-4 w-4" />พิมพ์รวม ({selectedIds.length})</>
+                )}
+              </button>
+            )}
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            >
+              <option value="ALL">ทั้งหมด</option>
+              <option value="BORROWED">กำลังยืม</option>
+              <option value="RETURNED">คืนแล้ว</option>
+              <option value="OVERDUE">เกินกำหนด</option>
+              <option value="LOST">สูญหาย</option>
+            </select>
+          </div>
         </div>
       </div>
 
       {/* Borrows Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <table className="min-w-full divide-y divide-slate-200">
+          <thead className="bg-slate-50">
             <tr>
               <th className="px-4 py-3">
                 <input
                   type="checkbox"
                   checked={selectedIds.length === borrows.length && borrows.length > 0}
                   onChange={toggleSelectAll}
-                  className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                  className="w-4 h-4 text-orange-600 rounded focus:ring-orange-500"
                 />
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                เลขครุภัณฑ์
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                รายการ
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                ผู้ยืม
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                วันที่ยืม
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                กำหนดคืน
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                สถานะ
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                การดำเนินการ
-              </th>
+              <th className="px-5 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">เลขครุภัณฑ์</th>
+              <th className="px-5 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">รายการ</th>
+              <th className="px-5 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">ผู้ยืม</th>
+              <th className="px-5 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">วันที่ยืม</th>
+              <th className="px-5 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">กำหนดคืน</th>
+              <th className="px-5 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">สถานะ</th>
+              <th className="px-5 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">การดำเนินการ</th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="bg-white divide-y divide-slate-100">
             {borrows.map((borrow) => (
-              <tr key={borrow.id} className="hover:bg-gray-50">
+              <tr key={borrow.id} className="hover:bg-slate-50 transition-colors">
                 <td className="px-4 py-4">
                   <input
                     type="checkbox"
                     checked={selectedIds.includes(borrow.id)}
                     onChange={() => toggleSelect(borrow.id)}
-                    className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                    className="w-4 h-4 text-orange-600 rounded focus:ring-orange-500"
                   />
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                <td className="px-5 py-4 whitespace-nowrap text-sm font-mono font-medium text-slate-700">
                   {borrow.fixedAsset.assetNumber}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-center space-x-3">
+                <td className="px-5 py-4 whitespace-nowrap">
+                  <div className="flex items-center gap-3">
                     {borrow.fixedAsset.imageUrl && (
-                      <div className="flex-shrink-0">
-                        <SafeImage
-                          src={borrow.fixedAsset.imageUrl}
-                          alt={borrow.fixedAsset.name}
-                          width={40}
-                          height={40}
-                          className="rounded-lg border border-gray-200 object-cover"
-                        />
-                      </div>
+                      <SafeImage
+                        src={borrow.fixedAsset.imageUrl}
+                        alt={borrow.fixedAsset.name}
+                        width={36}
+                        height={36}
+                        className="rounded-lg border border-slate-200 object-cover shrink-0"
+                      />
                     )}
                     <div>
-                      <div className="text-sm font-medium text-gray-900">
-                        {borrow.fixedAsset.name}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        {borrow.fixedAsset.category}
-                        {borrow.fixedAsset.brand && ` - ${borrow.fixedAsset.brand}`}
-                      </div>
+                      <div className="text-sm font-medium text-slate-800">{borrow.fixedAsset.name}</div>
+                      <div className="text-xs text-slate-500">{borrow.fixedAsset.category}{borrow.fixedAsset.brand && ` · ${borrow.fixedAsset.brand}`}</div>
                     </div>
                   </div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div>
-                    <div className="text-sm font-medium text-gray-900">
-                      {borrow.user.name}
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      {borrow.user.department}
-                    </div>
-                  </div>
+                <td className="px-5 py-4 whitespace-nowrap">
+                  <div className="text-sm font-medium text-slate-800">{borrow.user.name}</div>
+                  <div className="text-xs text-slate-500">{borrow.user.department}</div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                <td className="px-5 py-4 whitespace-nowrap text-sm text-slate-600">
                   {new Date(borrow.borrowDate).toLocaleDateString('th-TH')}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                <td className="px-5 py-4 whitespace-nowrap text-sm">
                   {borrow.expectedReturnDate ? (
-                    <span className={isOverdue(borrow) ? 'text-red-600' : ''}>
+                    <span className={isOverdue(borrow) ? 'text-red-600 font-medium' : 'text-slate-600'}>
                       {new Date(borrow.expectedReturnDate).toLocaleDateString('th-TH')}
                     </span>
                   ) : (
-                    '-'
+                    <span className="text-slate-400">-</span>
                   )}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(borrow.status)}`}>
+                <td className="px-5 py-4 whitespace-nowrap">
+                  <span className={`inline-flex px-2.5 py-0.5 text-xs font-semibold rounded-full ${getStatusColor(borrow.status)}`}>
                     {getStatusText(borrow.status)}
                   </span>
                   {isOverdue(borrow) && borrow.status === 'BORROWED' && (
-                    <div className="text-xs text-red-600 mt-1">เกินกำหนด!</div>
+                    <div className="text-xs text-red-600 mt-0.5 font-medium">เกินกำหนด!</div>
                   )}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <div className="flex items-center space-x-2">
+                <td className="px-5 py-4 whitespace-nowrap">
+                  <div className="flex items-center gap-1.5">
                     <button
                       onClick={() => setShowDetails(showDetails === borrow.id ? null : borrow.id)}
-                      className="inline-flex items-center justify-center w-8 h-8 text-blue-600 hover:text-white hover:bg-blue-600 rounded-full transition-colors"
-                      title={showDetails === borrow.id ? 'ซ่อนรายละเอียด' : 'ดูรายละเอียด'}
+                      className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-500 transition-colors"
+                      title="ดูรายละเอียด"
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                      </svg>
+                      <EyeIcon className="w-4 h-4" />
                     </button>
-                    
                     <a
                       href={`/api/assets/borrow/${borrow.id}/form`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center justify-center w-8 h-8 text-red-600 hover:text-white hover:bg-red-600 rounded-full transition-colors"
-                      title="พิมพ์แบบฟอร์มยืม-คืน (Print to PDF)"
+                      className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-slate-100 hover:bg-orange-50 hover:text-orange-700 text-slate-500 transition-colors"
+                      title="พิมพ์แบบฟอร์ม"
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                      </svg>
+                      <PrinterIcon className="w-4 h-4" />
                     </a>
-                    
                     {isAdmin && borrow.status === 'BORROWED' && (
                       <button
                         onClick={() => handleReturn(borrow.id)}
-                        className="inline-flex items-center justify-center w-8 h-8 text-green-600 hover:text-white hover:bg-green-600 rounded-full transition-colors"
-                        title="บันทึกการคืนครุภัณฑ์"
+                        className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-slate-100 hover:bg-green-50 hover:text-green-700 text-slate-500 transition-colors"
+                        title="บันทึกการคืน"
                       >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
+                        <CheckCircleIcon className="w-4 h-4" />
                       </button>
                     )}
-                    
                     {isAdmin && borrow.status === 'RETURNED' && (
                       <button
                         onClick={() => handleUndoReturn(borrow.id)}
-                        className="inline-flex items-center justify-center w-8 h-8 text-orange-600 hover:text-white hover:bg-orange-600 rounded-full transition-colors"
-                        title="ยกเลิกการคืน (กดผิด)"
+                        className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-slate-100 hover:bg-amber-50 hover:text-amber-700 text-slate-500 transition-colors"
+                        title="ยกเลิกการคืน"
                       >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
-                        </svg>
+                        <ArrowUturnLeftIcon className="w-4 h-4" />
                       </button>
                     )}
-
                     {isAdmin && borrow.status !== 'RETURNED' && (
                       <button
                         onClick={() => handleEdit(borrow)}
-                        className="inline-flex items-center justify-center w-8 h-8 text-purple-600 hover:text-white hover:bg-purple-600 rounded-full transition-colors"
-                        title="แก้ไขรายการยืม"
+                        className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-500 transition-colors"
+                        title="แก้ไข"
                       >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                        </svg>
+                        <PencilSquareIcon className="w-4 h-4" />
                       </button>
                     )}
-
                     {isAdmin && borrow.status !== 'RETURNED' && (
                       <button
                         onClick={() => handleDelete(borrow.id, borrow.fixedAsset.name)}
-                        className="inline-flex items-center justify-center w-8 h-8 text-red-700 hover:text-white hover:bg-red-700 rounded-full transition-colors"
-                        title="ลบรายการยืม"
+                        className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-slate-100 hover:bg-red-50 hover:text-red-700 text-slate-500 transition-colors"
+                        title="ลบรายการ"
                       >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
+                        <TrashIcon className="w-4 h-4" />
                       </button>
                     )}
                   </div>
@@ -601,10 +662,11 @@ export default function AssetBorrowsPage() {
         </table>
 
         {borrows.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-gray-500">
-              {statusFilter === 'ALL' 
-                ? 'ยังไม่มีรายการยืมครุภัณฑ์' 
+          <div className="text-center py-16">
+            <ClipboardDocumentListIcon className="h-12 w-12 mx-auto text-slate-300 mb-3" />
+            <p className="text-sm text-slate-500">
+              {statusFilter === 'ALL'
+                ? 'ยังไม่มีรายการยืมครุภัณฑ์'
                 : `ไม่มีรายการที่มีสถานะ "${getStatusText(statusFilter)}"`
               }
             </p>
@@ -614,156 +676,113 @@ export default function AssetBorrowsPage() {
 
       {/* Details Modal */}
       {showDetails && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
             {(() => {
               const borrow = borrows.find(b => b.id === showDetails);
               if (!borrow) return null;
-
               return (
                 <div>
-                  <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-lg font-semibold">รายละเอียดการยืมครุภัณฑ์</h2>
-                    <button
-                      onClick={() => setShowDetails(null)}
-                      className="text-gray-400 hover:text-gray-600"
-                    >
-                      ✕
+                  <div className="flex justify-between items-center mb-5">
+                    <h2 className="text-base font-bold text-slate-800">รายละเอียดการยืมครุภัณฑ์</h2>
+                    <button onClick={() => setShowDetails(null)} className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 transition-colors">
+                      <XMarkIcon className="h-5 w-5" />
                     </button>
                   </div>
-
-                  {/* Asset Image */}
                   {borrow.fixedAsset.imageUrl && (
-                    <div className="mb-6 text-center">
+                    <div className="mb-5 text-center">
                       <SafeImage
                         src={borrow.fixedAsset.imageUrl}
                         alt={borrow.fixedAsset.name}
                         width={200}
                         height={150}
-                        className="rounded-lg border border-gray-200 object-cover mx-auto cursor-pointer hover:opacity-80"
+                        className="rounded-xl border border-slate-200 object-cover mx-auto cursor-pointer hover:opacity-80"
                         onClick={() => setShowImageModal(borrow.fixedAsset.imageUrl!)}
                       />
                     </div>
                   )}
-
                   <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700">เลขครุภัณฑ์</label>
-                        <p className="text-sm text-gray-900">{borrow.fixedAsset.assetNumber}</p>
+                        <label className="block text-xs font-semibold text-slate-500 mb-0.5">เลขครุภัณฑ์</label>
+                        <p className="text-sm text-slate-800">{borrow.fixedAsset.assetNumber}</p>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700">ชื่อครุภัณฑ์</label>
-                        <p className="text-sm text-gray-900">{borrow.fixedAsset.name}</p>
+                        <label className="block text-xs font-semibold text-slate-500 mb-0.5">ชื่อครุภัณฑ์</label>
+                        <p className="text-sm text-slate-800">{borrow.fixedAsset.name}</p>
                       </div>
                     </div>
-
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700">หมวดหมู่</label>
-                        <p className="text-sm text-gray-900">{borrow.fixedAsset.category}</p>
+                        <label className="block text-xs font-semibold text-slate-500 mb-0.5">หมวดหมู่</label>
+                        <p className="text-sm text-slate-800">{borrow.fixedAsset.category}</p>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700">ตำแหน่ง</label>
-                        <p className="text-sm text-gray-900">{borrow.fixedAsset.location}</p>
+                        <label className="block text-xs font-semibold text-slate-500 mb-0.5">ตำแหน่ง</label>
+                        <p className="text-sm text-slate-800">{borrow.fixedAsset.location}</p>
                       </div>
                     </div>
-
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700">ผู้ยืม</label>
-                        <p className="text-sm text-gray-900">{borrow.user.name}</p>
-                        <p className="text-xs text-gray-500">{borrow.user.email}</p>
-                        <p className="text-xs text-gray-500">{borrow.user.department}</p>
+                        <label className="block text-xs font-semibold text-slate-500 mb-0.5">ผู้ยืม</label>
+                        <p className="text-sm text-slate-800">{borrow.user.name}</p>
+                        {borrow.user.email && <p className="text-xs text-slate-500">{borrow.user.email}</p>}
+                        <p className="text-xs text-slate-500">{borrow.user.department}</p>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700">สถานะ</label>
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(borrow.status)}`}>
-                          {getStatusText(borrow.status)}
-                        </span>
+                        <label className="block text-xs font-semibold text-slate-500 mb-0.5">สถานะ</label>
+                        <span className={`inline-flex px-2.5 py-0.5 text-xs font-semibold rounded-full ${getStatusColor(borrow.status)}`}>{getStatusText(borrow.status)}</span>
                       </div>
                     </div>
-
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700">วันที่ยืม</label>
-                        <p className="text-sm text-gray-900">
-                          {new Date(borrow.borrowDate).toLocaleDateString('th-TH', {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric'
-                          })}
-                        </p>
+                        <label className="block text-xs font-semibold text-slate-500 mb-0.5">วันที่ยืม</label>
+                        <p className="text-sm text-slate-800">{new Date(borrow.borrowDate).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700">กำหนดคืน</label>
-                        <p className="text-sm text-gray-900">
-                          {borrow.expectedReturnDate ? 
-                            new Date(borrow.expectedReturnDate).toLocaleDateString('th-TH', {
-                              year: 'numeric',
-                              month: 'long',
-                              day: 'numeric'
-                            })
-                            : '-'
-                          }
-                        </p>
+                        <label className="block text-xs font-semibold text-slate-500 mb-0.5">กำหนดคืน</label>
+                        <p className="text-sm text-slate-800">{borrow.expectedReturnDate ? new Date(borrow.expectedReturnDate).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' }) : '-'}</p>
                       </div>
                     </div>
-
                     {borrow.actualReturnDate && (
                       <div>
-                        <label className="block text-sm font-medium text-gray-700">วันที่คืนจริง</label>
-                        <p className="text-sm text-gray-900">
-                          {new Date(borrow.actualReturnDate).toLocaleDateString('th-TH', {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric'
-                          })}
-                        </p>
+                        <label className="block text-xs font-semibold text-slate-500 mb-0.5">วันที่คืนจริง</label>
+                        <p className="text-sm text-slate-800">{new Date(borrow.actualReturnDate).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
                       </div>
                     )}
-
                     {(borrow.studentName || borrow.studentId) && (
-                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                      <div className="bg-blue-50 border border-blue-200 rounded-xl p-3">
                         <div className="grid grid-cols-2 gap-4">
                           {borrow.studentName && (
                             <div>
-                              <label className="block text-sm font-medium text-blue-900">ชื่อนักศึกษา</label>
-                              <p className="text-sm text-blue-700 font-semibold">{borrow.studentName}</p>
+                              <label className="block text-xs font-semibold text-blue-700 mb-0.5">ชื่อนักศึกษา</label>
+                              <p className="text-sm text-blue-800 font-semibold">{borrow.studentName}</p>
                             </div>
                           )}
                           {borrow.studentId && (
                             <div>
-                              <label className="block text-sm font-medium text-blue-900">รหัสนักศึกษา</label>
-                              <p className="text-sm text-blue-700 font-semibold">{borrow.studentId}</p>
+                              <label className="block text-xs font-semibold text-blue-700 mb-0.5">รหัสนักศึกษา</label>
+                              <p className="text-sm text-blue-800 font-semibold">{borrow.studentId}</p>
                             </div>
                           )}
                         </div>
                       </div>
                     )}
-
                     {borrow.purpose && (
                       <div>
-                        <label className="block text-sm font-medium text-gray-700">วัตถุประสงค์</label>
-                        <p className="text-sm text-gray-900">{borrow.purpose}</p>
+                        <label className="block text-xs font-semibold text-slate-500 mb-0.5">วัตถุประสงค์</label>
+                        <p className="text-sm text-slate-800">{borrow.purpose}</p>
                       </div>
                     )}
-
                     {borrow.note && (
                       <div>
-                        <label className="block text-sm font-medium text-gray-700">หมายเหตุ</label>
-                        <p className="text-sm text-gray-900">{borrow.note}</p>
+                        <label className="block text-xs font-semibold text-slate-500 mb-0.5">หมายเหตุ</label>
+                        <p className="text-sm text-slate-800">{borrow.note}</p>
                       </div>
                     )}
                   </div>
-
                   <div className="mt-6 flex justify-end">
-                    <button
-                      onClick={() => setShowDetails(null)}
-                      className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
-                    >
-                      ปิด
-                    </button>
+                    <button onClick={() => setShowDetails(null)} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-medium transition-colors">ปิด</button>
                   </div>
                 </div>
               );
@@ -778,164 +797,308 @@ export default function AssetBorrowsPage() {
           <div className="relative max-w-4xl max-h-[90vh] p-4">
             <button
               onClick={() => setShowImageModal(null)}
-              className="absolute top-2 right-2 bg-white/20 hover:bg-white/30 text-white rounded-full w-10 h-10 flex items-center justify-center text-xl z-10"
+              className="absolute top-2 right-2 bg-white/20 hover:bg-white/30 text-white rounded-full w-9 h-9 flex items-center justify-center z-10"
             >
-              ×
+              <XMarkIcon className="h-5 w-5" />
             </button>
             <SafeImage
               src={showImageModal}
               alt="Asset image"
               width={800}
               height={600}
-              className="rounded-lg max-w-full max-h-full object-contain"
+              className="rounded-xl max-w-full max-h-full object-contain"
             />
+          </div>
+        </div>
+      )}
+
+      {/* Multi-Borrow Modal */}
+      {showBorrowModal && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-5 border-b border-slate-200 shrink-0">
+              <div>
+                <h2 className="text-base font-bold text-slate-800">ยืมครุภัณฑ์</h2>
+                <p className="text-xs text-slate-500 mt-0.5">เลือกได้หลายรายการในครั้งเดียว</p>
+              </div>
+              <button
+                onClick={() => setShowBorrowModal(false)}
+                className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 transition-colors"
+              >
+                <XMarkIcon className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="flex flex-col lg:flex-row flex-1 min-h-0">
+              {/* Left: Asset selection */}
+              <div className="lg:w-1/2 flex flex-col border-b lg:border-b-0 lg:border-r border-slate-200">
+                <div className="px-5 pt-4 pb-3 shrink-0">
+                  <p className="text-xs font-semibold text-slate-500 mb-2">เลือกครุภัณฑ์</p>
+                  <div className="relative">
+                    <MagnifyingGlassIcon className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="ค้นหาชื่อ / เลขครุภัณฑ์..."
+                      value={assetSearch}
+                      onChange={e => setAssetSearch(e.target.value)}
+                      className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    />
+                  </div>
+                </div>
+                <div className="flex-1 overflow-y-auto px-5 pb-4 space-y-1.5">
+                  {availableAssets
+                    .filter(a =>
+                      assetSearch === '' ||
+                      a.name.toLowerCase().includes(assetSearch.toLowerCase()) ||
+                      a.assetNumber.toLowerCase().includes(assetSearch.toLowerCase())
+                    )
+                    .map(asset => {
+                      const inCart = borrowCart.includes(asset.id);
+                      return (
+                        <button
+                          key={asset.id}
+                          onClick={() => toggleCartItem(asset.id)}
+                          className={`w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-colors ${
+                            inCart
+                              ? 'border-orange-400 bg-orange-50'
+                              : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                          }`}
+                        >
+                          <div className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${
+                            inCart ? 'border-orange-500 bg-orange-500' : 'border-slate-300'
+                          }`}>
+                            {inCart && <CheckCircleIcon className="w-3.5 h-3.5 text-white" />}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="text-sm font-medium text-slate-800 truncate">{asset.name}</div>
+                            <div className="text-xs text-slate-400">{asset.assetNumber} · {asset.category}</div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  {availableAssets.length === 0 && (
+                    <p className="text-center text-sm text-slate-400 py-8">ไม่มีครุภัณฑ์ที่พร้อมให้ยืม</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Right: Form fields */}
+              <div className="lg:w-1/2 flex flex-col">
+                <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
+                  {/* Selected summary */}
+                  <div className="bg-slate-50 rounded-xl px-4 py-2.5 flex items-center gap-2">
+                    <span className="text-xs text-slate-500">เลือกแล้ว:</span>
+                    <span className="text-sm font-bold text-orange-600">{borrowCart.length} รายการ</span>
+                    {borrowCart.length > 0 && (
+                      <button onClick={() => setBorrowCart([])} className="ml-auto text-xs text-slate-400 hover:text-slate-600">
+                        ล้าง
+                      </button>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 mb-1.5">ผู้ยืม <span className="text-red-500">*</span></label>
+                    <select
+                      value={borrowForm.userId}
+                      onChange={e => setBorrowForm(p => ({ ...p, userId: e.target.value }))}
+                      className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    >
+                      <option value="">— เลือกผู้ยืม —</option>
+                      {allUsers.map(u => (
+                        <option key={u.id} value={u.id}>{u.name} — {u.department}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 mb-1.5">กำหนดวันคืน</label>
+                    <input
+                      type="date"
+                      value={borrowForm.expectedReturnDate}
+                      onChange={e => setBorrowForm(p => ({ ...p, expectedReturnDate: e.target.value }))}
+                      className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 mb-1.5">วัตถุประสงค์</label>
+                    <textarea
+                      value={borrowForm.purpose}
+                      onChange={e => setBorrowForm(p => ({ ...p, purpose: e.target.value }))}
+                      rows={2}
+                      className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none"
+                      placeholder="ระบุวัตถุประสงค์..."
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-600 mb-1.5">ชื่อนักศึกษา</label>
+                      <input
+                        type="text"
+                        value={borrowForm.studentName}
+                        onChange={e => setBorrowForm(p => ({ ...p, studentName: e.target.value }))}
+                        className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        placeholder="ชื่อ-นามสกุล"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-600 mb-1.5">รหัสนักศึกษา</label>
+                      <input
+                        type="text"
+                        value={borrowForm.studentId}
+                        onChange={e => setBorrowForm(p => ({ ...p, studentId: e.target.value }))}
+                        className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        placeholder="เช่น 65123456789"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 mb-1.5">หมายเหตุ</label>
+                    <textarea
+                      value={borrowForm.note}
+                      onChange={e => setBorrowForm(p => ({ ...p, note: e.target.value }))}
+                      rows={2}
+                      className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none"
+                      placeholder="หมายเหตุเพิ่มเติม..."
+                    />
+                  </div>
+                </div>
+
+                {/* Footer buttons */}
+                <div className="px-5 py-4 border-t border-slate-200 flex justify-end gap-3 shrink-0">
+                  <button
+                    onClick={() => setShowBorrowModal(false)}
+                    className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-medium transition-colors"
+                  >
+                    ยกเลิก
+                  </button>
+                  <button
+                    onClick={handleSubmitBorrow}
+                    disabled={submittingBorrow || borrowCart.length === 0}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-orange-600 hover:bg-orange-700 disabled:opacity-50 text-white rounded-xl text-sm font-semibold transition-colors"
+                  >
+                    {submittingBorrow ? (
+                      <><div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>กำลังบันทึก...</>
+                    ) : (
+                      <><PlusIcon className="h-4 w-4" />บันทึกการยืม ({borrowCart.length})</>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}
 
       {/* Edit Modal */}
       {showEditModal && editingBorrow && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-gray-900">แก้ไขรายการยืม</h2>
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
+            <div className="flex justify-between items-center mb-5">
+              <h2 className="text-base font-bold text-slate-800">แก้ไขรายการยืม</h2>
               <button
-                onClick={() => {
-                  setShowEditModal(false);
-                  setEditingBorrow(null);
-                }}
-                className="text-gray-400 hover:text-gray-600"
+                onClick={() => { setShowEditModal(false); setEditingBorrow(null); }}
+                className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 transition-colors"
               >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <XMarkIcon className="h-5 w-5" />
               </button>
             </div>
 
             <div className="space-y-4">
               {/* ข้อมูลครุภัณฑ์ (แสดงอย่างเดียว) */}
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <h3 className="font-semibold text-gray-900 mb-2">ข้อมูลครุภัณฑ์</h3>
+              <div className="bg-slate-50 rounded-xl p-4">
+                <h3 className="text-xs font-semibold text-slate-500 uppercase mb-2">ข้อมูลครุภัณฑ์</h3>
                 <div className="grid grid-cols-2 gap-3 text-sm">
-                  <div>
-                    <span className="text-gray-600">เลขครุภัณฑ์:</span>
-                    <span className="ml-2 font-semibold">{editingBorrow.fixedAsset.assetNumber}</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">ชื่อ:</span>
-                    <span className="ml-2 font-semibold">{editingBorrow.fixedAsset.name}</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">ผู้ยืม:</span>
-                    <span className="ml-2 font-semibold">{editingBorrow.user.name}</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">วันที่ยืม:</span>
-                    <span className="ml-2 font-semibold">{new Date(editingBorrow.borrowDate).toLocaleDateString('th-TH')}</span>
-                  </div>
+                  <div><span className="text-slate-500">เลขครุภัณฑ์:</span><span className="ml-2 font-semibold text-slate-800">{editingBorrow.fixedAsset.assetNumber}</span></div>
+                  <div><span className="text-slate-500">ชื่อ:</span><span className="ml-2 font-semibold text-slate-800">{editingBorrow.fixedAsset.name}</span></div>
+                  <div><span className="text-slate-500">วันที่ยืม:</span><span className="ml-2 font-semibold text-slate-800">{new Date(editingBorrow.borrowDate).toLocaleDateString('th-TH')}</span></div>
                 </div>
               </div>
 
-              {/* ฟอร์มแก้ไข */}
+              {/* เปลี่ยนผู้ยืม */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  กำหนดวันคืน
-                </label>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">ผู้ยืม</label>
+                <select
+                  value={selectedUserId}
+                  onChange={(e) => setSelectedUserId(e.target.value)}
+                  className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                >
+                  {allUsers.length === 0 && (
+                    <option value={editingBorrow.user.id}>{editingBorrow.user.name} — {editingBorrow.user.department}</option>
+                  )}
+                  {allUsers.map(u => (
+                    <option key={u.id} value={u.id}>{u.name} — {u.department}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">กำหนดวันคืน</label>
                 <input
                   type="date"
                   value={editingBorrow.expectedReturnDate ? new Date(editingBorrow.expectedReturnDate).toISOString().split('T')[0] : ''}
-                  onChange={(e) => setEditingBorrow({
-                    ...editingBorrow,
-                    expectedReturnDate: e.target.value ? e.target.value : undefined
-                  })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  onChange={(e) => setEditingBorrow({ ...editingBorrow, expectedReturnDate: e.target.value ? e.target.value : undefined })}
+                  className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 />
               </div>
-
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  วัตถุประสงค์
-                </label>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">วัตถุประสงค์</label>
                 <textarea
                   value={editingBorrow.purpose || ''}
-                  onChange={(e) => setEditingBorrow({
-                    ...editingBorrow,
-                    purpose: e.target.value
-                  })}
+                  onChange={(e) => setEditingBorrow({ ...editingBorrow, purpose: e.target.value })}
                   rows={2}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   placeholder="ระบุวัตถุประสงค์ในการยืม..."
                 />
               </div>
-
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  หมายเหตุ
-                </label>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">หมายเหตุ</label>
                 <textarea
                   value={editingBorrow.note || ''}
-                  onChange={(e) => setEditingBorrow({
-                    ...editingBorrow,
-                    note: e.target.value
-                  })}
+                  onChange={(e) => setEditingBorrow({ ...editingBorrow, note: e.target.value })}
                   rows={2}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   placeholder="หมายเหตุเพิ่มเติม..."
                 />
               </div>
-
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    ชื่อนักศึกษา (ถ้ามี)
-                  </label>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">ชื่อนักศึกษา (ถ้ามี)</label>
                   <input
                     type="text"
                     value={editingBorrow.studentName || ''}
-                    onChange={(e) => setEditingBorrow({
-                      ...editingBorrow,
-                      studentName: e.target.value
-                    })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    onChange={(e) => setEditingBorrow({ ...editingBorrow, studentName: e.target.value })}
+                    className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                     placeholder="ชื่อ-นามสกุล"
                   />
                 </div>
-
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    รหัสนักศึกษา
-                  </label>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">รหัสนักศึกษา</label>
                   <input
                     type="text"
                     value={editingBorrow.studentId || ''}
-                    onChange={(e) => setEditingBorrow({
-                      ...editingBorrow,
-                      studentId: e.target.value
-                    })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    onChange={(e) => setEditingBorrow({ ...editingBorrow, studentId: e.target.value })}
+                    className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                     placeholder="เช่น 65123456789"
                   />
                 </div>
               </div>
             </div>
 
-            <div className="mt-6 flex justify-end space-x-3">
+            <div className="mt-6 flex justify-end gap-3">
               <button
-                onClick={() => {
-                  setShowEditModal(false);
-                  setEditingBorrow(null);
-                }}
-                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                onClick={() => { setShowEditModal(false); setEditingBorrow(null); }}
+                className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-medium transition-colors"
               >
                 ยกเลิก
               </button>
               <button
                 onClick={handleSaveEdit}
-                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2"
+                className="inline-flex items-center gap-2 px-4 py-2.5 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-sm font-semibold transition-colors"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
+                <CheckCircleIcon className="w-4 h-4" />
                 บันทึกการแก้ไข
               </button>
             </div>

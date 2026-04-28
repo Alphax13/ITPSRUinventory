@@ -15,7 +15,7 @@ export default function DashboardLayout({
 
   return (
     <AuthWrapper>
-      <div className="h-screen bg-orange-50 overflow-hidden">
+      <div className="h-screen bg-slate-50 overflow-hidden">
         {/* Mobile sidebar backdrop */}
         {sidebarOpen && (
           <div 
@@ -35,7 +35,7 @@ export default function DashboardLayout({
         {/* Main content */}
         <div className="lg:pl-72 h-screen flex flex-col">
           <Navbar onMenuClick={() => setSidebarOpen(true)} />
-          <main className="flex-1 p-4 lg:p-8 bg-orange-50 overflow-y-auto">
+          <main className="flex-1 p-4 lg:p-8 bg-slate-50 overflow-y-auto">
             <div className="max-w-7xl mx-auto">
               <div className="fade-in">
                 {children}

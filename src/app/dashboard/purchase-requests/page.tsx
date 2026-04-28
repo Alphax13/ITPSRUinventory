@@ -4,6 +4,14 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useAuthStore } from '@/stores/authStore';
+import {
+  ShoppingCartIcon,
+  PlusIcon,
+  CheckIcon,
+  XMarkIcon,
+  TrashIcon,
+  PhotoIcon,
+} from '@heroicons/react/24/outline';
 
 interface PurchaseItem {
   name: string;
@@ -351,99 +359,89 @@ export default function PurchaseRequestsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-400 to-blue-500 rounded-2xl p-6 text-white">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="border-l-4 border-orange-600 px-6 py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold mb-2">🛒 คำขอจัดซื้อ</h1>
-            <p className="text-blue-100">สร้างคำขอจัดซื้อวัสดุ อุปกรณ์ และครุภัณฑ์</p>
-            <div className="flex items-center gap-2 mt-2">
+            <div className="flex items-center gap-2 mb-0.5">
+              <h1 className="text-xl font-bold text-slate-800">คำขอจัดซื้อ</h1>
               {user?.role === 'ADMIN' ? (
-                <span className="bg-yellow-500 text-white px-3 py-1 rounded-full text-sm font-medium">
-                  👑 ดูได้ทั้งหมด
-                </span>
+                <span className="bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full text-xs font-semibold">ดูได้ทั้งหมด</span>
               ) : (
-                <span className="bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-medium">
-                  👤 เฉพาะของฉัน
-                </span>
+                <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full text-xs font-semibold">เฉพาะของฉัน</span>
               )}
             </div>
+            <p className="text-sm text-slate-500">สร้างคำขอจัดซื้อวัสดุ อุปกรณ์ และครุภัณฑ์</p>
           </div>
-          
           <button
             onClick={() => setShowForm(true)}
-            className="bg-white text-blue-500 font-bold py-3 px-6 rounded-xl hover:bg-blue-50 transition-all duration-200 shadow-md hover:shadow-lg flex items-center gap-2 whitespace-nowrap"
+            className="inline-flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white font-semibold py-2.5 px-5 rounded-xl transition-colors text-sm shrink-0"
           >
-            <span className="text-xl">➕</span>
+            <PlusIcon className="h-4 w-4" />
             สร้างคำขอใหม่
           </button>
         </div>
       </div>
 
       {showForm && (
-        <div className="fixed inset-0 bg-black/80 overflow-y-auto h-full w-full flex justify-center items-center z-50">
+        <div className="fixed inset-0 bg-black/60 overflow-y-auto h-full w-full flex justify-center items-start pt-10 pb-10 z-50">
           <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">🛒 สร้างคำขอจัดซื้อใหม่</h2>
-              <button 
+              <h2 className="text-lg font-bold text-slate-800">สร้างคำขอจัดซื้อใหม่</h2>
+              <button
                 onClick={() => setShowForm(false)}
-                className="text-gray-400 hover:text-gray-600 text-3xl font-bold"
+                className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 transition-colors"
               >
-                ×
+                <XMarkIcon className="h-5 w-5" />
               </button>
             </div>
 
             <form onSubmit={handleSubmit}>
               <div className="mb-6">
-                <label className="block text-gray-700 text-sm font-bold mb-2">
+                <label className="block text-slate-700 text-sm font-semibold mb-3">
                   รายการที่ต้องการจัดซื้อ
                 </label>
-                
                 {formData.items.map((item, index) => (
-                  <div key={index} className="border border-gray-200 rounded-lg p-4 mb-4">
-                    <div className="flex gap-2 mb-3 items-start">
-                      <div className="flex-1">
+                  <div key={index} className="border border-slate-200 rounded-xl p-4 mb-3">
+                    <div className="flex flex-col sm:flex-row gap-3 items-start">
+                      <div className="flex-1 w-full">
                         <input
                           type="text"
                           placeholder="ชื่อสินค้า/วัสดุ"
                           value={item.name}
                           onChange={(e) => updateItem(index, 'name', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg mb-2"
+                          className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent mb-2"
                           required
                         />
-                        <div className="flex gap-2">
-                          <input
-                            type="number"
-                            placeholder="จำนวน"
-                            value={item.quantity}
-                            onChange={(e) => updateItem(index, 'quantity', parseInt(e.target.value) || 1)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                            min="1"
-                            required
-                          />
-                        </div>
+                        <input
+                          type="number"
+                          placeholder="จำนวน"
+                          value={item.quantity}
+                          onChange={(e) => updateItem(index, 'quantity', parseInt(e.target.value) || 1)}
+                          className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                          min="1"
+                          required
+                        />
                       </div>
-                      
-                      {/* Image Upload Section */}
-                      <div className="w-32">
+                      <div className="w-full sm:w-28">
                         {item.imageUrl ? (
                           <div className="relative">
                             <Image
                               src={item.imageUrl}
                               alt="สินค้า"
-                              width={128}
-                              height={96}
-                              className="w-full h-24 object-cover rounded-lg border"
+                              width={112}
+                              height={84}
+                              className="w-full h-20 object-cover rounded-xl border border-slate-200"
                             />
                             <button
                               type="button"
                               onClick={() => updateItem(index, 'imageUrl', '')}
-                              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"
+                              className="absolute -top-1.5 -right-1.5 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center hover:bg-red-600"
                             >
-                              ×
+                              <XMarkIcon className="h-3 w-3" />
                             </button>
                           </div>
                         ) : (
-                          <div className="w-full h-24 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center">
+                          <div className="w-full h-20 border-2 border-dashed border-slate-300 rounded-xl flex flex-col items-center justify-center">
                             <input
                               type="file"
                               accept="image/*"
@@ -454,57 +452,52 @@ export default function PurchaseRequestsPage() {
                               className="hidden"
                               id={`image-${index}`}
                             />
-                            <label
-                              htmlFor={`image-${index}`}
-                              className="cursor-pointer text-center p-1"
-                            >
+                            <label htmlFor={`image-${index}`} className="cursor-pointer text-center p-1 flex flex-col items-center">
                               {uploadingImages[index] ? (
-                                <div className="text-xs text-gray-500">
+                                <div className="text-xs text-slate-500">
                                   <div className="animate-spin w-4 h-4 border-2 border-orange-500 border-t-transparent rounded-full mx-auto mb-1"></div>
                                   อัปโหลด...
                                 </div>
                               ) : (
-                                <div className="text-xs text-gray-500">
-                                  <div className="text-lg mb-1">📷</div>
-                                  เพิ่มรูป
-                                </div>
+                                <>
+                                  <PhotoIcon className="h-5 w-5 text-slate-400 mb-1" />
+                                  <span className="text-xs text-slate-500">เพิ่มรูป</span>
+                                </>
                               )}
                             </label>
                           </div>
                         )}
                       </div>
-                      
                       {formData.items.length > 1 && (
                         <button
                           type="button"
                           onClick={() => removeItem(index)}
-                          className="text-red-500 hover:text-red-700 mt-2"
+                          className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors mt-1"
                         >
-                          🗑️
+                          <TrashIcon className="h-4 w-4" />
                         </button>
                       )}
                     </div>
                   </div>
                 ))}
-                
                 <button
                   type="button"
                   onClick={addItem}
-                  className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 text-sm font-medium bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-lg transition-colors"
+                  className="inline-flex items-center gap-1.5 text-orange-600 hover:text-orange-700 text-sm font-medium bg-orange-50 hover:bg-orange-100 px-4 py-2 rounded-lg transition-colors"
                 >
-                  <span className="text-lg">➕</span>
+                  <PlusIcon className="h-4 w-4" />
                   เพิ่มรายการ
                 </button>
               </div>
 
               <div className="mb-6">
-                <label className="block text-gray-700 text-sm font-bold mb-2">
+                <label className="block text-slate-700 text-sm font-semibold mb-2">
                   เหตุผลในการจัดซื้อ (ไม่บังคับ)
                 </label>
                 <textarea
                   value={formData.reason}
                   onChange={(e) => setFormData(prev => ({ ...prev, reason: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   rows={3}
                   placeholder="เช่น สำหรับใช้ในการทำงาน, ทดแทนของเสีย"
                 />
@@ -514,14 +507,14 @@ export default function PurchaseRequestsPage() {
                 <button
                   type="button"
                   onClick={() => setShowForm(false)}
-                  className="px-6 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-medium"
+                  className="px-5 py-2.5 border border-slate-300 text-slate-700 rounded-xl hover:bg-slate-50 transition-colors font-medium text-sm"
                   disabled={loading}
                 >
                   ยกเลิก
                 </button>
                 <button
                   type="submit"
-                  className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-6 py-3 rounded-xl transition-all duration-200 font-bold disabled:opacity-50 flex items-center gap-2"
+                  className="inline-flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-6 py-2.5 rounded-xl transition-colors font-semibold text-sm disabled:opacity-50"
                   disabled={loading}
                 >
                   {loading ? (
@@ -531,7 +524,7 @@ export default function PurchaseRequestsPage() {
                     </>
                   ) : (
                     <>
-                      <span>🚀</span>
+                      <CheckIcon className="h-4 w-4" />
                       ส่งคำขอ
                     </>
                   )}
@@ -543,153 +536,248 @@ export default function PurchaseRequestsPage() {
       )}
 
       {/* Request List */}
-      <div className="bg-white rounded-2xl shadow-sm border border-blue-100 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  รหัสคำขอ
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  ผู้ขอ
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  รายการ
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  เหตุผล
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  สถานะ
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  วันที่สร้าง
-                </th>
-                {user?.role === 'ADMIN' && (
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    การจัดการ
-                  </th>
+      {requests.length === 0 ? (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm">
+          <div className="text-center py-16">
+            <ShoppingCartIcon className="h-12 w-12 mx-auto text-slate-300 mb-3" />
+            <h3 className="text-base font-semibold text-slate-700 mb-1">ยังไม่มีคำขอจัดซื้อ</h3>
+            <p className="text-sm text-slate-500">คลิกปุ่ม &quot;สร้างคำขอใหม่&quot; เพื่อเริ่มต้น</p>
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* Mobile cards — hidden on md+ */}
+          <div className="md:hidden space-y-3">
+            {requests.map((request) => (
+              <div key={request.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+                {/* Card header */}
+                <div className="flex items-start justify-between gap-3 mb-3">
+                  <div>
+                    <span className="text-xs font-mono text-slate-400">#{request.id.slice(-6)}</span>
+                    <p className="text-sm font-semibold text-slate-800 mt-0.5">{request.requester?.name || 'Unknown'}</p>
+                    <p className="text-xs text-slate-400 mt-0.5">{new Date(request.createdAt).toLocaleDateString('th-TH')}</p>
+                  </div>
+                  <span className={`shrink-0 px-2.5 py-0.5 text-xs font-semibold rounded-full ${getStatusColor(request.status)}`}>
+                    {getStatusText(request.status)}
+                  </span>
+                </div>
+
+                {/* Items */}
+                <div className="space-y-1.5 mb-3">
+                  {Array.isArray(request.items) && request.items.map((item: PurchaseItem, idx: number) => (
+                    <div key={idx} className="flex items-center gap-2.5 p-2 bg-slate-50 rounded-lg">
+                      {item.imageUrl && (
+                        <Image
+                          src={item.imageUrl}
+                          alt={item.name}
+                          width={36}
+                          height={36}
+                          className="w-9 h-9 object-cover rounded-lg border border-slate-200 shrink-0"
+                        />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-slate-800 truncate">{item.name}</p>
+                        <p className="text-xs text-slate-500">จำนวน: {item.quantity}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Reason */}
+                {request.reason && (
+                  <div className="text-xs text-slate-500 bg-slate-50 rounded-lg px-3 py-2 mb-3 break-all">
+                    {/^https?:\/\//i.test(request.reason) ? (
+                      <a
+                        href={request.reason}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-orange-600 hover:text-orange-700 hover:underline"
+                      >
+                        {request.reason}
+                      </a>
+                    ) : (
+                      request.reason
+                    )}
+                  </div>
                 )}
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {requests.map((request) => (
-                <tr key={request.id}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    #{request.id.slice(-6)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {request.requester?.name || 'Unknown'}
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="text-sm text-gray-900">
-                      {Array.isArray(request.items) && request.items.map((item: PurchaseItem, index: number) => (
-                        <div key={index} className="flex items-center gap-3 mb-2 p-2 bg-gray-50 rounded-lg">
-                          {item.imageUrl && (
-                            <Image
-                              src={item.imageUrl}
-                              alt={item.name}
-                              width={48}
-                              height={48}
-                              className="w-12 h-12 object-cover rounded-lg border"
-                            />
-                          )}
-                          <div className="flex-1">
-                            <div className="font-medium">{item.name}</div>
-                            <div className="text-xs text-gray-500">
-                              จำนวน: {item.quantity}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="text-sm text-gray-900 max-w-xs">
-                      {request.reason || <span className="text-gray-400 italic">ไม่ได้ระบุ</span>}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(request.status)}`}>
-                      {getStatusText(request.status)}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {new Date(request.createdAt).toLocaleDateString('th-TH')}
-                  </td>
-                  {user?.role === 'ADMIN' && (
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex gap-2 items-center">
-                        {request.status === 'PENDING' ? (
-                          <>
-                            <button
-                              onClick={() => handleStatusUpdate(request.id, 'APPROVED')}
-                              disabled={processingStatus[request.id]}
-                              className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-lg text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
-                            >
-                              {processingStatus[request.id] ? (
-                                <div className="animate-spin w-3 h-3 border-2 border-white border-t-transparent rounded-full"></div>
-                              ) : (
-                                <>
-                                  <span>✓</span>
-                                  อนุมัติ
-                                </>
-                              )}
-                            </button>
-                            <button
-                              onClick={() => handleStatusUpdate(request.id, 'REJECTED')}
-                              disabled={processingStatus[request.id]}
-                              className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded-lg text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
-                            >
-                              {processingStatus[request.id] ? (
-                                <div className="animate-spin w-3 h-3 border-2 border-white border-t-transparent rounded-full"></div>
-                              ) : (
-                                <>
-                                  <span>✕</span>
-                                  ปฏิเสธ
-                                </>
-                              )}
-                            </button>
-                          </>
-                        ) : (
-                          <span className="text-gray-400 text-xs">
-                            {request.status === 'APPROVED' ? 'อนุมัติแล้ว' : 'ปฏิเสธแล้ว'}
-                          </span>
-                        )}
-                        
+
+                {/* Admin actions */}
+                {user?.role === 'ADMIN' && (
+                  <div className="flex gap-2 flex-wrap pt-2 border-t border-slate-100">
+                    {request.status === 'PENDING' ? (
+                      <>
                         <button
-                          onClick={() => handleDelete(request.id)}
+                          onClick={() => handleStatusUpdate(request.id, 'APPROVED')}
                           disabled={processingStatus[request.id]}
-                          className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 ml-2"
-                          title="ลบคำขอ"
+                          className="inline-flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors disabled:opacity-50"
                         >
                           {processingStatus[request.id] ? (
-                            <div className="animate-spin w-3 h-3 border-2 border-white border-t-transparent rounded-full"></div>
-                          ) : (
-                            <>
-                              <span>🗑️</span>
-                              ลบ
-                            </>
-                          )}
+                            <div className="animate-spin w-3 h-3 border-2 border-white border-t-transparent rounded-full" />
+                          ) : (<><CheckIcon className="h-3.5 w-3.5" />อนุมัติ</>)}
                         </button>
-                      </div>
-                    </td>
-                  )}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {requests.length === 0 && (
-          <div className="text-center py-16">
-            <div className="text-6xl mb-4 opacity-30">🛒</div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">ยังไม่มีคำขอจัดซื้อ</h3>
-            <p className="text-gray-600">คลิกปุ่ม &quot;สร้างคำขอใหม่&quot; เพื่อเริ่มต้น</p>
+                        <button
+                          onClick={() => handleStatusUpdate(request.id, 'REJECTED')}
+                          disabled={processingStatus[request.id]}
+                          className="inline-flex items-center gap-1 bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors disabled:opacity-50"
+                        >
+                          {processingStatus[request.id] ? (
+                            <div className="animate-spin w-3 h-3 border-2 border-white border-t-transparent rounded-full" />
+                          ) : (<><XMarkIcon className="h-3.5 w-3.5" />ปฏิเสธ</>)}
+                        </button>
+                      </>
+                    ) : (
+                      <span className="text-slate-400 text-xs">
+                        {request.status === 'APPROVED' ? 'อนุมัติแล้ว' : 'ปฏิเสธแล้ว'}
+                      </span>
+                    )}
+                    <button
+                      onClick={() => handleDelete(request.id)}
+                      disabled={processingStatus[request.id]}
+                      className="inline-flex items-center gap-1 bg-slate-100 hover:bg-red-50 hover:text-red-700 text-slate-600 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors disabled:opacity-50 ml-auto"
+                    >
+                      {processingStatus[request.id] ? (
+                        <div className="animate-spin w-3 h-3 border-2 border-slate-400 border-t-transparent rounded-full" />
+                      ) : (
+                        <TrashIcon className="h-3.5 w-3.5" />
+                      )}
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
-        )}
-      </div>
+
+          {/* Desktop table — hidden on mobile */}
+          <div className="hidden md:block bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-slate-200">
+                <thead className="bg-slate-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">รหัสคำขอ</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">ผู้ขอ</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">รายการ</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">เหตุผล</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">สถานะ</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">วันที่สร้าง</th>
+                    {user?.role === 'ADMIN' && (
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">การจัดการ</th>
+                    )}
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-slate-100">
+                  {requests.map((request) => (
+                    <tr key={request.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-mono font-medium text-slate-700">
+                        #{request.id.slice(-6)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                        {request.requester?.name || 'Unknown'}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-slate-700 space-y-1.5">
+                          {Array.isArray(request.items) && request.items.map((item: PurchaseItem, idx: number) => (
+                            <div key={idx} className="flex items-center gap-2.5 p-2 bg-slate-50 rounded-lg">
+                              {item.imageUrl && (
+                                <Image
+                                  src={item.imageUrl}
+                                  alt={item.name}
+                                  width={40}
+                                  height={40}
+                                  className="w-10 h-10 object-cover rounded-lg border border-slate-200"
+                                />
+                              )}
+                              <div className="flex-1">
+                                <div className="font-medium text-slate-800">{item.name}</div>
+                                <div className="text-xs text-slate-500">จำนวน: {item.quantity}</div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-slate-700 max-w-xs break-all">
+                          {request.reason ? (
+                            /^https?:\/\//i.test(request.reason) ? (
+                              <a
+                                href={request.reason}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-orange-600 hover:text-orange-700 hover:underline"
+                              >
+                                {request.reason}
+                              </a>
+                            ) : (
+                              request.reason
+                            )
+                          ) : (
+                            <span className="text-slate-400 italic">ไม่ได้ระบุ</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(request.status)}`}>
+                          {getStatusText(request.status)}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                        {new Date(request.createdAt).toLocaleDateString('th-TH')}
+                      </td>
+                      {user?.role === 'ADMIN' && (
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <div className="flex gap-2 items-center">
+                            {request.status === 'PENDING' ? (
+                              <>
+                                <button
+                                  onClick={() => handleStatusUpdate(request.id, 'APPROVED')}
+                                  disabled={processingStatus[request.id]}
+                                  className="inline-flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors disabled:opacity-50"
+                                >
+                                  {processingStatus[request.id] ? (
+                                    <div className="animate-spin w-3 h-3 border-2 border-white border-t-transparent rounded-full"></div>
+                                  ) : (
+                                    <><CheckIcon className="h-3.5 w-3.5" />อนุมัติ</>
+                                  )}
+                                </button>
+                                <button
+                                  onClick={() => handleStatusUpdate(request.id, 'REJECTED')}
+                                  disabled={processingStatus[request.id]}
+                                  className="inline-flex items-center gap-1 bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors disabled:opacity-50"
+                                >
+                                  {processingStatus[request.id] ? (
+                                    <div className="animate-spin w-3 h-3 border-2 border-white border-t-transparent rounded-full"></div>
+                                  ) : (
+                                    <><XMarkIcon className="h-3.5 w-3.5" />ปฏิเสธ</>
+                                  )}
+                                </button>
+                              </>
+                            ) : (
+                              <span className="text-slate-400 text-xs">
+                                {request.status === 'APPROVED' ? 'อนุมัติแล้ว' : 'ปฏิเสธแล้ว'}
+                              </span>
+                            )}
+                            <button
+                              onClick={() => handleDelete(request.id)}
+                              disabled={processingStatus[request.id]}
+                              className="inline-flex items-center gap-1 bg-slate-100 hover:bg-red-50 hover:text-red-700 text-slate-600 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors disabled:opacity-50"
+                              title="ลบคำขอ"
+                            >
+                              {processingStatus[request.id] ? (
+                                <div className="animate-spin w-3 h-3 border-2 border-slate-400 border-t-transparent rounded-full"></div>
+                              ) : (
+                                <TrashIcon className="h-3.5 w-3.5" />
+                              )}
+                            </button>
+                          </div>
+                        </td>
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

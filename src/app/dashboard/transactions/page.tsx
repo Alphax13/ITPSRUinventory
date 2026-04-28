@@ -4,6 +4,15 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuthStore } from '@/stores/authStore';
 import QRScanner from '@/components/QRScanner';
 import SafeImage from '@/components/SafeImage';
+import {
+  MagnifyingGlassIcon,
+  ShoppingCartIcon,
+  ArrowUpTrayIcon,
+  ArrowDownTrayIcon,
+  XMarkIcon,
+  CubeIcon,
+  ExclamationTriangleIcon,
+} from '@heroicons/react/24/outline';
 
 interface Material {
   id: string;
@@ -263,49 +272,51 @@ export default function TransactionPage() {
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       {/* Header */}
-      <div className="text-center">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">เบิก-จ่ายวัสดุ</h1>
-        <p className="text-gray-600">เพิ่มวัสดุหลายรายการในตะกร้าแล้วทำรายการพร้อมกัน</p>
-        {materials.length > 0 && (
-          <p className="text-sm text-blue-600 mt-1">
-            📦 โหลดข้อมูลวัสดุแล้ว {materials.length} รายการ
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="border-l-4 border-orange-600 px-6 py-5">
+          <h1 className="text-xl font-bold text-slate-800">เบิก-จ่ายวัสดุ</h1>
+          <p className="text-sm text-slate-500 mt-0.5">เพิ่มวัสดุหลายรายการในตะกร้าแล้วทำรายการพร้อมกัน
+            {materials.length > 0 && <span className="ml-2 text-orange-600 font-medium">({materials.length} รายการในระบบ)</span>}
           </p>
-        )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Panel - Material Selection */}
         <div className="lg:col-span-2 space-y-4">
           {/* Transaction Type Toggle */}
-          <div className="bg-white rounded-lg shadow p-4">
-            <div className="flex space-x-4 mb-4">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+            <div className="flex gap-3 mb-5">
               <button
                 onClick={() => setTransactionType('OUT')}
-                className={`px-4 py-2 rounded-lg font-medium ${
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm transition-colors ${
                   transactionType === 'OUT'
-                    ? 'bg-red-100 text-red-700 border-2 border-red-300'
-                    : 'bg-gray-100 text-gray-700'
+                    ? 'bg-red-600 text-white'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
-                📤 เบิกออก
+                <ArrowUpTrayIcon className="h-4 w-4" />
+                เบิกออก
               </button>
               {user?.role === 'ADMIN' && (
                 <button
                   onClick={() => setTransactionType('IN')}
-                  className={`px-4 py-2 rounded-lg font-medium ${
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm transition-colors ${
                     transactionType === 'IN'
-                      ? 'bg-green-100 text-green-700 border-2 border-green-300'
-                      : 'bg-gray-100 text-gray-700'
+                      ? 'bg-green-600 text-white'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                   }`}
                 >
-                  📥 เพิ่มเข้า
+                  <ArrowDownTrayIcon className="h-4 w-4" />
+                  เพิ่มเข้า
                 </button>
               )}
             </div>
 
             {/* Search and Scan */}
-            <div className="flex space-x-3 mb-4">
+            <div className="flex gap-3 mb-4">
               <div className="flex-1 relative" ref={searchRef}>
+                <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                 <input
                   type="text"
                   placeholder="ค้นหาด้วยรหัส หรือชื่อวัสดุ..."
@@ -320,13 +331,10 @@ export default function TransactionPage() {
                   }}
                   onKeyDown={(e) => {
                     if (!showDropdown || filteredMaterials.length === 0) return;
-                    
                     switch (e.key) {
                       case 'ArrowDown':
                         e.preventDefault();
-                        setSelectedIndex(prev => 
-                          prev < Math.min(filteredMaterials.length - 1, 7) ? prev + 1 : prev
-                        );
+                        setSelectedIndex(prev => prev < Math.min(filteredMaterials.length - 1, 7) ? prev + 1 : prev);
                         break;
                       case 'ArrowUp':
                         e.preventDefault();
@@ -334,9 +342,7 @@ export default function TransactionPage() {
                         break;
                       case 'Enter':
                         e.preventDefault();
-                        if (selectedIndex >= 0) {
-                          handleMaterialSelect(filteredMaterials[selectedIndex]);
-                        }
+                        if (selectedIndex >= 0) handleMaterialSelect(filteredMaterials[selectedIndex]);
                         break;
                       case 'Escape':
                         setShowDropdown(false);
@@ -344,88 +350,68 @@ export default function TransactionPage() {
                         break;
                     }
                   }}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full pl-9 pr-4 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 />
-                
+
                 {/* Auto-complete Dropdown */}
                 {showDropdown && searchTerm && filteredMaterials.length > 0 && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-80 overflow-y-auto z-50">
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-80 overflow-y-auto z-50">
                     {filteredMaterials.slice(0, 8).map((material, index) => (
                       <div
                         key={material.id}
                         onClick={() => handleMaterialSelect(material)}
-                        className={`p-3 cursor-pointer border-b border-gray-100 last:border-b-0 transition-colors ${
-                          index === selectedIndex 
-                            ? 'bg-blue-100 border-blue-200' 
-                            : 'hover:bg-blue-50'
-                        } ${index === 0 ? 'rounded-t-lg' : ''} ${index === Math.min(filteredMaterials.length - 1, 7) ? 'rounded-b-lg' : ''}`}
+                        className={`p-3 cursor-pointer border-b border-slate-100 last:border-b-0 transition-colors ${
+                          index === selectedIndex ? 'bg-orange-50' : 'hover:bg-slate-50'
+                        }`}
                       >
-                        <div className="flex items-center space-x-3">
-                          {/* Material Image */}
-                          <div className="w-12 h-12 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-slate-100 rounded-lg overflow-hidden shrink-0">
                             {material.imageUrl ? (
                               <SafeImage
                                 src={material.imageUrl}
                                 alt={material.name}
-                                width={48}
-                                height={48}
+                                width={40}
+                                height={40}
                                 className="w-full h-full object-cover"
-                                onError={() => {
-                                  // Handle error by showing fallback icon
-                                  const parent = document.querySelector('.w-12.h-12') as HTMLElement;
-                                  if (parent) {
-                                    parent.innerHTML = '<div class="w-full h-full bg-gray-200 flex items-center justify-center text-gray-400 text-xs">📦</div>';
-                                  }
-                                }}
                               />
                             ) : (
-                              <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-400 text-lg">
-                                📦
+                              <div className="w-full h-full flex items-center justify-center">
+                                <CubeIcon className="h-5 w-5 text-slate-400" />
                               </div>
                             )}
                           </div>
-                          
-                          {/* Material Info */}
                           <div className="flex-1 min-w-0">
-                            <p className="font-medium text-gray-900 truncate">{material.name}</p>
-                            <p className="text-sm text-gray-500 truncate">
-                              {material.code} • {material.category}
-                            </p>
+                            <p className="font-medium text-sm text-slate-800 truncate">{material.name}</p>
+                            <p className="text-xs text-slate-500">{material.code} · {material.category}</p>
                           </div>
-                          
-                          {/* Stock Info */}
-                          <div className="text-right flex-shrink-0">
-                            <div className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
-                              material.currentStock > 0 
-                                ? 'bg-green-100 text-green-800' 
-                                : 'bg-red-100 text-red-800'
+                          <div className="text-right shrink-0">
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                              material.currentStock > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
                             }`}>
-                              {material.currentStock > 0 ? '✅' : '❌'} {material.currentStock} {material.unit}
-                            </div>
+                              {material.currentStock} {material.unit}
+                            </span>
                             {material.currentStock > 0 && material.currentStock <= 10 && (
-                              <p className="text-xs text-orange-500 mt-1">⚠️ สต็อกต่ำ</p>
+                              <p className="text-xs text-amber-600 mt-0.5 flex items-center gap-0.5">
+                                <ExclamationTriangleIcon className="h-3 w-3" />สต็อกต่ำ
+                              </p>
                             )}
                           </div>
                         </div>
                       </div>
                     ))}
-                    
-                    {/* Show more indicator */}
                     {filteredMaterials.length > 8 && (
-                      <div className="p-3 text-center text-sm text-gray-500 bg-gray-50 rounded-b-lg border-t">
-                        📋 แสดง 8 จาก {filteredMaterials.length} รายการ - พิมพ์เพิ่มเติมเพื่อกรอง
+                      <div className="p-3 text-center text-xs text-slate-500 bg-slate-50 rounded-b-xl border-t border-slate-100">
+                        แสดง 8 จาก {filteredMaterials.length} รายการ — พิมพ์เพิ่มเติมเพื่อกรอง
                       </div>
                     )}
                   </div>
                 )}
-                
-                {/* No results message */}
+
                 {showDropdown && searchTerm && filteredMaterials.length === 0 && materials.length > 0 && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg p-4 z-50">
-                    <div className="text-center text-gray-500">
-                      <div className="text-2xl mb-2">🔍</div>
-                      <p>ไม่พบวัสดุที่ค้นหา</p>
-                      <p className="text-sm">ลองใช้คำค้นหาอื่น</p>
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg p-4 z-50">
+                    <div className="text-center text-slate-500">
+                      <MagnifyingGlassIcon className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                      <p className="text-sm">ไม่พบวัสดุที่ค้นหา</p>
                     </div>
                   </div>
                 )}
@@ -436,67 +422,60 @@ export default function TransactionPage() {
 
         {/* Right Panel - Shopping Cart */}
         <div className="space-y-4">
-          <div className="bg-white rounded-lg shadow p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">
-                🛒 ตะกร้าวัสดุ
+              <h3 className="text-base font-semibold text-slate-800 flex items-center gap-2">
+                <ShoppingCartIcon className="h-5 w-5 text-orange-600" />
+                ตะกร้าวัสดุ
               </h3>
-              <span className="bg-blue-100 text-blue-800 text-sm font-medium px-2.5 py-0.5 rounded">
+              <span className="bg-slate-100 text-slate-700 text-xs font-semibold px-2.5 py-1 rounded-full">
                 {cart.length} รายการ ({getTotalItems()} ชิ้น)
               </span>
             </div>
 
             {cart.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                <div className="text-4xl mb-2">🛒</div>
-                <p className="font-medium">ยังไม่มีรายการในตะกร้า</p>
-                <div className="text-sm mt-2 space-y-1">
-                  <p>💡 <strong>วิธีใช้:</strong></p>
-                  <p>🔍 ค้นหาชื่อหรือรหัสวัสดุ</p>
-                  <p>📱 สแกน QR Code</p>
-                </div>
+              <div className="text-center py-8 text-slate-400">
+                <ShoppingCartIcon className="h-10 w-10 mx-auto mb-3 opacity-30" />
+                <p className="text-sm font-medium">ยังไม่มีรายการในตะกร้า</p>
+                <p className="text-xs mt-1">ค้นหาชื่อหรือรหัสวัสดุด้านซ้าย</p>
               </div>
             ) : (
               <div className="space-y-3 max-h-96 overflow-y-auto">
                 {cart.map((item) => (
-                  <div key={item.id} className="border border-gray-200 rounded-lg p-3">
+                  <div key={item.id} className="border border-slate-200 rounded-xl p-3">
                     <div className="flex justify-between items-start mb-2">
                       <div className="flex-1">
-                        <p className="font-medium text-sm text-gray-900">{item.material.name}</p>
-                        <p className="text-xs text-gray-500">{item.material.code}</p>
+                        <p className="font-medium text-sm text-slate-800">{item.material.name}</p>
+                        <p className="text-xs text-slate-400">{item.material.code}</p>
                       </div>
                       <button
                         onClick={() => removeFromCart(item.id)}
-                        className="text-red-500 hover:text-red-700 ml-2"
+                        className="text-slate-400 hover:text-red-600 ml-2 transition-colors"
                       >
-                        ❌
+                        <XMarkIcon className="h-4 w-4" />
                       </button>
                     </div>
-                    
                     <div className="space-y-2">
                       <div>
-                        <label className="block text-xs text-gray-600 mb-1">จำนวน</label>
+                        <label className="block text-xs text-slate-500 mb-1">จำนวน</label>
                         <input
                           type="number"
                           value={item.quantity}
                           onChange={(e) => updateCartItem(item.id, 'quantity', Math.max(1, parseInt(e.target.value) || 1))}
-                          className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                          className="w-full px-2.5 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500"
                           min="1"
                           max={transactionType === 'OUT' ? item.material.currentStock : undefined}
                         />
-                        <p className="text-xs text-gray-500 mt-1">
-                          สต็อก: {item.material.currentStock} {item.material.unit}
-                        </p>
+                        <p className="text-xs text-slate-400 mt-1">สต็อก: {item.material.currentStock} {item.material.unit}</p>
                       </div>
-                      
                       <div>
-                        <label className="block text-xs text-gray-600 mb-1">เหตุผล <span className="text-gray-400">(ไม่จำเป็น)</span></label>
+                        <label className="block text-xs text-slate-500 mb-1">เหตุผล <span className="text-slate-400">(ไม่จำเป็น)</span></label>
                         <input
                           type="text"
                           value={item.reason}
                           onChange={(e) => updateCartItem(item.id, 'reason', e.target.value)}
-                          className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                          placeholder="ระบุเหตุผล (ไม่จำเป็น)..."
+                          className="w-full px-2.5 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500"
+                          placeholder="ระบุเหตุผล..."
                         />
                       </div>
                     </div>
@@ -506,24 +485,29 @@ export default function TransactionPage() {
             )}
 
             {cart.length > 0 && (
-              <div className="mt-4 pt-4 border-t border-gray-200">
+              <div className="mt-4 pt-4 border-t border-slate-200">
                 <button
                   onClick={handleBatchSubmit}
                   disabled={submitting}
-                  className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-medium py-3 px-4 rounded-lg transition-colors"
+                  className={`w-full inline-flex items-center justify-center gap-2 font-semibold py-2.5 px-4 rounded-xl transition-colors text-sm text-white disabled:bg-slate-400 ${
+                    transactionType === 'OUT' ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'
+                  }`}
                 >
-                  {submitting 
-                    ? 'กำลังดำเนินการ...' 
-                    : `${transactionType === 'OUT' ? '📤 เบิกวัสดุ' : '📥 เพิ่มวัสดุ'} (${cart.length} รายการ)`
+                  {transactionType === 'OUT'
+                    ? <ArrowUpTrayIcon className="h-4 w-4" />
+                    : <ArrowDownTrayIcon className="h-4 w-4" />
+                  }
+                  {submitting
+                    ? 'กำลังดำเนินการ...'
+                    : `${transactionType === 'OUT' ? 'เบิกวัสดุ' : 'เพิ่มวัสดุ'} (${cart.length} รายการ)`
                   }
                 </button>
-                
                 <button
                   onClick={() => setCart([])}
                   disabled={submitting}
-                  className="w-full mt-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-4 rounded-lg transition-colors"
+                  className="w-full mt-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2 px-4 rounded-xl transition-colors text-sm"
                 >
-                  🗑️ ล้างตะกร้า
+                  ล้างตะกร้า
                 </button>
               </div>
             )}
@@ -533,50 +517,49 @@ export default function TransactionPage() {
 
       {/* Add to Cart Modal */}
       {showAddModal && selectedMaterial && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">เพิ่มลงตะกร้า</h3>
-            
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-              <h4 className="font-semibold text-blue-900">{selectedMaterial.name}</h4>
-              <p className="text-blue-700 text-sm">
-                รหัส: {selectedMaterial.code} • หมวดหมู่: {selectedMaterial.category}
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full mx-4 shadow-xl">
+            <h3 className="text-base font-semibold text-slate-800 mb-4">เพิ่มลงตะกร้า</h3>
+
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-4">
+              <h4 className="font-semibold text-slate-800">{selectedMaterial.name}</h4>
+              <p className="text-slate-500 text-sm mt-0.5">
+                รหัส: {selectedMaterial.code} · {selectedMaterial.category}
               </p>
-              <p className="text-blue-700 text-sm">
-                สต็อกคงเหลือ: <span className="font-medium">{selectedMaterial.currentStock} {selectedMaterial.unit}</span>
+              <p className="text-slate-600 text-sm mt-1">
+                สต็อกคงเหลือ: <span className="font-semibold">{selectedMaterial.currentStock} {selectedMaterial.unit}</span>
               </p>
             </div>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-gray-700 font-medium mb-2">
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">
                   จำนวน ({selectedMaterial.unit})
                 </label>
                 <input
                   type="number"
                   value={quantity}
                   onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   min="1"
                   max={transactionType === 'OUT' ? selectedMaterial.currentStock : undefined}
                 />
               </div>
-
               <div>
-                <label className="block text-gray-700 font-medium mb-2">
-                  เหตุผล <span className="text-gray-500 text-sm font-normal">(ไม่จำเป็น)</span>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                  เหตุผล <span className="text-slate-400 font-normal">(ไม่จำเป็น)</span>
                 </label>
                 <textarea
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   rows={3}
-                  placeholder="ระบุเหตุผล (ไม่จำเป็น)..."
+                  placeholder="ระบุเหตุผล..."
                 />
               </div>
             </div>
 
-            <div className="flex space-x-3 mt-6">
+            <div className="flex gap-3 mt-5">
               <button
                 onClick={() => {
                   setShowAddModal(false);
@@ -587,14 +570,14 @@ export default function TransactionPage() {
                   setShowDropdown(false);
                   setSelectedIndex(-1);
                 }}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                className="flex-1 px-4 py-2.5 border border-slate-300 text-slate-700 rounded-xl hover:bg-slate-50 transition-colors text-sm font-medium"
               >
                 ยกเลิก
               </button>
               <button
                 onClick={addToCart}
                 disabled={!selectedMaterial}
-                className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg transition-colors"
+                className="flex-1 px-4 py-2.5 bg-orange-600 hover:bg-orange-700 disabled:bg-slate-400 text-white rounded-xl transition-colors text-sm font-semibold"
               >
                 เพิ่มลงตะกร้า
               </button>

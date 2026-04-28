@@ -2,6 +2,7 @@
 'use client';
 
 import { useState } from 'react';
+import { XMarkIcon } from '@heroicons/react/24/outline';
 
 interface StockAdjustmentModalProps {
   onClose: () => void;
@@ -70,21 +71,22 @@ export default function StockAdjustmentModal({ onClose, onSave, consumable }: St
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
-      <div className="bg-white p-6 rounded-2xl shadow-xl w-full max-w-md border border-orange-200">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-800">
-            📦 ปรับสต็อค
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-200">
+          <h2 className="text-base font-bold text-slate-800">
+            ปรับสต็อค์
           </h2>
           <button 
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors duration-200 text-2xl"
+            className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 transition-colors"
           >
-            ×
+            <XMarkIcon className="h-5 w-5" />
           </button>
         </div>
 
-        <div className="mb-4 p-4 bg-orange-50 rounded-xl border border-orange-200">
+        <div className="p-6">
+        <div className="mb-4 p-4 bg-slate-50 rounded-xl border border-slate-200">
           <h3 className="font-semibold text-gray-800">{consumable.name}</h3>
           <p className="text-sm text-gray-600">
             สต็อคปัจจุบัน: <span className="font-bold text-orange-600">{consumable.currentStock} {consumable.unit}</span>
@@ -94,7 +96,7 @@ export default function StockAdjustmentModal({ onClose, onSave, consumable }: St
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Error Display */}
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">
               {error}
             </div>
           )}
@@ -112,7 +114,7 @@ export default function StockAdjustmentModal({ onClose, onSave, consumable }: St
                   onChange={() => setAdjustmentType('add')}
                   className="mr-2"
                 />
-                <span className="text-green-600">➕ เพิ่มสต็อค</span>
+              <span className="text-emerald-600">เพิ่มสต็อค์</span>
               </label>
               <label className="flex items-center">
                 <input
@@ -123,7 +125,7 @@ export default function StockAdjustmentModal({ onClose, onSave, consumable }: St
                   onChange={() => setAdjustmentType('subtract')}
                   className="mr-2"
                 />
-                <span className="text-red-600">➖ หักสต็อค</span>
+              <span className="text-red-600">หักสต็อค์</span>
               </label>
             </div>
           </div>
@@ -135,7 +137,7 @@ export default function StockAdjustmentModal({ onClose, onSave, consumable }: St
               type="number" 
               value={quantity} 
               onChange={(e) => setQuantity(parseInt(e.target.value) || 0)} 
-              className="w-full px-4 py-3 border border-orange-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-300" 
+              className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" 
               min="1"
               max={adjustmentType === 'subtract' ? consumable.currentStock : undefined}
               required 
@@ -149,13 +151,13 @@ export default function StockAdjustmentModal({ onClose, onSave, consumable }: St
               type="text" 
               value={reason} 
               onChange={(e) => setReason(e.target.value)} 
-              className="w-full px-4 py-3 border border-orange-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-300" 
+              className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" 
               placeholder="เช่น รับของเข้า, เสียหาย, หมดอายุ"
             />
           </div>
 
           {/* ผลลัพธ์ */}
-          <div className="p-3 bg-gray-50 rounded-lg">
+          <div className="p-3 bg-slate-50 rounded-xl">
             <p className="text-sm text-gray-600">
               สต็อคหลังการปรับ: <span className="font-bold text-gray-800">
                 {adjustmentType === 'add' 
@@ -170,23 +172,24 @@ export default function StockAdjustmentModal({ onClose, onSave, consumable }: St
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition-colors duration-200"
+              className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium py-2.5 px-6 rounded-xl transition-colors"
             >
               ยกเลิก
             </button>
             <button
               type="submit"
               disabled={loading}
-              className={`flex-1 px-6 py-3 font-semibold rounded-xl transition-all duration-200 ${
+              className={`flex-1 px-6 py-2.5 font-semibold rounded-xl transition-colors ${
                 adjustmentType === 'add'
-                  ? 'bg-gradient-to-r from-green-400 to-green-500 hover:from-green-500 hover:to-green-600 text-white'
-                  : 'bg-gradient-to-r from-red-400 to-red-500 hover:from-red-500 hover:to-red-600 text-white'
+                  ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                  : 'bg-red-600 hover:bg-red-700 text-white'
               } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              {loading ? 'กำลังบันทึก...' : adjustmentType === 'add' ? '➕ เพิ่มสต็อค' : '➖ หักสต็อค'}
+              {loading ? 'กำลังบันทึก...' : adjustmentType === 'add' ? 'เพิ่มสต็อค์' : 'หักสต็อค์'}
             </button>
           </div>
         </form>
+        </div>
       </div>
     </div>
   );

@@ -48,12 +48,13 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST: ยืมครุภัณฑ์
+// POST: ยืมครุภัณฑ์ (รองรับทั้งรายการเดียวและหลายรายการ)
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { 
-      fixedAssetId, 
+      fixedAssetId,      // single (backward compat)
+      fixedAssetIds,     // multi
       userId, 
       expectedReturnDate, 
       purpose, 
@@ -62,81 +63,83 @@ export async function POST(request: NextRequest) {
       studentId
     } = body;
 
-    if (!fixedAssetId || !userId) {
+    // รองรับทั้ง single และ multi
+    const assetIds: string[] = fixedAssetIds?.length
+      ? fixedAssetIds
+      : fixedAssetId
+      ? [fixedAssetId]
+      : [];
+
+    if (assetIds.length === 0 || !userId) {
       return NextResponse.json({ 
-        error: 'Asset ID and User ID are required' 
+        error: 'Asset ID(s) and User ID are required' 
       }, { status: 400 });
     }
 
-    // ตรวจสอบว่าครุภัณฑ์นี้ถูกยืมอยู่หรือไม่
-    const existingBorrow = await prisma.assetBorrow.findFirst({
-      where: {
-        fixedAssetId,
-        status: 'BORROWED'
-      }
+    // ตรวจสอบทุกครุภัณฑ์
+    const assets = await prisma.fixedAsset.findMany({
+      where: { id: { in: assetIds } }
     });
 
-    if (existingBorrow) {
+    if (assets.length !== assetIds.length) {
+      return NextResponse.json({ error: 'Some assets not found' }, { status: 404 });
+    }
+
+    const unavailable = assets.filter(a => a.condition === 'DISPOSED' || a.condition === 'DAMAGED');
+    if (unavailable.length > 0) {
       return NextResponse.json({ 
-        error: 'This asset is currently borrowed' 
+        error: `ครุภัณฑ์ต่อไปนี้ไม่พร้อมให้ยืม: ${unavailable.map(a => a.name).join(', ')}` 
       }, { status: 400 });
     }
 
-    // ตรวจสอบสภาพครุภัณฑ์
-    const asset = await prisma.fixedAsset.findUnique({
-      where: { id: fixedAssetId }
+    // ตรวจสอบว่าถูกยืมอยู่หรือไม่
+    const alreadyBorrowed = await prisma.assetBorrow.findMany({
+      where: { fixedAssetId: { in: assetIds }, status: 'BORROWED' },
+      include: { fixedAsset: { select: { name: true } } }
     });
 
-    if (!asset) {
+    if (alreadyBorrowed.length > 0) {
       return NextResponse.json({ 
-        error: 'Asset not found' 
-      }, { status: 404 });
-    }
-
-    if (asset.condition === 'DISPOSED' || asset.condition === 'DAMAGED') {
-      return NextResponse.json({ 
-        error: 'Asset is not available for borrowing' 
+        error: `ครุภัณฑ์ต่อไปนี้ถูกยืมอยู่แล้ว: ${alreadyBorrowed.map(b => b.fixedAsset.name).join(', ')}` 
       }, { status: 400 });
     }
 
-    // สร้างรายการยืม
-    const borrow = await prisma.assetBorrow.create({
-      data: {
-        fixedAssetId,
-        userId,
-        expectedReturnDate: expectedReturnDate ? new Date(expectedReturnDate) : null,
-        purpose: purpose || null,
-        note: note || null,
-        studentName: studentName || null,
-        studentId: studentId || null,
-        status: 'BORROWED'
-      },
-      include: {
-        fixedAsset: {
-          select: {
-            assetNumber: true,
-            name: true,
-            category: true
-          }
-        },
-        user: {
-          select: {
-            name: true,
-            email: true
-          }
+    // สร้างรายการยืมทั้งหมดใน transaction
+    const borrowData = assetIds.map(id => ({
+      fixedAssetId: id,
+      userId,
+      expectedReturnDate: expectedReturnDate ? new Date(expectedReturnDate) : null,
+      purpose: purpose || null,
+      note: note || null,
+      studentName: studentName || null,
+      studentId: studentId || null,
+      status: 'BORROWED' as const,
+    }));
+
+    const createdBorrows = await prisma.$transaction(
+      borrowData.map(data => prisma.assetBorrow.create({
+        data,
+        include: {
+          fixedAsset: { select: { assetNumber: true, name: true, category: true } },
+          user: { select: { name: true, email: true } }
         }
-      }
-    });
+      }))
+    );
 
-    // แจ้งเตือน Admin เมื่อมีการยืมครุภัณฑ์
-    try {
-      await NotificationService.notifyAssetBorrow(borrow.id);
-    } catch (notificationError) {
-      console.error('Error sending borrow notification:', notificationError);
-      // ไม่ให้ notification error ทำให้ transaction fail
+    // แจ้งเตือน Admin
+    for (const borrow of createdBorrows) {
+      try {
+        await NotificationService.notifyAssetBorrow(borrow.id);
+      } catch (notificationError) {
+        console.error('Error sending borrow notification:', notificationError);
+      }
     }
 
-    return NextResponse.json(borrow, { status: 201 });
+    // ส่งคืน single object หากยืมเดียว (backward compat), array หากหลายรายการ
+    return NextResponse.json(
+      createdBorrows.length === 1 ? createdBorrows[0] : createdBorrows,
+      { status: 201 }
+    );
   } catch (error) {
     console.error('Error creating asset borrow:', error);
     return NextResponse.json({ 

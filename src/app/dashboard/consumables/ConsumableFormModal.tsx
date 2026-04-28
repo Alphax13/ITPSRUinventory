@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import SafeImage from '@/components/SafeImage';
+import { XMarkIcon } from '@heroicons/react/24/outline';
 
 interface ConsumableFormModalProps {
   onClose: () => void;
@@ -194,62 +195,62 @@ export default function ConsumableFormModal({ onClose, onSave, editingConsumable
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
-      <div className="bg-white p-6 rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-orange-200">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">
-            {editingConsumable ? '✏️ แก้ไขวัสดุสิ้นเปลือง' : '➕ เพิ่มวัสดุสิ้นเปลืองใหม่'}
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-200 sticky top-0 bg-white z-10">
+          <h2 className="text-base font-bold text-slate-800">
+            {editingConsumable ? 'แก้ไขวัสดุสิ้นเปลือง' : 'เพิ่มวัสดุสิ้นเปลืองใหม่'}
           </h2>
-          <button 
+          <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors duration-200 text-2xl"
+            className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 transition-colors"
           >
-            ×
+            <XMarkIcon className="h-5 w-5" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {/* Error Display */}
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">
               {error}
             </div>
           )}
 
           {/* รูปภาพ */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">📸 รูปภาพของวัสดุ</label>
+            <label className="block text-sm font-medium text-slate-700 mb-2">รูปภาพของวัสดุ</label>
             
             {/* ตัวเลือกประเภทการใส่รูป */}
-            <div className="flex space-x-4 mb-4">
+            <div className="flex gap-2 mb-3">
               <button
                 type="button"
                 onClick={() => handleImageTypeChange('file')}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                className={`px-3 py-1.5 rounded-xl text-sm font-medium transition-colors ${
                   imageInputType === 'file'
-                    ? 'bg-orange-100 text-orange-700 border-2 border-orange-300'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    ? 'bg-orange-50 text-orange-700 border border-orange-300'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
-                📁 อัพโหลดไฟล์
+                อัพโหลดไฟล์
               </button>
               <button
                 type="button"
                 onClick={() => handleImageTypeChange('url')}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                className={`px-3 py-1.5 rounded-xl text-sm font-medium transition-colors ${
                   imageInputType === 'url'
-                    ? 'bg-orange-100 text-orange-700 border-2 border-orange-300'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    ? 'bg-orange-50 text-orange-700 border border-orange-300'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
-                🔗 ใส่ URL
+                URL
               </button>
             </div>
 
             {/* แสดงพรีวิวรูปภาพ */}
             {imagePreview && (
-              <div className="mb-4 relative">
-                <div className="relative overflow-hidden rounded-xl border border-orange-200">
+              <div className="mb-3 relative">
+                <div className="relative overflow-hidden rounded-xl border border-slate-200">
                   <SafeImage
                     src={imagePreview}
                     alt="Preview"
@@ -264,14 +265,11 @@ export default function ConsumableFormModal({ onClose, onSave, editingConsumable
                   <button
                     type="button"
                     onClick={removeImage}
-                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-red-600 transition-colors shadow-lg"
+                    className="absolute top-2 right-2 bg-white/80 hover:bg-white text-slate-600 rounded-full w-7 h-7 flex items-center justify-center shadow"
                   >
-                    ×
+                    <XMarkIcon className="h-4 w-4" />
                   </button>
                 </div>
-                <p className="text-xs text-gray-500 mt-2">
-                  {imageInputType === 'url' ? '🔗 URL รูปภาพ' : '📁 ไฟล์ที่อัพโหลด'}
-                </p>
               </div>
             )}
             
@@ -282,7 +280,7 @@ export default function ConsumableFormModal({ onClose, onSave, editingConsumable
                 type="file"
                 accept="image/*"
                 onChange={handleFileChange}
-                className="w-full px-4 py-3 border border-orange-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-300 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"
+                className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"
               />
             ) : (
               <input
@@ -291,28 +289,27 @@ export default function ConsumableFormModal({ onClose, onSave, editingConsumable
                 name="imageUrl"
                 value={formData.imageUrl}
                 onChange={handleChange}
-                className="w-full px-4 py-3 border border-orange-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-300"
+                className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 placeholder="https://example.com/image.jpg"
               />
             )}
-            
-            <p className="text-xs text-gray-500 mt-2">
-              {imageInputType === 'file' 
-                ? '📁 เลือกไฟล์รูปภาพจากเครื่องคอมพิวเตอร์'
-                : '🔗 ใส่ลิงค์รูปภาพจากอินเทอร์เน็ต (เช่น Google Drive, Imgur, หรือเว็บไซต์อื่นๆ)'
+            <p className="text-xs text-slate-400 mt-1.5">
+              {imageInputType === 'file'
+                ? 'เลือกไฟล์รูปภาพจากเครื่องคอมพิวเตอร์'
+                : 'ใส่ลิงค์รูปภาพจากอินเทอร์เน็ต (เช่น Google Drive, Imgur)'
               }
             </p>
           </div>
 
           {/* ชื่อวัสดุ */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">📝 ชื่อวัสดุ</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">ชื่อวัสดุ</label>
             <input 
               type="text" 
               name="name" 
               value={formData.name} 
               onChange={handleChange} 
-              className="w-full px-4 py-3 border border-orange-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-300" 
+              className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" 
               placeholder="เช่น ปากกาลูกลื่น สีน้ำเงิน"
               required 
             />
@@ -321,12 +318,12 @@ export default function ConsumableFormModal({ onClose, onSave, editingConsumable
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* หมวดหมู่ */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">🏷️ หมวดหมู่</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">หมวดหมู่</label>
               <select 
                 name="category" 
                 value={formData.category} 
                 onChange={handleChange} 
-                className="w-full px-4 py-3 border border-orange-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-300" 
+                className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" 
                 required
               >
                 <option value="">เลือกหมวดหมู่</option>
@@ -341,12 +338,12 @@ export default function ConsumableFormModal({ onClose, onSave, editingConsumable
             
             {/* หน่วยนับ */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">📊 หน่วยนับ</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">หน่วยนับ</label>
               <select 
                 name="unit" 
                 value={formData.unit} 
                 onChange={handleChange} 
-                className="w-full px-4 py-3 border border-orange-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-300" 
+                className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" 
                 required
               >
                 <option value="ชิ้น">ชิ้น</option>
@@ -363,13 +360,13 @@ export default function ConsumableFormModal({ onClose, onSave, editingConsumable
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* จำนวนปัจจุบันในสต็อค */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">📦 จำนวนปัจจุบันในสต็อค</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">จำนวนปัจจุบันในสต็อค์</label>
               <input 
                 type="number" 
                 name="currentStock" 
                 value={formData.currentStock} 
                 onChange={handleChange} 
-                className="w-full px-4 py-3 border border-orange-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-300" 
+                className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 min="0"
                 required 
               />
@@ -377,13 +374,13 @@ export default function ConsumableFormModal({ onClose, onSave, editingConsumable
 
             {/* จำนวนขั้นต่ำ */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">⚠️ จำนวนขั้นต่ำ</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">จำนวนขั้นต่ำ</label>
               <input 
                 type="number" 
                 name="minStock" 
                 value={formData.minStock} 
                 onChange={handleChange} 
-                className="w-full px-4 py-3 border border-orange-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-300" 
+                className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" 
                 min="0"
                 required 
               />
@@ -393,13 +390,13 @@ export default function ConsumableFormModal({ onClose, onSave, editingConsumable
           <div className="grid grid-cols-1 md:grid-cols-1 gap-6">            
             {/* ตำแหน่งจัดเก็บ */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">📍 ตำแหน่งจัดเก็บ</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">ตำแหน่งจัดเก็บ</label>
               <input 
                 type="text" 
                 name="location" 
                 value={formData.location} 
                 onChange={handleChange} 
-                className="w-full px-4 py-3 border border-orange-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-300" 
+                className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" 
                 placeholder="เช่น ห้องพัสดุ ชั้น 2"
               />
             </div>
@@ -407,38 +404,38 @@ export default function ConsumableFormModal({ onClose, onSave, editingConsumable
 
           {/* รายละเอียด */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">📄 รายละเอียดเพิ่มเติม</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">รายละเอียดเพิ่มเติม</label>
             <textarea 
               name="description" 
               value={formData.description} 
               onChange={handleChange} 
               rows={3}
-              className="w-full px-4 py-3 border border-orange-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-300" 
+              className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" 
               placeholder="รายละเอียดเพิ่มเติมของวัสดุ"
             />
           </div>
 
           {/* Buttons */}
-          <div className="flex gap-4 pt-4">
+          <div className="flex gap-3 pt-2">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-3 px-6 rounded-xl transition-all duration-200"
+              className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium py-2.5 px-6 rounded-xl transition-colors"
             >
               ยกเลิก
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 bg-gradient-to-r from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 disabled:from-orange-300 disabled:to-orange-400 text-white font-bold py-3 px-6 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md"
+              className="flex-1 bg-orange-600 hover:bg-orange-700 disabled:opacity-50 text-white font-semibold py-2.5 px-6 rounded-xl transition-colors"
             >
               {loading ? (
                 <div className="flex items-center justify-center gap-2">
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                   กำลังบันทึก...
                 </div>
               ) : (
-                editingConsumable ? '💾 บันทึกการแก้ไข' : '➕ เพิ่มวัสดุใหม่'
+                editingConsumable ? 'บันทึกการแก้ไข' : 'เพิ่มวัสดุใหม่'
               )}
             </button>
           </div>
