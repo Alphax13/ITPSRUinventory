@@ -56,6 +56,8 @@ export async function PUT(
       note,
       studentName,
       studentId,
+      borrowOnBehalfOf,
+      borrowerType,
       userId
     } = body;
 
@@ -77,6 +79,8 @@ export async function PUT(
     if (note !== undefined) updateData.note = note;
     if (studentName !== undefined) updateData.studentName = studentName || null;
     if (studentId !== undefined) updateData.studentId = studentId || null;
+    if (borrowOnBehalfOf !== undefined) updateData.borrowOnBehalfOf = borrowOnBehalfOf || null;
+    if (borrowerType !== undefined) updateData.borrowerType = borrowerType;
     if (userId) updateData.userId = userId;
     
     console.log('[PUT] Update data:', updateData);

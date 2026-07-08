@@ -134,21 +134,23 @@ model ConsumableTransaction {
 
 // Model สำหรับการยืม-คืนครุภัณฑ์
 model AssetBorrow {
-  id              String        @id @default(cuid())
-  fixedAssetId    String
-  fixedAsset      FixedAsset    @relation(fields: [fixedAssetId], references: [id])
-  userId          String
-  user            User          @relation(fields: [userId], references: [id], name: "AssetBorrows")
-  borrowDate      DateTime      @default(now())
-  expectedReturnDate DateTime?   // วันที่คาดว่าจะคืน
-  actualReturnDate DateTime?     // วันที่คืนจริง
-  purpose         String?       // วัตถุประสงค์การยืม
-  note            String?
-  studentName     String?       // ชื่อนักศึกษา (ถ้ายืมในนามของนักศึกษา)
-  studentId       String?       // รหัสนักศึกษา
-  status          BorrowStatus  @default(BORROWED)
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  id                String        @id @default(cuid())
+  fixedAssetId      String
+  fixedAsset        FixedAsset    @relation(fields: [fixedAssetId], references: [id])
+  userId            String
+  user              User          @relation(fields: [userId], references: [id], name: "AssetBorrows")
+  borrowerType      BorrowerType  @default(LECTURER) // ประเภทผู้ยืม
+  borrowDate        DateTime      @default(now())
+  expectedReturnDate DateTime?    // วันที่คาดว่าจะคืน
+  actualReturnDate  DateTime?     // วันที่คืนจริง
+  purpose           String?       // วัตถุประสงค์การยืม
+  note              String?
+  studentName       String?       // ชื่อนักศึกษา (กรณี STUDENT)
+  studentId         String?       // รหัสนักศึกษา (กรณี STUDENT)
+  borrowOnBehalfOf  String?       // ยืมในนามของ (กรณี FACULTY)
+  status            BorrowStatus  @default(BORROWED)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
   
   @@index([status])              // เพิ่มความเร็วในการค้นหาตาม status
   @@index([fixedAssetId])        // เพิ่มความเร็วในการค้นหาตามครุภัณฑ์
@@ -160,6 +162,14 @@ enum BorrowStatus {
   RETURNED    // คืนแล้ว
   OVERDUE     // เกินกำหนด
   LOST        // สูญหาย
+}
+
+// Enum สำหรับประเภทผู้ยืม
+enum BorrowerType {
+  STUDENT     // นักศึกษายืม
+  LECTURER    // อาจารย์ยืม
+  FACULTY     // คณะยืมในนามใคร
+  STAFF       // เจ้าหน้าที่ยืม
 }
 
 // Model สำหรับการซ่อมบำรุงครุภัณฑ์

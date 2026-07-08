@@ -19,6 +19,22 @@ import {
   MagnifyingGlassIcon,
 } from '@heroicons/react/24/outline';
 
+type BorrowerType = 'STUDENT' | 'LECTURER' | 'FACULTY' | 'STAFF';
+
+const BORROWER_TYPE_LABELS: Record<BorrowerType, string> = {
+  STUDENT: 'นักศึกษา',
+  LECTURER: 'อาจารย์',
+  FACULTY: 'คณะ',
+  STAFF: 'เจ้าหน้าที่',
+};
+
+const BORROWER_TYPE_COLORS: Record<BorrowerType, string> = {
+  STUDENT: 'bg-blue-100 text-blue-800',
+  LECTURER: 'bg-purple-100 text-purple-800',
+  FACULTY: 'bg-amber-100 text-amber-800',
+  STAFF: 'bg-teal-100 text-teal-800',
+};
+
 interface BorrowRecord {
   id: string;
   borrowDate: string;
@@ -28,6 +44,8 @@ interface BorrowRecord {
   note?: string;
   studentName?: string;
   studentId?: string;
+  borrowOnBehalfOf?: string;
+  borrowerType: BorrowerType;
   status: 'BORROWED' | 'RETURNED' | 'OVERDUE' | 'LOST';
   fixedAsset: {
     id: string;
@@ -72,11 +90,13 @@ export default function AssetBorrowsPage() {
   const [borrowCart, setBorrowCart] = useState<string[]>([]); // selected asset IDs
   const [borrowForm, setBorrowForm] = useState({
     userId: '',
+    borrowerType: 'LECTURER' as BorrowerType,
     expectedReturnDate: '',
     purpose: '',
     note: '',
     studentName: '',
     studentId: '',
+    borrowOnBehalfOf: '',
   });
   const [submittingBorrow, setSubmittingBorrow] = useState(false);
 
@@ -107,7 +127,7 @@ export default function AssetBorrowsPage() {
       }
     } catch {}
     setBorrowCart([]);
-    setBorrowForm({ userId: user?.id || '', expectedReturnDate: '', purpose: '', note: '', studentName: '', studentId: '' });
+    setBorrowForm({ userId: user?.id || '', borrowerType: 'LECTURER', expectedReturnDate: '', purpose: '', note: '', studentName: '', studentId: '', borrowOnBehalfOf: '' });
     setAssetSearch('');
     setShowBorrowModal(true);
   };
@@ -136,11 +156,13 @@ export default function AssetBorrowsPage() {
         body: JSON.stringify({
           fixedAssetIds: borrowCart,
           userId: borrowForm.userId,
+          borrowerType: borrowForm.borrowerType,
           expectedReturnDate: borrowForm.expectedReturnDate || null,
           purpose: borrowForm.purpose || null,
           note: borrowForm.note || null,
-          studentName: borrowForm.studentName || null,
-          studentId: borrowForm.studentId || null,
+          studentName: borrowForm.borrowerType === 'STUDENT' ? (borrowForm.studentName || null) : null,
+          studentId: borrowForm.borrowerType === 'STUDENT' ? (borrowForm.studentId || null) : null,
+          borrowOnBehalfOf: borrowForm.borrowerType === 'FACULTY' ? (borrowForm.borrowOnBehalfOf || null) : null,
         }),
       });
       if (!res.ok) {
@@ -329,8 +351,10 @@ export default function AssetBorrowsPage() {
           expectedReturnDate: editingBorrow.expectedReturnDate || null,
           purpose: editingBorrow.purpose || '',
           note: editingBorrow.note || '',
-          studentName: editingBorrow.studentName || '',
-          studentId: editingBorrow.studentId || '',
+          borrowerType: editingBorrow.borrowerType,
+          studentName: editingBorrow.borrowerType === 'STUDENT' ? (editingBorrow.studentName || '') : '',
+          studentId: editingBorrow.borrowerType === 'STUDENT' ? (editingBorrow.studentId || '') : '',
+          borrowOnBehalfOf: editingBorrow.borrowerType === 'FACULTY' ? (editingBorrow.borrowOnBehalfOf || '') : '',
           userId: selectedUserId || editingBorrow.user.id,
         }),
       });
@@ -577,8 +601,23 @@ export default function AssetBorrowsPage() {
                   </div>
                 </td>
                 <td className="px-5 py-4 whitespace-nowrap">
-                  <div className="text-sm font-medium text-slate-800">{borrow.user.name}</div>
-                  <div className="text-xs text-slate-500">{borrow.user.department}</div>
+                  <div className="flex items-center gap-2">
+                    <span className={`inline-flex px-2 py-0.5 text-xs font-semibold rounded-full ${BORROWER_TYPE_COLORS[borrow.borrowerType] || 'bg-slate-100 text-slate-700'}`}>
+                      {BORROWER_TYPE_LABELS[borrow.borrowerType] || borrow.borrowerType}
+                    </span>
+                  </div>
+                  <div className="text-sm font-medium text-slate-800 mt-0.5">
+                    {borrow.borrowerType === 'STUDENT' && borrow.studentName ? borrow.studentName : borrow.user.name}
+                  </div>
+                  {borrow.borrowerType === 'STUDENT' && borrow.studentName && (
+                    <div className="text-xs text-slate-500">รับรองโดย: {borrow.user.name}</div>
+                  )}
+                  {borrow.borrowerType === 'FACULTY' && borrow.borrowOnBehalfOf && (
+                    <div className="text-xs text-slate-500">นามของ: {borrow.borrowOnBehalfOf}</div>
+                  )}
+                  {borrow.borrowerType !== 'STUDENT' && (
+                    <div className="text-xs text-slate-500">{borrow.user.department}</div>
+                  )}
                 </td>
                 <td className="px-5 py-4 whitespace-nowrap text-sm text-slate-600">
                   {new Date(borrow.borrowDate).toLocaleDateString('th-TH')}
@@ -724,16 +763,67 @@ export default function AssetBorrowsPage() {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-xs font-semibold text-slate-500 mb-0.5">ผู้ยืม</label>
-                        <p className="text-sm text-slate-800">{borrow.user.name}</p>
-                        {borrow.user.email && <p className="text-xs text-slate-500">{borrow.user.email}</p>}
-                        <p className="text-xs text-slate-500">{borrow.user.department}</p>
+                        <label className="block text-xs font-semibold text-slate-500 mb-0.5">ประเภทผู้ยืม</label>
+                        <span className={`inline-flex px-2.5 py-0.5 text-xs font-semibold rounded-full ${BORROWER_TYPE_COLORS[borrow.borrowerType] || 'bg-slate-100 text-slate-700'}`}>
+                          {BORROWER_TYPE_LABELS[borrow.borrowerType] || borrow.borrowerType}
+                        </span>
                       </div>
                       <div>
                         <label className="block text-xs font-semibold text-slate-500 mb-0.5">สถานะ</label>
                         <span className={`inline-flex px-2.5 py-0.5 text-xs font-semibold rounded-full ${getStatusColor(borrow.status)}`}>{getStatusText(borrow.status)}</span>
                       </div>
                     </div>
+
+                    {/* ข้อมูลผู้ยืมตามประเภท */}
+                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2">
+                      {borrow.borrowerType === 'STUDENT' ? (
+                        <>
+                          {borrow.studentName && (
+                            <div>
+                              <label className="block text-xs font-semibold text-slate-500 mb-0.5">ชื่อนักศึกษา</label>
+                              <p className="text-sm text-slate-800 font-semibold">{borrow.studentName}</p>
+                            </div>
+                          )}
+                          {borrow.studentId && (
+                            <div>
+                              <label className="block text-xs font-semibold text-slate-500 mb-0.5">รหัสนักศึกษา</label>
+                              <p className="text-sm text-slate-800">{borrow.studentId}</p>
+                            </div>
+                          )}
+                          <div>
+                            <label className="block text-xs font-semibold text-slate-500 mb-0.5">อาจารย์/เจ้าหน้าที่ผู้รับรอง</label>
+                            <p className="text-sm text-slate-800">{borrow.user.name}</p>
+                          </div>
+                        </>
+                      ) : borrow.borrowerType === 'FACULTY' ? (
+                        <>
+                          <div>
+                            <label className="block text-xs font-semibold text-slate-500 mb-0.5">ผู้รับผิดชอบ</label>
+                            <p className="text-sm text-slate-800">{borrow.user.name}</p>
+                          </div>
+                          {borrow.borrowOnBehalfOf && (
+                            <div>
+                              <label className="block text-xs font-semibold text-slate-500 mb-0.5">ยืมในนามของ</label>
+                              <p className="text-sm text-slate-800 font-semibold">{borrow.borrowOnBehalfOf}</p>
+                            </div>
+                          )}
+                          <div>
+                            <label className="block text-xs font-semibold text-slate-500 mb-0.5">หน่วยงาน</label>
+                            <p className="text-sm text-slate-800">{borrow.user.department}</p>
+                          </div>
+                        </>
+                      ) : (
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-500 mb-0.5">
+                            {borrow.borrowerType === 'LECTURER' ? 'อาจารย์ผู้ยืม' : 'เจ้าหน้าที่ผู้ยืม'}
+                          </label>
+                          <p className="text-sm text-slate-800">{borrow.user.name}</p>
+                          {borrow.user.email && <p className="text-xs text-slate-500">{borrow.user.email}</p>}
+                          <p className="text-xs text-slate-500">{borrow.user.department}</p>
+                        </div>
+                      )}
+                    </div>
+
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <label className="block text-xs font-semibold text-slate-500 mb-0.5">วันที่ยืม</label>
@@ -748,24 +838,6 @@ export default function AssetBorrowsPage() {
                       <div>
                         <label className="block text-xs font-semibold text-slate-500 mb-0.5">วันที่คืนจริง</label>
                         <p className="text-sm text-slate-800">{new Date(borrow.actualReturnDate).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
-                      </div>
-                    )}
-                    {(borrow.studentName || borrow.studentId) && (
-                      <div className="bg-blue-50 border border-blue-200 rounded-xl p-3">
-                        <div className="grid grid-cols-2 gap-4">
-                          {borrow.studentName && (
-                            <div>
-                              <label className="block text-xs font-semibold text-blue-700 mb-0.5">ชื่อนักศึกษา</label>
-                              <p className="text-sm text-blue-800 font-semibold">{borrow.studentName}</p>
-                            </div>
-                          )}
-                          {borrow.studentId && (
-                            <div>
-                              <label className="block text-xs font-semibold text-blue-700 mb-0.5">รหัสนักศึกษา</label>
-                              <p className="text-sm text-blue-800 font-semibold">{borrow.studentId}</p>
-                            </div>
-                          )}
-                        </div>
                       </div>
                     )}
                     {borrow.purpose && (
@@ -897,19 +969,130 @@ export default function AssetBorrowsPage() {
                     )}
                   </div>
 
+                  {/* ประเภทผู้ยืม */}
                   <div>
-                    <label className="block text-xs font-semibold text-slate-600 mb-1.5">ผู้ยืม <span className="text-red-500">*</span></label>
-                    <select
-                      value={borrowForm.userId}
-                      onChange={e => setBorrowForm(p => ({ ...p, userId: e.target.value }))}
-                      className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                    >
-                      <option value="">— เลือกผู้ยืม —</option>
-                      {allUsers.map(u => (
-                        <option key={u.id} value={u.id}>{u.name} — {u.department}</option>
+                    <label className="block text-xs font-semibold text-slate-600 mb-1.5">ประเภทผู้ยืม <span className="text-red-500">*</span></label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {(['STUDENT', 'LECTURER', 'FACULTY', 'STAFF'] as BorrowerType[]).map(t => (
+                        <button
+                          key={t}
+                          type="button"
+                          onClick={() => setBorrowForm(p => ({ ...p, borrowerType: t, studentName: '', studentId: '', borrowOnBehalfOf: '' }))}
+                          className={`px-3 py-2 rounded-xl text-xs font-semibold border-2 transition-colors ${
+                            borrowForm.borrowerType === t
+                              ? 'border-orange-500 bg-orange-50 text-orange-700'
+                              : 'border-slate-200 text-slate-600 hover:border-slate-300'
+                          }`}
+                        >
+                          {BORROWER_TYPE_LABELS[t]}
+                        </button>
                       ))}
-                    </select>
+                    </div>
                   </div>
+
+                  {/* นักศึกษา: ชื่อ + รหัส + อาจารย์ผู้รับรอง */}
+                  {borrowForm.borrowerType === 'STUDENT' && (
+                    <>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-600 mb-1.5">ชื่อนักศึกษา <span className="text-red-500">*</span></label>
+                          <input
+                            type="text"
+                            value={borrowForm.studentName}
+                            onChange={e => setBorrowForm(p => ({ ...p, studentName: e.target.value }))}
+                            className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                            placeholder="ชื่อ-นามสกุล"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-600 mb-1.5">รหัสนักศึกษา <span className="text-red-500">*</span></label>
+                          <input
+                            type="text"
+                            value={borrowForm.studentId}
+                            onChange={e => setBorrowForm(p => ({ ...p, studentId: e.target.value }))}
+                            className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                            placeholder="เช่น 65123456789"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-600 mb-1.5">อาจารย์/เจ้าหน้าที่ผู้รับรอง <span className="text-red-500">*</span></label>
+                        <select
+                          value={borrowForm.userId}
+                          onChange={e => setBorrowForm(p => ({ ...p, userId: e.target.value }))}
+                          className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        >
+                          <option value="">— เลือกอาจารย์/เจ้าหน้าที่ผู้รับรอง —</option>
+                          {allUsers.map(u => (
+                            <option key={u.id} value={u.id}>{u.name} — {u.department}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </>
+                  )}
+
+                  {/* อาจารย์: dropdown ผู้ยืม */}
+                  {borrowForm.borrowerType === 'LECTURER' && (
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-600 mb-1.5">อาจารย์ผู้ยืม <span className="text-red-500">*</span></label>
+                      <select
+                        value={borrowForm.userId}
+                        onChange={e => setBorrowForm(p => ({ ...p, userId: e.target.value }))}
+                        className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      >
+                        <option value="">— เลือกอาจารย์ผู้ยืม —</option>
+                        {allUsers.map(u => (
+                          <option key={u.id} value={u.id}>{u.name} — {u.department}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {/* คณะ: ผู้รับผิดชอบ + ยืมในนาม */}
+                  {borrowForm.borrowerType === 'FACULTY' && (
+                    <>
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-600 mb-1.5">ผู้รับผิดชอบ <span className="text-red-500">*</span></label>
+                        <select
+                          value={borrowForm.userId}
+                          onChange={e => setBorrowForm(p => ({ ...p, userId: e.target.value }))}
+                          className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        >
+                          <option value="">— เลือกผู้รับผิดชอบ —</option>
+                          {allUsers.map(u => (
+                            <option key={u.id} value={u.id}>{u.name} — {u.department}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-600 mb-1.5">ยืมในนามของ <span className="text-red-500">*</span></label>
+                        <input
+                          type="text"
+                          value={borrowForm.borrowOnBehalfOf}
+                          onChange={e => setBorrowForm(p => ({ ...p, borrowOnBehalfOf: e.target.value }))}
+                          className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                          placeholder="ระบุชื่อ/หน่วยงานที่ยืมในนาม"
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  {/* เจ้าหน้าที่: dropdown ผู้ยืม */}
+                  {borrowForm.borrowerType === 'STAFF' && (
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-600 mb-1.5">เจ้าหน้าที่ผู้ยืม <span className="text-red-500">*</span></label>
+                      <select
+                        value={borrowForm.userId}
+                        onChange={e => setBorrowForm(p => ({ ...p, userId: e.target.value }))}
+                        className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      >
+                        <option value="">— เลือกเจ้าหน้าที่ผู้ยืม —</option>
+                        {allUsers.map(u => (
+                          <option key={u.id} value={u.id}>{u.name} — {u.department}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
 
                   <div>
                     <label className="block text-xs font-semibold text-slate-600 mb-1.5">กำหนดวันคืน</label>
@@ -930,29 +1113,6 @@ export default function AssetBorrowsPage() {
                       className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none"
                       placeholder="ระบุวัตถุประสงค์..."
                     />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-600 mb-1.5">ชื่อนักศึกษา</label>
-                      <input
-                        type="text"
-                        value={borrowForm.studentName}
-                        onChange={e => setBorrowForm(p => ({ ...p, studentName: e.target.value }))}
-                        className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                        placeholder="ชื่อ-นามสกุล"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-600 mb-1.5">รหัสนักศึกษา</label>
-                      <input
-                        type="text"
-                        value={borrowForm.studentId}
-                        onChange={e => setBorrowForm(p => ({ ...p, studentId: e.target.value }))}
-                        className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                        placeholder="เช่น 65123456789"
-                      />
-                    </div>
                   </div>
 
                   <div>
@@ -1018,22 +1178,106 @@ export default function AssetBorrowsPage() {
                 </div>
               </div>
 
-              {/* เปลี่ยนผู้ยืม */}
+              {/* ประเภทผู้ยืม */}
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">ผู้ยืม</label>
-                <select
-                  value={selectedUserId}
-                  onChange={(e) => setSelectedUserId(e.target.value)}
-                  className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                >
-                  {allUsers.length === 0 && (
-                    <option value={editingBorrow.user.id}>{editingBorrow.user.name} — {editingBorrow.user.department}</option>
-                  )}
-                  {allUsers.map(u => (
-                    <option key={u.id} value={u.id}>{u.name} — {u.department}</option>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">ประเภทผู้ยืม</label>
+                <div className="grid grid-cols-4 gap-2">
+                  {(['STUDENT', 'LECTURER', 'FACULTY', 'STAFF'] as BorrowerType[]).map(t => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setEditingBorrow({ ...editingBorrow, borrowerType: t, studentName: '', studentId: '', borrowOnBehalfOf: '' })}
+                      className={`px-2 py-2 rounded-xl text-xs font-semibold border-2 transition-colors ${
+                        editingBorrow.borrowerType === t
+                          ? 'border-orange-500 bg-orange-50 text-orange-700'
+                          : 'border-slate-200 text-slate-600 hover:border-slate-300'
+                      }`}
+                    >
+                      {BORROWER_TYPE_LABELS[t]}
+                    </button>
                   ))}
-                </select>
+                </div>
               </div>
+
+              {/* นักศึกษา */}
+              {editingBorrow.borrowerType === 'STUDENT' && (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1.5">ชื่อนักศึกษา</label>
+                      <input
+                        type="text"
+                        value={editingBorrow.studentName || ''}
+                        onChange={(e) => setEditingBorrow({ ...editingBorrow, studentName: e.target.value })}
+                        className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        placeholder="ชื่อ-นามสกุล"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1.5">รหัสนักศึกษา</label>
+                      <input
+                        type="text"
+                        value={editingBorrow.studentId || ''}
+                        onChange={(e) => setEditingBorrow({ ...editingBorrow, studentId: e.target.value })}
+                        className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        placeholder="เช่น 65123456789"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1.5">อาจารย์/เจ้าหน้าที่ผู้รับรอง</label>
+                    <select
+                      value={selectedUserId}
+                      onChange={(e) => setSelectedUserId(e.target.value)}
+                      className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    >
+                      {allUsers.length === 0 && (
+                        <option value={editingBorrow.user.id}>{editingBorrow.user.name} — {editingBorrow.user.department}</option>
+                      )}
+                      {allUsers.map(u => (
+                        <option key={u.id} value={u.id}>{u.name} — {u.department}</option>
+                      ))}
+                    </select>
+                  </div>
+                </>
+              )}
+
+              {/* อาจารย์ / เจ้าหน้าที่ / คณะ: dropdown ผู้ยืม */}
+              {editingBorrow.borrowerType !== 'STUDENT' && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                    {editingBorrow.borrowerType === 'LECTURER' ? 'อาจารย์ผู้ยืม' :
+                     editingBorrow.borrowerType === 'FACULTY' ? 'ผู้รับผิดชอบ (คณะ)' : 'เจ้าหน้าที่ผู้ยืม'}
+                  </label>
+                  <select
+                    value={selectedUserId}
+                    onChange={(e) => setSelectedUserId(e.target.value)}
+                    className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  >
+                    {allUsers.length === 0 && (
+                      <option value={editingBorrow.user.id}>{editingBorrow.user.name} — {editingBorrow.user.department}</option>
+                    )}
+                    {allUsers.map(u => (
+                      <option key={u.id} value={u.id}>{u.name} — {u.department}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* คณะ: ยืมในนาม */}
+              {editingBorrow.borrowerType === 'FACULTY' && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">ยืมในนามของ</label>
+                  <input
+                    type="text"
+                    value={editingBorrow.borrowOnBehalfOf || ''}
+                    onChange={(e) => setEditingBorrow({ ...editingBorrow, borrowOnBehalfOf: e.target.value })}
+                    className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    placeholder="ระบุชื่อ/หน่วยงานที่ยืมในนาม"
+                  />
+                </div>
+              )}
+
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1.5">กำหนดวันคืน</label>
                 <input
@@ -1062,28 +1306,6 @@ export default function AssetBorrowsPage() {
                   className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   placeholder="หมายเหตุเพิ่มเติม..."
                 />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">ชื่อนักศึกษา (ถ้ามี)</label>
-                  <input
-                    type="text"
-                    value={editingBorrow.studentName || ''}
-                    onChange={(e) => setEditingBorrow({ ...editingBorrow, studentName: e.target.value })}
-                    className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                    placeholder="ชื่อ-นามสกุล"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">รหัสนักศึกษา</label>
-                  <input
-                    type="text"
-                    value={editingBorrow.studentId || ''}
-                    onChange={(e) => setEditingBorrow({ ...editingBorrow, studentId: e.target.value })}
-                    className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                    placeholder="เช่น 65123456789"
-                  />
-                </div>
               </div>
             </div>
 

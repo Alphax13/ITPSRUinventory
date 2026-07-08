@@ -47,6 +47,8 @@ export async function GET(
       note: borrow.note || undefined,
       studentName: borrow.studentName || undefined,
       studentId: borrow.studentId || undefined,
+      borrowOnBehalfOf: borrow.borrowOnBehalfOf || undefined,
+      borrowerType: borrow.borrowerType || 'LECTURER',
       adminName: admin?.name || 'เจ้าหน้าที่',
     };
 

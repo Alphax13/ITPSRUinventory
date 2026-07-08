@@ -17,14 +17,18 @@ import {
   DocumentArrowDownIcon,
   TableCellsIcon,
   ShieldCheckIcon,
+  WrenchScrewdriverIcon,
+  ArrowsRightLeftIcon,
 } from '@heroicons/react/24/outline';
+
+type ReportType = 'stock' | 'transactions' | 'purchase-requests' | 'fixed-assets' | 'borrows';
 
 export default function ReportsPage() {
   const [loading, setLoading] = useState(false);
   const [previewModal, setPreviewModal] = useState<{
     isOpen: boolean;
-    type: 'stock' | 'transactions' | 'purchase-requests';
-    data: MaterialReportData[] | TransactionReportData[] | PurchaseRequestReportData[];
+    type: ReportType;
+    data: MaterialReportData[] | TransactionReportData[] | PurchaseRequestReportData[] | any[];
     dateRange?: { startDate: string; endDate: string };
   }>({
     isOpen: false,
@@ -32,55 +36,82 @@ export default function ReportsPage() {
     data: [],
     dateRange: undefined
   });
-  const [dateRange, setDateRange] = useState({
+
+  // ช่วงวันที่สำหรับรายงานเบิก-จ่าย
+  const [txDateRange, setTxDateRange] = useState({
     startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     endDate: new Date().toISOString().split('T')[0],
   });
+
+  // ตัวกรองสำหรับรายงานการยืม
+  const [borrowFilters, setBorrowFilters] = useState({
+    startDate: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    endDate: new Date().toISOString().split('T')[0],
+    status: 'ALL',
+    borrowerType: 'ALL',
+  });
+
+  // ตัวกรองสำหรับครุภัณฑ์
+  const [assetConditionFilter, setAssetConditionFilter] = useState('ALL');
+
   const [stats, setStats] = useState({
     totalMaterials: 0,
     lowStockMaterials: 0,
     totalTransactions: 0,
-    pendingRequests: 0
+    pendingRequests: 0,
+    totalAssets: 0,
+    borrowedAssets: 0,
+    overdueAssets: 0,
+    totalBorrows: 0,
   });
 
   const { user } = useAuthStore();
 
   const loadStats = useCallback(async () => {
     try {
-      const [stockRes, transactionRes, purchaseRes] = await Promise.all([
+      const [stockRes, transactionRes, purchaseRes, assetRes, borrowRes] = await Promise.all([
         fetch('/api/reports/stock'),
-        fetch(`/api/reports/transactions?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`),
-        fetch('/api/reports/purchase-requests')
+        fetch(`/api/reports/transactions?startDate=${txDateRange.startDate}&endDate=${txDateRange.endDate}`),
+        fetch('/api/reports/purchase-requests'),
+        fetch('/api/reports/fixed-assets'),
+        fetch('/api/reports/borrows'),
       ]);
 
       if (stockRes.ok) {
-        const stockData: MaterialReportData[] = await stockRes.json();
-        setStats(prev => ({
-          ...prev,
-          totalMaterials: stockData.length,
-          lowStockMaterials: stockData.filter(item => item.currentStock <= item.minStock).length
-        }));
+        const d: MaterialReportData[] = await stockRes.json();
+        setStats(prev => ({ ...prev, totalMaterials: d.length, lowStockMaterials: d.filter(i => i.currentStock <= i.minStock).length }));
       }
-
       if (transactionRes.ok) {
-        const transactionData: TransactionReportData[] = await transactionRes.json();
+        const d: TransactionReportData[] = await transactionRes.json();
+        setStats(prev => ({ ...prev, totalTransactions: d.length }));
+      }
+      if (purchaseRes.ok) {
+        const d: PurchaseRequestReportData[] = await purchaseRes.json();
+        setStats(prev => ({ ...prev, pendingRequests: d.filter(r => r.status === 'PENDING').length }));
+      }
+      if (assetRes.ok) {
+        const d: any[] = await assetRes.json();
         setStats(prev => ({
           ...prev,
-          totalTransactions: transactionData.length
+          totalAssets: d.length,
+          borrowedAssets: d.filter(a => a.borrowStatus === 'กำลังถูกยืม').length,
         }));
       }
-
-      if (purchaseRes.ok) {
-        const purchaseData: PurchaseRequestReportData[] = await purchaseRes.json();
+      if (borrowRes.ok) {
+        const d: any[] = await borrowRes.json();
+        const now = new Date();
         setStats(prev => ({
           ...prev,
-          pendingRequests: purchaseData.filter(req => req.status === 'PENDING').length
+          totalBorrows: d.length,
+          overdueAssets: d.filter(b =>
+            b.status === 'BORROWED' && b.expectedReturnDate && new Date(b.expectedReturnDate) < now
+          ).length,
         }));
       }
     } catch (error) {
       console.error('Error loading stats:', error);
     }
-  }, [dateRange.startDate, dateRange.endDate]);
+  }, [txDateRange.startDate, txDateRange.endDate]);
 
   useEffect(() => {
     loadStats();
@@ -96,186 +127,105 @@ export default function ReportsPage() {
     );
   }
 
-  const generateReport = async (type: 'stock' | 'transactions' | 'purchase-requests', format: 'pdf' | 'excel', preview: boolean = false) => {
-    setLoading(true);
-    
-    try {
-      let apiUrl = '';
-      let filename = '';
-      
-      switch (type) {
-        case 'stock':
-          apiUrl = '/api/reports/stock';
-          filename = `stock-report-${new Date().toISOString().split('T')[0]}`;
-          break;
-        case 'transactions':
-          apiUrl = `/api/reports/transactions?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`;
-          filename = `transaction-report-${dateRange.startDate}-${dateRange.endDate}`;
-          break;
-        case 'purchase-requests':
-          apiUrl = '/api/reports/purchase-requests';
-          filename = `purchase-request-report-${new Date().toISOString().split('T')[0]}`;
-          break;
+  const buildUrl = (type: ReportType, suffix: string) => {
+    switch (type) {
+      case 'stock':
+        return `/api/reports/stock${suffix}`;
+      case 'transactions':
+        return `/api/reports/transactions${suffix}?startDate=${txDateRange.startDate}&endDate=${txDateRange.endDate}`;
+      case 'purchase-requests':
+        return `/api/reports/purchase-requests${suffix}`;
+      case 'fixed-assets': {
+        const params = assetConditionFilter !== 'ALL' ? `?condition=${assetConditionFilter}` : '';
+        return `/api/reports/fixed-assets${suffix}${params}`;
       }
+      case 'borrows': {
+        const p = new URLSearchParams();
+        if (borrowFilters.startDate) p.set('startDate', borrowFilters.startDate);
+        if (borrowFilters.endDate) p.set('endDate', borrowFilters.endDate);
+        if (borrowFilters.status !== 'ALL') p.set('status', borrowFilters.status);
+        if (borrowFilters.borrowerType !== 'ALL') p.set('borrowerType', borrowFilters.borrowerType);
+        const qs = p.toString();
+        return `/api/reports/borrows${suffix}${qs ? `?${qs}` : ''}`;
+      }
+    }
+  };
 
+  const generateReport = async (type: ReportType, format: 'pdf' | 'excel', preview = false) => {
+    setLoading(true);
+    try {
       if (preview) {
-        // Fetch data for preview
-        const response = await fetch(apiUrl);
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('API Error:', errorText);
-          throw new Error('Failed to fetch data for preview');
-        }
+        const response = await fetch(buildUrl(type, ''));
+        if (!response.ok) throw new Error('Failed to fetch data for preview');
         const data = await response.json();
-        
         setPreviewModal({
           isOpen: true,
           type,
           data,
-          dateRange: type === 'transactions' ? dateRange : undefined
+          dateRange: type === 'transactions' ? txDateRange : undefined,
         });
         return;
       }
 
-      // ใช้ HTMLDocs API สำหรับการสร้างรายงาน
-      const downloadUrl = format === 'pdf' 
-        ? `${apiUrl}/${format}${type === 'transactions' ? `?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}` : ''}`
-        : `${apiUrl}/${format}${type === 'transactions' ? `?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}` : ''}`;
-        
-      console.log('Downloading from:', downloadUrl);
-      
-      const response = await fetch(downloadUrl);
-      
+      const filename = {
+        'stock': 'รายงานสต็อก',
+        'transactions': 'รายงานเบิกจ่าย',
+        'purchase-requests': 'รายงานคำขอซื้อ',
+        'fixed-assets': 'รายงานครุภัณฑ์',
+        'borrows': 'รายงานยืมคืน',
+      }[type];
+
+      const response = await fetch(buildUrl(type, `/${format}`));
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('API Error:', errorText);
-        
-        let errorMessage = 'เกิดข้อผิดพลาดในการสร้างรายงาน';
-        try {
-          const errorJson = JSON.parse(errorText);
-          errorMessage = errorJson.error || errorMessage;
-        } catch {
-          errorMessage = errorText || errorMessage;
-        }
-        
-        throw new Error(errorMessage);
+        const errText = await response.text();
+        let msg = 'เกิดข้อผิดพลาดในการสร้างรายงาน';
+        try { msg = JSON.parse(errText).error || msg; } catch {}
+        throw new Error(msg);
       }
-      
-      // ดาวน์โหลดไฟล์
+
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `${filename}.${format === 'pdf' ? 'pdf' : 'xlsx'}`;
+      link.download = `${filename}_${new Date().toLocaleDateString('th-TH').replace(/\//g, '-')}.${format === 'pdf' ? 'pdf' : 'xlsx'}`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
-      
     } catch (error) {
       console.error('Error generating report:', error);
-      const errorMessage = error instanceof Error ? error.message : 'เกิดข้อผิดพลาดในการสร้างรายงาน';
-      alert(`${errorMessage}\n\nกรุณาตรวจสอบ:\n- HTMLDocs API key ใน .env\n- การเชื่อมต่ออินเทอร์เน็ต\n- Credits ใน HTMLDocs account`);
+      const msg = error instanceof Error ? error.message : 'เกิดข้อผิดพลาด';
+      alert(`${msg}\n\nกรุณาตรวจสอบ:\n- HTMLDocs API key ใน .env\n- การเชื่อมต่ออินเทอร์เน็ต`);
     } finally {
       setLoading(false);
     }
   };
 
   const handlePreviewExport = async (format: 'pdf' | 'excel') => {
-    if (!previewModal.isOpen || !previewModal.data || previewModal.data.length === 0) return;
-    
+    if (!previewModal.isOpen) return;
     setLoading(true);
-    
     try {
-      const { type } = previewModal;
-      const timestamp = new Date().toLocaleDateString('th-TH').replace(/\//g, '-');
-      const filename = `${type === 'stock' ? 'รายงานสต็อก' : 
-                          type === 'transactions' ? 'รายงานเบิกจ่าย' : 
-                          'รายงานคำขอซื้อ'}_${timestamp}`;
-
-      // สร้าง API URL
-      let apiUrl = '';
-      switch (type) {
-        case 'stock':
-          apiUrl = `/api/reports/stock/${format}`;
-          break;
-        case 'transactions':
-          const modalDateRange = previewModal.dateRange || dateRange;
-          apiUrl = `/api/reports/transactions/${format}?startDate=${modalDateRange.startDate}&endDate=${modalDateRange.endDate}`;
-          break;
-        case 'purchase-requests':
-          apiUrl = `/api/reports/purchase-requests/${format}`;
-          break;
-      }
-      
-      console.log('Fetching report from:', apiUrl);
-      
-      // ดาวน์โหลดไฟล์จาก HTMLDocs API
-      const response = await fetch(apiUrl);
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('API Error:', errorText);
-        
-        let errorMessage = 'เกิดข้อผิดพลาดในการสร้างรายงาน';
-        try {
-          const errorJson = JSON.parse(errorText);
-          errorMessage = errorJson.error || errorMessage;
-        } catch {
-          errorMessage = errorText || errorMessage;
-        }
-        
-        throw new Error(errorMessage);
-      }
-      
+      const response = await fetch(buildUrl(previewModal.type, `/${format}`));
+      if (!response.ok) throw new Error('เกิดข้อผิดพลาดในการส่งออกรายงาน');
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `${filename}.${format === 'pdf' ? 'pdf' : 'xlsx'}`;
+      link.download = `report.${format === 'pdf' ? 'pdf' : 'xlsx'}`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
-      
-      // Close modal after successful export
       setPreviewModal(prev => ({ ...prev, isOpen: false }));
-      
     } catch (error) {
-      console.error('Error exporting report:', error);
-      const errorMessage = error instanceof Error ? error.message : 'เกิดข้อผิดพลาดในการส่งออกรายงาน';
-      alert(`${errorMessage}\n\nกรุณาตรวจสอบ:\n- HTMLDocs API key ใน .env\n- การเชื่อมต่ออินเทอร์เน็ต\n- Credits ใน HTMLDocs account`);
+      alert(error instanceof Error ? error.message : 'เกิดข้อผิดพลาด');
     } finally {
       setLoading(false);
     }
   };
 
-  const reportTypes = [
-    {
-      title: 'รายงานสต็อกวัสดุ',
-      description: 'รายงานสต็อกวัสดุคงเหลือทั้งหมด',
-      icon: ChartBarIcon,
-      iconBg: 'bg-blue-50',
-      iconColor: 'text-blue-600',
-      type: 'stock' as const,
-    },
-    {
-      title: 'รายงานการเบิก-จ่าย',
-      description: 'รายงานประวัติการเบิก-จ่ายวัสดุตามช่วงวันที่',
-      icon: ClipboardDocumentListIcon,
-      iconBg: 'bg-emerald-50',
-      iconColor: 'text-emerald-600',
-      type: 'transactions' as const,
-    },
-    {
-      title: 'รายงานคำขอซื้อ',
-      description: 'รายงานคำขอซื้อและสถานะการอนุมัติ',
-      icon: ShoppingCartIcon,
-      iconBg: 'bg-violet-50',
-      iconColor: 'text-violet-600',
-      type: 'purchase-requests' as const,
-    },
-  ];
+  const inputClass = 'w-full px-2.5 py-2 border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent';
+  const selectClass = inputClass;
 
   return (
     <div className="space-y-6">
@@ -283,7 +233,7 @@ export default function ReportsPage() {
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="border-l-4 border-orange-600 px-6 py-5">
           <h1 className="text-xl font-bold text-slate-800">รายงาน</h1>
-          <p className="text-sm text-slate-500 mt-0.5">สร้างและดาวน์โหลดรายงาน PDF และ Excel</p>
+          <p className="text-sm text-slate-500 mt-0.5">รายงานครอบคลุมทุกส่วนของระบบ — สต็อก เบิกจ่าย ครุภัณฑ์ ยืม-คืน และคำขอซื้อ</p>
         </div>
       </div>
 
@@ -295,20 +245,29 @@ export default function ReportsPage() {
           </div>
           <p className="text-2xl font-bold text-slate-800">{stats.totalMaterials}</p>
           <p className="text-xs text-slate-500 mt-0.5">วัสดุทั้งหมด</p>
+          {stats.lowStockMaterials > 0 && (
+            <p className="text-xs text-amber-600 mt-1 font-medium">⚠ สต็อกต่ำ {stats.lowStockMaterials} รายการ</p>
+          )}
         </div>
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-          <div className="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center mb-3">
-            <ExclamationTriangleIcon className="h-5 w-5 text-amber-500" />
+          <div className="w-9 h-9 rounded-xl bg-orange-50 flex items-center justify-center mb-3">
+            <WrenchScrewdriverIcon className="h-5 w-5 text-orange-600" />
           </div>
-          <p className="text-2xl font-bold text-amber-600">{stats.lowStockMaterials}</p>
-          <p className="text-xs text-slate-500 mt-0.5">สต็อกต่ำ</p>
+          <p className="text-2xl font-bold text-slate-800">{stats.totalAssets}</p>
+          <p className="text-xs text-slate-500 mt-0.5">ครุภัณฑ์ทั้งหมด</p>
+          {stats.borrowedAssets > 0 && (
+            <p className="text-xs text-blue-600 mt-1 font-medium">📦 กำลังยืม {stats.borrowedAssets} รายการ</p>
+          )}
         </div>
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-          <div className="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center mb-3">
-            <ClipboardDocumentListIcon className="h-5 w-5 text-emerald-600" />
+          <div className="w-9 h-9 rounded-xl bg-teal-50 flex items-center justify-center mb-3">
+            <ArrowsRightLeftIcon className="h-5 w-5 text-teal-600" />
           </div>
-          <p className="text-2xl font-bold text-slate-800">{stats.totalTransactions}</p>
-          <p className="text-xs text-slate-500 mt-0.5">รายการเบิก-จ่าย</p>
+          <p className="text-2xl font-bold text-slate-800">{stats.totalBorrows}</p>
+          <p className="text-xs text-slate-500 mt-0.5">รายการยืมทั้งหมด</p>
+          {stats.overdueAssets > 0 && (
+            <p className="text-xs text-red-600 mt-1 font-medium">🔴 เกินกำหนด {stats.overdueAssets} รายการ</p>
+          )}
         </div>
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
           <div className="w-9 h-9 rounded-xl bg-violet-50 flex items-center justify-center mb-3">
@@ -319,87 +278,150 @@ export default function ReportsPage() {
         </div>
       </div>
 
-      {/* Report Cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        {reportTypes.map((report) => {
-          const Icon = report.icon;
-          const isTransactions = report.type === 'transactions';
-          return (
-            <div key={report.type} className="bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col">
-              {/* Card header */}
-              <div className="p-5 border-b border-slate-100">
-                <div className="flex items-center gap-3 mb-1">
-                  <div className={`w-10 h-10 rounded-xl ${report.iconBg} flex items-center justify-center shrink-0`}>
-                    <Icon className={`h-5 w-5 ${report.iconColor}`} />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-slate-800 text-sm leading-tight">{report.title}</h3>
-                    <p className="text-xs text-slate-400 mt-0.5">{report.description}</p>
-                  </div>
+      {/* Report Cards — Row 1: วัสดุสิ้นเปลือง + เบิกจ่าย */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        {/* สต็อกวัสดุ */}
+        <ReportCard
+          title="รายงานสต็อกวัสดุสิ้นเปลือง"
+          description="สต็อกคงเหลือและสถานะวัสดุทั้งหมด"
+          iconBg="bg-blue-50"
+          iconColor="text-blue-600"
+          Icon={ChartBarIcon}
+          onPreview={() => generateReport('stock', 'pdf', true)}
+          onPDF={() => generateReport('stock', 'pdf')}
+          onExcel={() => generateReport('stock', 'excel')}
+          loading={loading}
+        />
+
+        {/* เบิก-จ่าย */}
+        <ReportCard
+          title="รายงานการเบิก-จ่ายวัสดุ"
+          description="ประวัติการเบิก-จ่ายตามช่วงวันที่"
+          iconBg="bg-emerald-50"
+          iconColor="text-emerald-600"
+          Icon={ClipboardDocumentListIcon}
+          onPreview={() => generateReport('transactions', 'pdf', true)}
+          onPDF={() => generateReport('transactions', 'pdf')}
+          onExcel={() => generateReport('transactions', 'excel')}
+          loading={loading}
+          filters={
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="block text-xs text-slate-400 mb-1">เริ่มต้น</label>
+                <input type="date" value={txDateRange.startDate}
+                  onChange={e => setTxDateRange(p => ({ ...p, startDate: e.target.value }))}
+                  className={inputClass} />
+              </div>
+              <div>
+                <label className="block text-xs text-slate-400 mb-1">สิ้นสุด</label>
+                <input type="date" value={txDateRange.endDate}
+                  onChange={e => setTxDateRange(p => ({ ...p, endDate: e.target.value }))}
+                  className={inputClass} />
+              </div>
+            </div>
+          }
+        />
+      </div>
+
+      {/* Row 2: ครุภัณฑ์ + ยืม-คืน */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        {/* ครุภัณฑ์ */}
+        <ReportCard
+          title="รายงานครุภัณฑ์ทั้งหมด"
+          description="ทะเบียนครุภัณฑ์ สภาพ ตำแหน่ง และสถานะการยืม"
+          iconBg="bg-orange-50"
+          iconColor="text-orange-600"
+          Icon={WrenchScrewdriverIcon}
+          onPreview={() => generateReport('fixed-assets', 'pdf', true)}
+          onPDF={() => generateReport('fixed-assets', 'pdf')}
+          onExcel={() => generateReport('fixed-assets', 'excel')}
+          loading={loading}
+          filters={
+            <div>
+              <label className="block text-xs text-slate-400 mb-1">กรองตามสภาพ</label>
+              <select value={assetConditionFilter}
+                onChange={e => setAssetConditionFilter(e.target.value)}
+                className={selectClass}>
+                <option value="ALL">ทุกสภาพ</option>
+                <option value="GOOD">ดี</option>
+                <option value="NEEDS_REPAIR">รอซ่อม</option>
+                <option value="DAMAGED">ชำรุด</option>
+                <option value="DISPOSED">จำหน่ายแล้ว</option>
+              </select>
+            </div>
+          }
+        />
+
+        {/* ยืม-คืน */}
+        <ReportCard
+          title="รายงานการยืม-คืนครุภัณฑ์"
+          description="ประวัติการยืมแยกตามประเภทผู้ยืม สถานะ และช่วงเวลา"
+          iconBg="bg-teal-50"
+          iconColor="text-teal-600"
+          Icon={ArrowsRightLeftIcon}
+          onPreview={() => generateReport('borrows', 'pdf', true)}
+          onPDF={() => generateReport('borrows', 'pdf')}
+          onExcel={() => generateReport('borrows', 'excel')}
+          loading={loading}
+          filters={
+            <div className="space-y-2">
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-xs text-slate-400 mb-1">เริ่มต้น</label>
+                  <input type="date" value={borrowFilters.startDate}
+                    onChange={e => setBorrowFilters(p => ({ ...p, startDate: e.target.value }))}
+                    className={inputClass} />
+                </div>
+                <div>
+                  <label className="block text-xs text-slate-400 mb-1">สิ้นสุด</label>
+                  <input type="date" value={borrowFilters.endDate}
+                    onChange={e => setBorrowFilters(p => ({ ...p, endDate: e.target.value }))}
+                    className={inputClass} />
                 </div>
               </div>
-
-              {/* Date range — transactions only */}
-              {isTransactions && (
-                <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/60">
-                  <p className="text-xs font-medium text-slate-500 mb-2.5">ช่วงวันที่</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="block text-xs text-slate-400 mb-1">เริ่มต้น</label>
-                      <input
-                        type="date"
-                        value={dateRange.startDate}
-                        onChange={(e) => setDateRange(prev => ({ ...prev, startDate: e.target.value }))}
-                        className="w-full px-2.5 py-2 border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs text-slate-400 mb-1">สิ้นสุด</label>
-                      <input
-                        type="date"
-                        value={dateRange.endDate}
-                        onChange={(e) => setDateRange(prev => ({ ...prev, endDate: e.target.value }))}
-                        className="w-full px-2.5 py-2 border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                      />
-                    </div>
-                  </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-xs text-slate-400 mb-1">สถานะ</label>
+                  <select value={borrowFilters.status}
+                    onChange={e => setBorrowFilters(p => ({ ...p, status: e.target.value }))}
+                    className={selectClass}>
+                    <option value="ALL">ทุกสถานะ</option>
+                    <option value="BORROWED">กำลังยืม</option>
+                    <option value="RETURNED">คืนแล้ว</option>
+                    <option value="OVERDUE">เกินกำหนด</option>
+                  </select>
                 </div>
-              )}
-
-              {/* Actions */}
-              <div className="p-5 mt-auto space-y-2">
-                {/* Preview */}
-                <button
-                  onClick={() => generateReport(report.type, 'pdf', true)}
-                  disabled={loading}
-                  className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-600 rounded-xl text-sm font-medium transition-colors"
-                >
-                  <EyeIcon className="h-4 w-4" />
-                  พรีวิวรายงาน
-                </button>
-                {/* Download row */}
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    onClick={() => generateReport(report.type, 'pdf')}
-                    disabled={loading}
-                    className="inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-orange-600 hover:bg-orange-700 disabled:opacity-50 text-white rounded-xl text-sm font-medium transition-colors"
-                  >
-                    <DocumentArrowDownIcon className="h-4 w-4 shrink-0" />
-                    PDF
-                  </button>
-                  <button
-                    onClick={() => generateReport(report.type, 'excel')}
-                    disabled={loading}
-                    className="inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl text-sm font-medium transition-colors"
-                  >
-                    <TableCellsIcon className="h-4 w-4 shrink-0" />
-                    Excel
-                  </button>
+                <div>
+                  <label className="block text-xs text-slate-400 mb-1">ประเภทผู้ยืม</label>
+                  <select value={borrowFilters.borrowerType}
+                    onChange={e => setBorrowFilters(p => ({ ...p, borrowerType: e.target.value }))}
+                    className={selectClass}>
+                    <option value="ALL">ทุกประเภท</option>
+                    <option value="STUDENT">นักศึกษา</option>
+                    <option value="LECTURER">อาจารย์</option>
+                    <option value="FACULTY">คณะ</option>
+                    <option value="STAFF">เจ้าหน้าที่</option>
+                  </select>
                 </div>
               </div>
             </div>
-          );
-        })}
+          }
+        />
+      </div>
+
+      {/* Row 3: คำขอซื้อ */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <ReportCard
+          title="รายงานคำขอซื้อ"
+          description="คำขอซื้อและสถานะการอนุมัติทั้งหมด"
+          iconBg="bg-violet-50"
+          iconColor="text-violet-600"
+          Icon={ShoppingCartIcon}
+          onPreview={() => generateReport('purchase-requests', 'pdf', true)}
+          onPDF={() => generateReport('purchase-requests', 'pdf')}
+          onExcel={() => generateReport('purchase-requests', 'excel')}
+          loading={loading}
+        />
       </div>
 
       {/* Loading overlay */}
@@ -423,6 +445,65 @@ export default function ReportsPage() {
           onExport={handlePreviewExport}
         />
       )}
+    </div>
+  );
+}
+
+/* ──────────────── ReportCard component ──────────────── */
+interface ReportCardProps {
+  title: string;
+  description: string;
+  Icon: React.ElementType;
+  iconBg: string;
+  iconColor: string;
+  onPreview: () => void;
+  onPDF: () => void;
+  onExcel: () => void;
+  loading: boolean;
+  filters?: React.ReactNode;
+}
+
+function ReportCard({ title, description, Icon, iconBg, iconColor, onPreview, onPDF, onExcel, loading, filters }: ReportCardProps) {
+  return (
+    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col">
+      <div className="p-5 border-b border-slate-100">
+        <div className="flex items-center gap-3 mb-1">
+          <div className={`w-10 h-10 rounded-xl ${iconBg} flex items-center justify-center shrink-0`}>
+            <Icon className={`h-5 w-5 ${iconColor}`} />
+          </div>
+          <div>
+            <h3 className="font-semibold text-slate-800 text-sm leading-tight">{title}</h3>
+            <p className="text-xs text-slate-400 mt-0.5">{description}</p>
+          </div>
+        </div>
+      </div>
+
+      {filters && (
+        <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/60">
+          <p className="text-xs font-medium text-slate-500 mb-2.5">ตัวกรอง</p>
+          {filters}
+        </div>
+      )}
+
+      <div className="p-5 mt-auto space-y-2">
+        <button onClick={onPreview} disabled={loading}
+          className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-600 rounded-xl text-sm font-medium transition-colors">
+          <EyeIcon className="h-4 w-4" />
+          พรีวิวรายงาน
+        </button>
+        <div className="grid grid-cols-2 gap-2">
+          <button onClick={onPDF} disabled={loading}
+            className="inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-orange-600 hover:bg-orange-700 disabled:opacity-50 text-white rounded-xl text-sm font-medium transition-colors">
+            <DocumentArrowDownIcon className="h-4 w-4 shrink-0" />
+            PDF
+          </button>
+          <button onClick={onExcel} disabled={loading}
+            className="inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl text-sm font-medium transition-colors">
+            <TableCellsIcon className="h-4 w-4 shrink-0" />
+            Excel
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

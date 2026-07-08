@@ -77,13 +77,23 @@ export default function AssetsPage() {
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [paginatedAssets, setPaginatedAssets] = useState<Asset[]>([]);
 
+  type BorrowerType = 'STUDENT' | 'LECTURER' | 'FACULTY' | 'STAFF';
+  const BORROWER_TYPE_LABELS: Record<BorrowerType, string> = {
+    STUDENT: 'นักศึกษา',
+    LECTURER: 'อาจารย์',
+    FACULTY: 'คณะ',
+    STAFF: 'เจ้าหน้าที่',
+  };
+
   const [borrowFormData, setBorrowFormData] = useState({
     userId: '',
+    borrowerType: 'LECTURER' as BorrowerType,
     expectedReturnDate: '',
     purpose: '',
     note: '',
     studentName: '',
     studentId: '',
+    borrowOnBehalfOf: '',
   });
   const [returnFormData, setReturnFormData] = useState({
     borrowId: '',
@@ -318,11 +328,13 @@ export default function AssetsPage() {
         fetchBorrows();
         setBorrowFormData({
           userId: '',
+          borrowerType: 'LECTURER',
           expectedReturnDate: '',
           purpose: '',
           note: '',
           studentName: '',
           studentId: '',
+          borrowOnBehalfOf: '',
         });
         setShowBorrowForm(false);
         setSelectedAsset(null);
@@ -594,20 +606,136 @@ export default function AssetsPage() {
               </button>
             </div>
             <form onSubmit={handleBorrowSubmit} className="space-y-4">
+              {/* ประเภทผู้ยืม */}
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">ผู้ยืม *</label>
-                <select
-                  value={borrowFormData.userId}
-                  onChange={(e) => setBorrowFormData({ ...borrowFormData, userId: e.target.value })}
-                  className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                  required
-                >
-                  <option value="">เลือกผู้ยืม</option>
-                  {users.map((u) => (
-                    <option key={u.id} value={u.id}>{u.name} ({u.email})</option>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">ประเภทผู้ยืม *</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {(['STUDENT', 'LECTURER', 'FACULTY', 'STAFF'] as BorrowerType[]).map(t => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setBorrowFormData(p => ({ ...p, borrowerType: t, studentName: '', studentId: '', borrowOnBehalfOf: '' }))}
+                      className={`px-3 py-2 rounded-xl text-xs font-semibold border-2 transition-colors ${
+                        borrowFormData.borrowerType === t
+                          ? 'border-orange-500 bg-orange-50 text-orange-700'
+                          : 'border-slate-200 text-slate-600 hover:border-slate-300'
+                      }`}
+                    >
+                      {BORROWER_TYPE_LABELS[t]}
+                    </button>
                   ))}
-                </select>
+                </div>
               </div>
+
+              {/* นักศึกษา */}
+              {borrowFormData.borrowerType === 'STUDENT' && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1.5">ชื่อนักศึกษา *</label>
+                    <input
+                      type="text"
+                      value={borrowFormData.studentName}
+                      onChange={(e) => setBorrowFormData({ ...borrowFormData, studentName: e.target.value })}
+                      className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      placeholder="ชื่อ-นามสกุลนักศึกษา"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1.5">รหัสนักศึกษา *</label>
+                    <input
+                      type="text"
+                      value={borrowFormData.studentId}
+                      onChange={(e) => setBorrowFormData({ ...borrowFormData, studentId: e.target.value })}
+                      className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      placeholder="เช่น 661xxxxxxx"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1.5">อาจารย์/เจ้าหน้าที่ผู้รับรอง *</label>
+                    <select
+                      value={borrowFormData.userId}
+                      onChange={(e) => setBorrowFormData({ ...borrowFormData, userId: e.target.value })}
+                      className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      required
+                    >
+                      <option value="">เลือกอาจารย์/เจ้าหน้าที่ผู้รับรอง</option>
+                      {users.map((u) => (
+                        <option key={u.id} value={u.id}>{u.name} ({u.email})</option>
+                      ))}
+                    </select>
+                  </div>
+                </>
+              )}
+
+              {/* อาจารย์ */}
+              {borrowFormData.borrowerType === 'LECTURER' && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">อาจารย์ผู้ยืม *</label>
+                  <select
+                    value={borrowFormData.userId}
+                    onChange={(e) => setBorrowFormData({ ...borrowFormData, userId: e.target.value })}
+                    className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    required
+                  >
+                    <option value="">เลือกอาจารย์ผู้ยืม</option>
+                    {users.map((u) => (
+                      <option key={u.id} value={u.id}>{u.name} ({u.email})</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* คณะ */}
+              {borrowFormData.borrowerType === 'FACULTY' && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1.5">ผู้รับผิดชอบ *</label>
+                    <select
+                      value={borrowFormData.userId}
+                      onChange={(e) => setBorrowFormData({ ...borrowFormData, userId: e.target.value })}
+                      className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      required
+                    >
+                      <option value="">เลือกผู้รับผิดชอบ</option>
+                      {users.map((u) => (
+                        <option key={u.id} value={u.id}>{u.name} ({u.email})</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1.5">ยืมในนามของ *</label>
+                    <input
+                      type="text"
+                      value={borrowFormData.borrowOnBehalfOf}
+                      onChange={(e) => setBorrowFormData({ ...borrowFormData, borrowOnBehalfOf: e.target.value })}
+                      className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      placeholder="ระบุชื่อ/หน่วยงานที่ยืมในนาม"
+                      required
+                    />
+                  </div>
+                </>
+              )}
+
+              {/* เจ้าหน้าที่ */}
+              {borrowFormData.borrowerType === 'STAFF' && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">เจ้าหน้าที่ผู้ยืม *</label>
+                  <select
+                    value={borrowFormData.userId}
+                    onChange={(e) => setBorrowFormData({ ...borrowFormData, userId: e.target.value })}
+                    className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    required
+                  >
+                    <option value="">เลือกเจ้าหน้าที่ผู้ยืม</option>
+                    {users.map((u) => (
+                      <option key={u.id} value={u.id}>{u.name} ({u.email})</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1.5">วันที่คาดว่าจะคืน</label>
                 <input
@@ -627,29 +755,6 @@ export default function AssetsPage() {
                   className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   placeholder="เช่น สำหรับการสอน, งานวิจัย"
                 />
-              </div>
-              <div className="border-t border-slate-100 pt-4 space-y-3">
-                <p className="text-xs font-semibold text-slate-500 uppercase">ข้อมูลนักศึกษา (ถ้ามี)</p>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">ชื่อนักศึกษา</label>
-                  <input
-                    type="text"
-                    value={borrowFormData.studentName}
-                    onChange={(e) => setBorrowFormData({ ...borrowFormData, studentName: e.target.value })}
-                    className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                    placeholder="กรอกชื่อนักศึกษา (ถ้ามี)"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">รหัสนักศึกษา</label>
-                  <input
-                    type="text"
-                    value={borrowFormData.studentId}
-                    onChange={(e) => setBorrowFormData({ ...borrowFormData, studentId: e.target.value })}
-                    className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                    placeholder="เช่น 661xxxxxxx"
-                  />
-                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1.5">หมายเหตุ</label>

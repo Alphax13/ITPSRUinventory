@@ -768,9 +768,60 @@ export function generateBorrowFormHTML(data: {
   note?: string;
   studentName?: string;
   studentId?: string;
+  borrowOnBehalfOf?: string;
+  borrowerType?: string;
   adminName?: string;
 }): string {
-  const borrowerName = data.studentName || data.borrower;
+  const bType = data.borrowerType || (data.studentName ? 'STUDENT' : 'LECTURER');
+
+  // ชื่อผู้ยืมจริงและป้ายกำกับตามประเภท
+  const getBorrowerInfo = () => {
+    switch (bType) {
+      case 'STUDENT':
+        return {
+          label: 'ชื่อผู้ยืม (นักศึกษา)',
+          name: data.studentName || data.borrower,
+          extra: [
+            buildDottedField('รหัสนักศึกษา', data.studentId || ''),
+            buildDottedField('อาจารย์/เจ้าหน้าที่ผู้รับรอง', data.borrower),
+            buildDottedField('หน่วยงาน', data.department),
+          ].join(''),
+        };
+      case 'LECTURER':
+        return {
+          label: 'ชื่ออาจารย์ผู้ยืม',
+          name: data.borrower,
+          extra: buildDottedField('หน่วยงาน/ภาควิชา', data.department),
+        };
+      case 'FACULTY':
+        return {
+          label: 'ผู้รับผิดชอบ (คณะ)',
+          name: data.borrower,
+          extra: [
+            buildDottedField('ยืมในนามของ', data.borrowOnBehalfOf || ''),
+            buildDottedField('หน่วยงาน', data.department),
+          ].join(''),
+        };
+      case 'STAFF':
+        return {
+          label: 'ชื่อเจ้าหน้าที่ผู้ยืม',
+          name: data.borrower,
+          extra: buildDottedField('หน่วยงาน', data.department),
+        };
+      default:
+        return {
+          label: 'ชื่อผู้ยืม',
+          name: data.studentName || data.borrower,
+          extra: buildDottedField('หน่วยงาน', data.department),
+        };
+    }
+  };
+
+  const borrowerInfo = getBorrowerInfo();
+  const displayName = bType === 'STUDENT' ? (data.studentName || data.borrower) : data.borrower;
+
+  // ป้ายลายเซ็นที่สองตามประเภทผู้ยืม
+  const secondSignTitle = bType === 'STUDENT' ? 'อาจารย์/เจ้าหน้าที่ผู้รับรอง' : 'ผู้อนุมัติ';
 
   const body = `
     ${buildOfficialHeader({
@@ -793,10 +844,8 @@ export function generateBorrowFormHTML(data: {
 
       <div class="form-block__section">
         <div class="form-block__section-title">2. ข้อมูลผู้ยืม</div>
-        ${data.studentName ? buildDottedField('ชื่อผู้ยืม (นักศึกษา)', borrowerName) : buildDottedField('ชื่อผู้ยืม (อาจารย์/เจ้าหน้าที่)', borrowerName)}
-        ${data.studentName ? buildDottedField('รหัสนักศึกษา', data.studentId || '') : ''}
-        ${data.studentName ? buildDottedField('อาจารย์/เจ้าหน้าที่ผู้รับรอง', data.borrower) : buildDottedField('หน่วยงาน', data.department)}
-        ${data.studentName ? buildDottedField('หน่วยงาน', data.department) : ''}
+        ${buildDottedField(borrowerInfo.label, borrowerInfo.name)}
+        ${borrowerInfo.extra}
         ${buildDottedField('วัตถุประสงค์ในการยืม', data.purpose)}
       </div>
 
@@ -830,7 +879,7 @@ export function generateBorrowFormHTML(data: {
 
     ${buildSignatureSection([
       { title: 'ผู้ยืม' },
-      { title: data.studentName ? 'อาจารย์/เจ้าหน้าที่ผู้รับรอง' : 'ผู้อนุมัติ' },
+      { title: secondSignTitle },
       { title: 'เจ้าหน้าที่พัสดุผู้ส่งมอบ' },
     ])}
 
@@ -839,7 +888,7 @@ export function generateBorrowFormHTML(data: {
     <div class="signature-section">
       <div class="signature-section__title">บันทึกการคืนครุภัณฑ์</div>
       <div style="display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4mm 8mm;">
-        ${buildDottedField('ผู้คืนครุภัณฑ์', borrowerName)}
+        ${buildDottedField('ผู้คืนครุภัณฑ์', displayName)}
         ${buildDottedField('เจ้าหน้าที่พัสดุผู้ตรวจรับ', '')}
       </div>
     </div>
@@ -941,6 +990,8 @@ export function generateMultiBorrowFormHTML(data: {
   expectedReturnDate: string;
   studentName?: string;
   studentId?: string;
+  borrowOnBehalfOf?: string;
+  borrowerType?: string;
   note?: string;
   adminName?: string;
   assets: Array<{
@@ -965,7 +1016,40 @@ export function generateMultiBorrowFormHTML(data: {
     )
     .join('');
 
-  const borrowerName = data.studentName || data.borrower;
+  const bType = data.borrowerType || (data.studentName ? 'STUDENT' : 'LECTURER');
+
+  const getBorrowerSection = () => {
+    switch (bType) {
+      case 'STUDENT':
+        return [
+          buildDottedField('ชื่อผู้ยืม (นักศึกษา)', data.studentName || data.borrower),
+          buildDottedField('รหัสนักศึกษา', data.studentId || ''),
+          buildDottedField('อาจารย์/เจ้าหน้าที่ผู้รับรอง', data.borrower),
+          buildDottedField('หน่วยงาน', data.department),
+        ].join('');
+      case 'LECTURER':
+        return [
+          buildDottedField('ชื่ออาจารย์ผู้ยืม', data.borrower),
+          buildDottedField('หน่วยงาน/ภาควิชา', data.department),
+        ].join('');
+      case 'FACULTY':
+        return [
+          buildDottedField('ผู้รับผิดชอบ (คณะ)', data.borrower),
+          buildDottedField('ยืมในนามของ', data.borrowOnBehalfOf || ''),
+          buildDottedField('หน่วยงาน', data.department),
+        ].join('');
+      case 'STAFF':
+        return [
+          buildDottedField('ชื่อเจ้าหน้าที่ผู้ยืม', data.borrower),
+          buildDottedField('หน่วยงาน', data.department),
+        ].join('');
+      default:
+        return [
+          buildDottedField('ชื่อผู้ยืม', data.studentName || data.borrower),
+          buildDottedField('หน่วยงาน', data.department),
+        ].join('');
+    }
+  };
 
   const body = `
     ${buildOfficialHeader({
@@ -988,9 +1072,7 @@ export function generateMultiBorrowFormHTML(data: {
 
       <div class="form-block__section">
         <div class="form-block__section-title">2. ข้อมูลผู้ยืม</div>
-        ${data.studentName ? buildDottedField('ชื่อผู้ยืม (นักศึกษา)', borrowerName) : buildDottedField('ชื่อผู้ยืม', borrowerName)}
-        ${data.studentName ? buildDottedField('รหัสนักศึกษา', data.studentId || '') : ''}
-        ${buildDottedField('หน่วยงาน', data.department)}
+        ${getBorrowerSection()}
         ${buildDottedField('วัตถุประสงค์', data.purpose)}
         ${data.note ? buildDottedField('หมายเหตุ', data.note) : ''}
       </div>
@@ -1042,5 +1124,216 @@ export function generateMultiBorrowFormHTML(data: {
   return buildHtmlDocument({
     title: 'แบบฟอร์มยืมคืนครุภัณฑ์หลายรายการ',
     body,
+  });
+}
+
+/* ====================== 7) รายงานครุภัณฑ์ทั้งหมด ====================== */
+
+export function generateFixedAssetReportHTML(data: {
+  assetNumber: string;
+  name: string;
+  category: string;
+  brand?: string;
+  model?: string;
+  condition: string;
+  location: string;
+  purchaseDate?: string;
+  purchasePrice?: number;
+  borrowStatus: string;
+}[]): string {
+  const conditionLabel = (c: string) => {
+    switch (c) {
+      case 'GOOD': return 'ดี';
+      case 'DAMAGED': return 'ชำรุด';
+      case 'NEEDS_REPAIR': return 'รอซ่อม';
+      case 'DISPOSED': return 'จำหน่ายแล้ว';
+      default: return c;
+    }
+  };
+
+  const conditionGroups = {
+    GOOD: data.filter(a => a.condition === 'GOOD').length,
+    NEEDS_REPAIR: data.filter(a => a.condition === 'NEEDS_REPAIR').length,
+    DAMAGED: data.filter(a => a.condition === 'DAMAGED').length,
+    DISPOSED: data.filter(a => a.condition === 'DISPOSED').length,
+    BORROWED: data.filter(a => a.borrowStatus === 'กำลังถูกยืม').length,
+  };
+
+  const rows = data.map((asset, index) => `
+    <tr>
+      <td class="official-table__center">${index + 1}</td>
+      <td class="official-table__center"><strong>${escapeHtml(asset.assetNumber)}</strong></td>
+      <td>${escapeHtml(asset.name)}</td>
+      <td>${escapeHtml(asset.category)}</td>
+      <td>${escapeHtml(asset.brand || '-')}</td>
+      <td>${escapeHtml(conditionLabel(asset.condition))}</td>
+      <td>${escapeHtml(asset.location)}</td>
+      <td>${asset.purchaseDate ? escapeHtml(formatThaiDate(asset.purchaseDate)) : '-'}</td>
+      <td class="official-table__center">${escapeHtml(asset.borrowStatus)}</td>
+    </tr>
+  `).join('');
+
+  const body = `
+    ${buildOfficialHeader({
+      title: 'รายงานครุภัณฑ์ทั้งหมด',
+      orgLines: ['สาขาวิชาเทคโนโลยีสารสนเทศ', 'มหาวิทยาลัยราชภัฏพิบูลสงคราม'],
+      emblemUrl: EMBLEM_URL,
+      monochrome: true,
+      docMeta: `วันที่พิมพ์ ${formatThaiDateTime()}`,
+    })}
+
+    ${buildSummary([
+      { label: 'ครุภัณฑ์ทั้งหมด', value: String(data.length) },
+      { label: 'สภาพดี', value: String(conditionGroups.GOOD) },
+      { label: 'รอซ่อม', value: String(conditionGroups.NEEDS_REPAIR) },
+      { label: 'ชำรุด', value: String(conditionGroups.DAMAGED) },
+      { label: 'กำลังถูกยืม', value: String(conditionGroups.BORROWED) },
+    ])}
+
+    <table class="official-table">
+      ${buildTableHeader([
+        { label: 'ลำดับ', width: '5%' },
+        { label: 'เลขครุภัณฑ์', width: '13%' },
+        { label: 'ชื่อครุภัณฑ์', width: '22%' },
+        { label: 'หมวดหมู่', width: '12%' },
+        { label: 'ยี่ห้อ', width: '10%' },
+        { label: 'สภาพ', width: '9%' },
+        { label: 'ตำแหน่ง', width: '13%' },
+        { label: 'วันที่ซื้อ', width: '10%' },
+        { label: 'สถานะ', width: '6%' },
+      ])}
+      <tbody>${rows}</tbody>
+    </table>
+
+    ${buildOfficialFooter()}
+  `;
+
+  return buildHtmlDocument({
+    title: 'รายงานครุภัณฑ์ทั้งหมด',
+    body,
+    pageMargin: '10mm',
+  });
+}
+
+/* ====================== 8) รายงานการยืม-คืนครุภัณฑ์ ====================== */
+
+export function generateBorrowReportHTML(
+  data: {
+    borrowDate: string;
+    assetNumber: string;
+    assetName: string;
+    borrowerType: string;
+    borrowerName: string;
+    studentName?: string;
+    studentId?: string;
+    borrowOnBehalfOf?: string;
+    expectedReturnDate?: string;
+    actualReturnDate?: string;
+    status: string;
+    purpose?: string;
+  }[],
+  filters?: { startDate?: string; endDate?: string; status?: string; borrowerType?: string }
+): string {
+  const statusLabel = (s: string) => {
+    switch (s) {
+      case 'BORROWED': return 'กำลังยืม';
+      case 'RETURNED': return 'คืนแล้ว';
+      case 'OVERDUE': return 'เกินกำหนด';
+      case 'LOST': return 'สูญหาย';
+      default: return s;
+    }
+  };
+
+  const borrowerTypeLabel = (t: string) => {
+    switch (t) {
+      case 'STUDENT': return 'นักศึกษา';
+      case 'LECTURER': return 'อาจารย์';
+      case 'FACULTY': return 'คณะ';
+      case 'STAFF': return 'เจ้าหน้าที่';
+      default: return t;
+    }
+  };
+
+  const stats = {
+    total: data.length,
+    borrowed: data.filter(b => b.status === 'BORROWED').length,
+    returned: data.filter(b => b.status === 'RETURNED').length,
+    overdue: data.filter(b => {
+      if (b.status !== 'BORROWED' || !b.expectedReturnDate) return false;
+      return new Date(b.expectedReturnDate) < new Date();
+    }).length,
+  };
+
+  const rows = data.map((borrow, index) => {
+    const primaryName = borrow.studentName || borrow.borrowerName;
+    const subInfo = borrow.studentName
+      ? `${borrow.studentId || ''} / รับรองโดย ${borrow.borrowerName}`
+      : borrow.borrowOnBehalfOf
+      ? `ในนาม: ${borrow.borrowOnBehalfOf}`
+      : '';
+
+    return `
+      <tr>
+        <td class="official-table__center">${index + 1}</td>
+        <td>${escapeHtml(formatThaiDate(borrow.borrowDate))}</td>
+        <td class="official-table__center"><strong>${escapeHtml(borrow.assetNumber)}</strong></td>
+        <td>${escapeHtml(borrow.assetName)}</td>
+        <td class="official-table__center">${escapeHtml(borrowerTypeLabel(borrow.borrowerType))}</td>
+        <td>${escapeHtml(primaryName)}${subInfo ? `<br/><small style="color:#64748b">${escapeHtml(subInfo)}</small>` : ''}</td>
+        <td class="official-table__center">${borrow.expectedReturnDate ? escapeHtml(formatThaiDate(borrow.expectedReturnDate)) : '-'}</td>
+        <td class="official-table__center">${borrow.actualReturnDate ? escapeHtml(formatThaiDate(borrow.actualReturnDate)) : '-'}</td>
+        <td class="official-table__center">${escapeHtml(statusLabel(borrow.status))}</td>
+      </tr>
+    `;
+  }).join('');
+
+  const filterMeta = filters
+    ? [
+        filters.startDate && filters.endDate
+          ? `ช่วงวันที่: ${formatThaiDate(filters.startDate)} – ${formatThaiDate(filters.endDate)}`
+          : '',
+        filters.status && filters.status !== 'ALL' ? `สถานะ: ${statusLabel(filters.status)}` : '',
+        filters.borrowerType && filters.borrowerType !== 'ALL' ? `ประเภทผู้ยืม: ${borrowerTypeLabel(filters.borrowerType)}` : '',
+      ].filter(Boolean).join('  |  ')
+    : '';
+
+  const body = `
+    ${buildOfficialHeader({
+      title: 'รายงานการยืม-คืนครุภัณฑ์',
+      orgLines: ['สาขาวิชาเทคโนโลยีสารสนเทศ', 'มหาวิทยาลัยราชภัฏพิบูลสงคราม'],
+      emblemUrl: EMBLEM_URL,
+      monochrome: true,
+      docMeta: `วันที่พิมพ์ ${formatThaiDateTime()}${filterMeta ? `<br/>${filterMeta}` : ''}`,
+    })}
+
+    ${buildSummary([
+      { label: 'รายการทั้งหมด', value: String(stats.total) },
+      { label: 'กำลังยืม', value: String(stats.borrowed) },
+      { label: 'คืนแล้ว', value: String(stats.returned) },
+      { label: 'เกินกำหนด', value: String(stats.overdue) },
+    ])}
+
+    <table class="official-table">
+      ${buildTableHeader([
+        { label: 'ลำดับ', width: '5%' },
+        { label: 'วันที่ยืม', width: '11%' },
+        { label: 'เลขครุภัณฑ์', width: '11%' },
+        { label: 'ชื่อครุภัณฑ์', width: '20%' },
+        { label: 'ประเภท', width: '8%' },
+        { label: 'ผู้ยืม', width: '18%' },
+        { label: 'กำหนดคืน', width: '11%' },
+        { label: 'คืนจริง', width: '10%' },
+        { label: 'สถานะ', width: '6%' },
+      ])}
+      <tbody>${rows}</tbody>
+    </table>
+
+    ${buildOfficialFooter()}
+  `;
+
+  return buildHtmlDocument({
+    title: 'รายงานการยืม-คืนครุภัณฑ์',
+    body,
+    pageMargin: '10mm',
   });
 }

@@ -103,6 +103,8 @@ export async function POST(request: Request) {
         : new Date(firstBorrow.borrowDate.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString(),
       studentName: firstBorrow.studentName || undefined,
       studentId: firstBorrow.studentId || undefined,
+      borrowOnBehalfOf: firstBorrow.borrowOnBehalfOf || undefined,
+      borrowerType: firstBorrow.borrowerType || 'LECTURER',
       note: firstBorrow.note || undefined,
       adminName: admin?.name || 'เจ้าหน้าที่',
       assets

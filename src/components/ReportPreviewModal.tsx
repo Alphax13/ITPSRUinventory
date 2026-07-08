@@ -19,7 +19,7 @@ const parseItemsToNames = (itemsJson: string): string[] => {
 interface ReportPreviewModalProps {
   isOpen: boolean;
   onClose: () => void;
-  reportType: 'stock' | 'transactions' | 'purchase-requests';
+  reportType: 'stock' | 'transactions' | 'purchase-requests' | 'fixed-assets' | 'borrows';
   data: any[];
   onExport: (format: 'pdf' | 'excel') => void;
   loading?: boolean;
@@ -213,16 +213,141 @@ export default function ReportPreviewModal({
     </div>
   );
 
+  const conditionLabel = (c: string) => {
+    switch (c) {
+      case 'GOOD': return 'ดี';
+      case 'DAMAGED': return 'ชำรุด';
+      case 'NEEDS_REPAIR': return 'รอซ่อม';
+      case 'DISPOSED': return 'จำหน่ายแล้ว';
+      default: return c;
+    }
+  };
+
+  const borrowerTypeLabel = (t: string) => {
+    switch (t) {
+      case 'STUDENT': return 'นักศึกษา';
+      case 'LECTURER': return 'อาจารย์';
+      case 'FACULTY': return 'คณะ';
+      case 'STAFF': return 'เจ้าหน้าที่';
+      default: return t;
+    }
+  };
+
+  const statusLabel = (s: string) => {
+    switch (s) {
+      case 'BORROWED': return 'กำลังยืม';
+      case 'RETURNED': return 'คืนแล้ว';
+      case 'OVERDUE': return 'เกินกำหนด';
+      case 'LOST': return 'สูญหาย';
+      default: return s;
+    }
+  };
+
+  const renderFixedAssetReport = () => (
+    <div className="overflow-x-auto">
+      <table className="min-w-full bg-white border border-gray-300 text-sm">
+        <thead>
+          <tr className="bg-slate-800 text-white">
+            <th className="px-3 py-2 border text-left">เลขครุภัณฑ์</th>
+            <th className="px-3 py-2 border text-left">ชื่อครุภัณฑ์</th>
+            <th className="px-3 py-2 border text-left">หมวดหมู่</th>
+            <th className="px-3 py-2 border text-left">ยี่ห้อ</th>
+            <th className="px-3 py-2 border text-center">สภาพ</th>
+            <th className="px-3 py-2 border text-left">ตำแหน่ง</th>
+            <th className="px-3 py-2 border text-center">สถานะ</th>
+          </tr>
+        </thead>
+        <tbody>
+          {currentData.map((item: any, index: number) => (
+            <tr key={item.assetNumber} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+              <td className="px-3 py-2 border font-mono font-medium">{item.assetNumber}</td>
+              <td className="px-3 py-2 border">{item.name}</td>
+              <td className="px-3 py-2 border">{item.category}</td>
+              <td className="px-3 py-2 border">{item.brand || '-'}</td>
+              <td className="px-3 py-2 border text-center">
+                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                  item.condition === 'GOOD' ? 'bg-green-100 text-green-800' :
+                  item.condition === 'NEEDS_REPAIR' ? 'bg-amber-100 text-amber-800' :
+                  item.condition === 'DAMAGED' ? 'bg-red-100 text-red-800' :
+                  'bg-gray-100 text-gray-600'
+                }`}>{conditionLabel(item.condition)}</span>
+              </td>
+              <td className="px-3 py-2 border">{item.location}</td>
+              <td className="px-3 py-2 border text-center">
+                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                  item.borrowStatus === 'กำลังถูกยืม' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
+                }`}>{item.borrowStatus}</span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+
+  const renderBorrowReport = () => (
+    <div className="overflow-x-auto">
+      <table className="min-w-full bg-white border border-gray-300 text-sm">
+        <thead>
+          <tr className="bg-slate-800 text-white">
+            <th className="px-3 py-2 border text-left">วันที่ยืม</th>
+            <th className="px-3 py-2 border text-left">เลขครุภัณฑ์</th>
+            <th className="px-3 py-2 border text-left">ชื่อครุภัณฑ์</th>
+            <th className="px-3 py-2 border text-center">ประเภท</th>
+            <th className="px-3 py-2 border text-left">ผู้ยืม</th>
+            <th className="px-3 py-2 border text-center">กำหนดคืน</th>
+            <th className="px-3 py-2 border text-center">คืนจริง</th>
+            <th className="px-3 py-2 border text-center">สถานะ</th>
+          </tr>
+        </thead>
+        <tbody>
+          {currentData.map((item: any, index: number) => {
+            const primaryName = item.studentName || item.borrowerName;
+            const sub = item.studentName ? item.studentId : item.borrowOnBehalfOf;
+            return (
+              <tr key={item.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                <td className="px-3 py-2 border">{new Date(item.borrowDate).toLocaleDateString('th-TH')}</td>
+                <td className="px-3 py-2 border font-mono">{item.assetNumber}</td>
+                <td className="px-3 py-2 border">{item.assetName}</td>
+                <td className="px-3 py-2 border text-center">
+                  <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
+                    {borrowerTypeLabel(item.borrowerType)}
+                  </span>
+                </td>
+                <td className="px-3 py-2 border">
+                  <div>{primaryName}</div>
+                  {sub && <div className="text-xs text-gray-500">{sub}</div>}
+                </td>
+                <td className="px-3 py-2 border text-center">
+                  {item.expectedReturnDate ? new Date(item.expectedReturnDate).toLocaleDateString('th-TH') : '-'}
+                </td>
+                <td className="px-3 py-2 border text-center">
+                  {item.actualReturnDate ? new Date(item.actualReturnDate).toLocaleDateString('th-TH') : '-'}
+                </td>
+                <td className="px-3 py-2 border text-center">
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                    item.status === 'BORROWED' ? 'bg-blue-100 text-blue-800' :
+                    item.status === 'RETURNED' ? 'bg-green-100 text-green-800' :
+                    item.status === 'OVERDUE' ? 'bg-red-100 text-red-800' :
+                    'bg-gray-100 text-gray-600'
+                  }`}>{statusLabel(item.status)}</span>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+
   const getReportTitle = () => {
     switch (reportType) {
-      case 'stock':
-        return 'รายงานสต็อกวัสดุ';
-      case 'transactions':
-        return 'รายงานการเบิกจ่าย';
-      case 'purchase-requests':
-        return 'รายงานคำขอซื้อ';
-      default:
-        return 'รายงาน';
+      case 'stock': return 'รายงานสต็อกวัสดุ';
+      case 'transactions': return 'รายงานการเบิกจ่าย';
+      case 'purchase-requests': return 'รายงานคำขอซื้อ';
+      case 'fixed-assets': return 'รายงานครุภัณฑ์ทั้งหมด';
+      case 'borrows': return 'รายงานการยืม-คืนครุภัณฑ์';
+      default: return 'รายงาน';
     }
   };
 
@@ -256,6 +381,8 @@ export default function ReportPreviewModal({
             {reportType === 'stock' && renderStockReport()}
             {reportType === 'transactions' && renderTransactionReport()}
             {reportType === 'purchase-requests' && renderPurchaseRequestReport()}
+            {reportType === 'fixed-assets' && renderFixedAssetReport()}
+            {reportType === 'borrows' && renderBorrowReport()}
           </div>
 
           {/* Pagination */}

@@ -56,11 +56,13 @@ export async function POST(request: NextRequest) {
       fixedAssetId,      // single (backward compat)
       fixedAssetIds,     // multi
       userId, 
+      borrowerType,
       expectedReturnDate, 
       purpose, 
       note,
       studentName,
-      studentId
+      studentId,
+      borrowOnBehalfOf
     } = body;
 
     // รองรับทั้ง single และ multi
@@ -108,11 +110,13 @@ export async function POST(request: NextRequest) {
     const borrowData = assetIds.map(id => ({
       fixedAssetId: id,
       userId,
+      borrowerType: borrowerType || 'LECTURER',
       expectedReturnDate: expectedReturnDate ? new Date(expectedReturnDate) : null,
       purpose: purpose || null,
       note: note || null,
       studentName: studentName || null,
       studentId: studentId || null,
+      borrowOnBehalfOf: borrowOnBehalfOf || null,
       status: 'BORROWED' as const,
     }));
 
