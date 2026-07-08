@@ -71,6 +71,8 @@ export default function AssetBorrowsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState('ALL');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [borrowerTypeFilter, setBorrowerTypeFilter] = useState('ALL');
   const [showDetails, setShowDetails] = useState<string | null>(null);
   const [showImageModal, setShowImageModal] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -427,12 +429,14 @@ export default function AssetBorrowsPage() {
     );
   };
 
-  // Toggle เลือกทั้งหมด
+  // Toggle เลือกทั้งหมด (เฉพาะรายการที่กรองแล้ว)
   const toggleSelectAll = () => {
-    if (selectedIds.length === borrows.length) {
-      setSelectedIds([]);
+    const filteredIds = filteredBorrows.map(b => b.id);
+    const allSelected = filteredIds.every(id => selectedIds.includes(id));
+    if (allSelected) {
+      setSelectedIds(prev => prev.filter(id => !filteredIds.includes(id)));
     } else {
-      setSelectedIds(borrows.map(b => b.id));
+      setSelectedIds(prev => [...new Set([...prev, ...filteredIds])]);
     }
   };
 
@@ -460,6 +464,25 @@ export default function AssetBorrowsPage() {
     if (!borrow.expectedReturnDate || borrow.status === 'RETURNED') return false;
     return new Date(borrow.expectedReturnDate) < new Date();
   };
+
+  // ค้นหา + กรองฝั่ง client
+  const filteredBorrows = borrows.filter(b => {
+    if (borrowerTypeFilter !== 'ALL' && b.borrowerType !== borrowerTypeFilter) return false;
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      b.fixedAsset.assetNumber.toLowerCase().includes(q) ||
+      b.fixedAsset.name.toLowerCase().includes(q) ||
+      b.fixedAsset.category.toLowerCase().includes(q) ||
+      (b.fixedAsset.brand || '').toLowerCase().includes(q) ||
+      b.user.name.toLowerCase().includes(q) ||
+      b.user.department.toLowerCase().includes(q) ||
+      (b.studentName || '').toLowerCase().includes(q) ||
+      (b.studentId || '').toLowerCase().includes(q) ||
+      (b.borrowOnBehalfOf || '').toLowerCase().includes(q) ||
+      (b.purpose || '').toLowerCase().includes(q)
+    );
+  });
 
   if (loading) {
     return (
@@ -506,43 +529,96 @@ export default function AssetBorrowsPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="border-l-4 border-orange-600 px-6 py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-xl font-bold text-slate-800">การยืมคืนครุภัณฑ์</h1>
-            <p className="text-sm text-slate-500 mt-0.5">ติดตามและจัดการการยืมคืนครุภัณฑ์</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={openBorrowModal}
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-sm font-medium transition-colors"
-            >
-              <PlusIcon className="h-4 w-4" />
-              ยืมครุภัณฑ์
-            </button>
-            {selectedIds.length > 0 && (
-              <button
-                onClick={handleBatchDownloadPDF}
-                disabled={downloadingBatch}
-                className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-700 hover:bg-slate-800 text-white rounded-xl text-sm font-medium transition-colors disabled:opacity-50"
-              >
-                {downloadingBatch ? (
-                  <><div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>กำลังเปิด...</>
-                ) : (
-                  <><PrinterIcon className="h-4 w-4" />พิมพ์รวม ({selectedIds.length})</>
+        <div className="border-l-4 border-orange-600 px-6 py-5">
+          {/* Row 1: title + action buttons */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-xl font-bold text-slate-800">การยืมคืนครุภัณฑ์</h1>
+              <p className="text-sm text-slate-500 mt-0.5">
+                ติดตามและจัดการการยืมคืนครุภัณฑ์
+                {filteredBorrows.length !== borrows.length && (
+                  <span className="ml-2 text-orange-600 font-medium">— พบ {filteredBorrows.length} จาก {borrows.length} รายการ</span>
                 )}
+              </p>
+            </div>
+            <div className="flex items-center gap-3 shrink-0">
+              <button
+                onClick={openBorrowModal}
+                className="inline-flex items-center gap-2 px-4 py-2.5 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-sm font-medium transition-colors"
+              >
+                <PlusIcon className="h-4 w-4" />
+                ยืมครุภัณฑ์
               </button>
-            )}
+              {selectedIds.length > 0 && (
+                <button
+                  onClick={handleBatchDownloadPDF}
+                  disabled={downloadingBatch}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-700 hover:bg-slate-800 text-white rounded-xl text-sm font-medium transition-colors disabled:opacity-50"
+                >
+                  {downloadingBatch ? (
+                    <><div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>กำลังเปิด...</>
+                  ) : (
+                    <><PrinterIcon className="h-4 w-4" />พิมพ์รวม ({selectedIds.length})</>
+                  )}
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Row 2: search + filters */}
+          <div className="mt-4 flex flex-col sm:flex-row gap-3">
+            {/* Search box */}
+            <div className="relative flex-1">
+              <MagnifyingGlassIcon className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              <input
+                type="text"
+                placeholder="ค้นหาชื่อครุภัณฑ์ เลขครุภัณฑ์ ผู้ยืม นักศึกษา..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-9 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                >
+                  <XMarkIcon className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+            {/* Borrower type filter */}
             <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              value={borrowerTypeFilter}
+              onChange={e => { setBorrowerTypeFilter(e.target.value); setSelectedIds([]); }}
               className="px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
             >
-              <option value="ALL">ทั้งหมด</option>
+              <option value="ALL">ทุกประเภทผู้ยืม</option>
+              <option value="STUDENT">นักศึกษา</option>
+              <option value="LECTURER">อาจารย์</option>
+              <option value="FACULTY">คณะ</option>
+              <option value="STAFF">เจ้าหน้าที่</option>
+            </select>
+            {/* Status filter */}
+            <select
+              value={statusFilter}
+              onChange={(e) => { setStatusFilter(e.target.value); setSelectedIds([]); }}
+              className="px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            >
+              <option value="ALL">ทุกสถานะ</option>
               <option value="BORROWED">กำลังยืม</option>
               <option value="RETURNED">คืนแล้ว</option>
               <option value="OVERDUE">เกินกำหนด</option>
               <option value="LOST">สูญหาย</option>
             </select>
+            {/* Clear filters */}
+            {(searchQuery || borrowerTypeFilter !== 'ALL' || statusFilter !== 'ALL') && (
+              <button
+                onClick={() => { setSearchQuery(''); setBorrowerTypeFilter('ALL'); setStatusFilter('ALL'); setSelectedIds([]); }}
+                className="px-3 py-2.5 border border-slate-300 rounded-xl text-sm text-slate-600 hover:bg-slate-50 transition-colors whitespace-nowrap"
+              >
+                ล้างตัวกรอง
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -555,7 +631,7 @@ export default function AssetBorrowsPage() {
               <th className="px-4 py-3">
                 <input
                   type="checkbox"
-                  checked={selectedIds.length === borrows.length && borrows.length > 0}
+                  checked={selectedIds.length === filteredBorrows.length && filteredBorrows.length > 0}
                   onChange={toggleSelectAll}
                   className="w-4 h-4 text-orange-600 rounded focus:ring-orange-500"
                 />
@@ -570,7 +646,7 @@ export default function AssetBorrowsPage() {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-slate-100">
-            {borrows.map((borrow) => (
+            {filteredBorrows.map((borrow) => (
               <tr key={borrow.id} className="hover:bg-slate-50 transition-colors">
                 <td className="px-4 py-4">
                   <input
@@ -700,15 +776,23 @@ export default function AssetBorrowsPage() {
           </tbody>
         </table>
 
-        {borrows.length === 0 && (
+        {filteredBorrows.length === 0 && (
           <div className="text-center py-16">
             <ClipboardDocumentListIcon className="h-12 w-12 mx-auto text-slate-300 mb-3" />
-            <p className="text-sm text-slate-500">
-              {statusFilter === 'ALL'
-                ? 'ยังไม่มีรายการยืมครุภัณฑ์'
-                : `ไม่มีรายการที่มีสถานะ "${getStatusText(statusFilter)}"`
-              }
-            </p>
+            {borrows.length === 0 ? (
+              <p className="text-sm text-slate-500">ยังไม่มีรายการยืมครุภัณฑ์</p>
+            ) : (
+              <>
+                <p className="text-sm font-medium text-slate-600">ไม่พบรายการที่ตรงกับการค้นหา</p>
+                <p className="text-xs text-slate-400 mt-1">ลองเปลี่ยนคำค้นหาหรือตัวกรอง</p>
+                <button
+                  onClick={() => { setSearchQuery(''); setBorrowerTypeFilter('ALL'); setStatusFilter('ALL'); }}
+                  className="mt-3 text-xs text-orange-600 hover:underline"
+                >
+                  ล้างตัวกรองทั้งหมด
+                </button>
+              </>
+            )}
           </div>
         )}
       </div>
